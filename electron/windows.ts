@@ -9,6 +9,7 @@ import {
 	getHudOverlayWindowBounds,
 	resizeHudOverlayFallbackBounds,
 	shouldExpandHudOverlayFallback,
+	shouldIgnoreHudOverlayMouse,
 } from "./hudOverlayBounds";
 import { getPackagedRendererBaseUrl } from "./rendererServer";
 
@@ -202,7 +203,7 @@ function getHudOverlayBounds() {
 	});
 	return getHudOverlayWindowBounds(
 		workArea,
-		isHudOverlayMousePassthroughSupported() && !hudOverlayRecordingActive,
+		isHudOverlayMousePassthroughSupported(),
 		fallbackExpanded,
 	);
 }
@@ -287,12 +288,10 @@ function setHudOverlayFallbackExpanded(expanded: boolean) {
 }
 
 function setHudOverlayMousePassthrough(ignore: boolean) {
-	hudOverlayIgnoringMouse =
-		hudOverlaySourceSelectionActive && !hudOverlayRecordingActive
-			? true
-			: hudOverlayRecordingActive
-				? false
-				: ignore;
+	hudOverlayIgnoringMouse = shouldIgnoreHudOverlayMouse({
+		requestedIgnore: ignore,
+		sourceSelectionActive: hudOverlaySourceSelectionActive,
+	});
 
 	if (hudOverlayMouseReassertTimer) {
 		clearTimeout(hudOverlayMouseReassertTimer);
@@ -300,13 +299,6 @@ function setHudOverlayMousePassthrough(ignore: boolean) {
 	}
 
 	if (!hudOverlayWindow || hudOverlayWindow.isDestroyed()) {
-		return;
-	}
-
-	if (hudOverlayRecordingActive) {
-		hudOverlayFallbackExpanded = false;
-		applyHudOverlayBounds();
-		hudOverlayWindow.setIgnoreMouseEvents(false);
 		return;
 	}
 
@@ -503,13 +495,8 @@ export function createHudOverlayWindow(): BrowserWindow {
 	}
 
 	if (isHudOverlayMousePassthroughSupported()) {
-		if (hudOverlayRecordingActive) {
-			hudOverlayIgnoringMouse = false;
-			win.setIgnoreMouseEvents(false);
-		} else {
-			hudOverlayIgnoringMouse = true;
-			win.setIgnoreMouseEvents(true, { forward: true });
-		}
+		hudOverlayIgnoringMouse = true;
+		win.setIgnoreMouseEvents(true, { forward: true });
 	}
 
 	// On Windows 11+, focus changes (e.g. showing a native notification) can break
@@ -638,11 +625,6 @@ export function reassertHudOverlayMousePassthrough(): void {
 		return;
 	}
 
-	if (hudOverlayRecordingActive) {
-		hud.setIgnoreMouseEvents(false);
-		return;
-	}
-
 	// Toggle off then back on so the native WS_EX_TRANSPARENT flag is fully
 	// re-initialised rather than merely re-asserted in a potentially broken state.
 	hud.setIgnoreMouseEvents(false);
@@ -661,7 +643,10 @@ export function setHudOverlayRecordingActive(recording: boolean): void {
 	hudOverlayRecordingActive = Boolean(recording);
 	hudOverlayFallbackExpanded = false;
 	applyHudOverlayBounds();
-	setHudOverlayMousePassthrough(!hudOverlayRecordingActive);
+	// The window spans the work area so the floating webcam can move freely. Keep
+	// transparent pixels click-through; renderer hover events temporarily opt the
+	// visible controls and webcam bubble back into mouse handling.
+	setHudOverlayMousePassthrough(true);
 }
 
 export function createUpdateToastWindow(): BrowserWindow {

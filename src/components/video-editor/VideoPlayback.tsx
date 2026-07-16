@@ -990,11 +990,45 @@ const VideoPlayback = forwardRef<VideoPlaybackRef, VideoPlaybackProps>(
 				}
 
 				const animationState = animationStateRef.current;
+				const cursorVisible =
+					showCursorRef.current &&
+					(!hideCursorWhenIdleRef.current ||
+						isCursorActiveAtTime(
+							cursorActivityTimesRef.current,
+							currentTimeRef.current,
+						));
+				const smoothedCursor = cursorVisible
+					? mapSmoothedCursorToCanvasNormalized(
+							cursorOverlayRef.current?.getSmoothedCursorSnapshot() ?? null,
+							{
+								maskRect: baseMaskRef.current,
+								canvasWidth: overlay.clientWidth,
+								canvasHeight: overlay.clientHeight,
+							},
+						)
+					: null;
+				const cursor =
+					smoothedCursor ??
+					(cursorVisible
+						? getCursorPositionAtTime(
+								cursorTelemetryRef.current,
+								currentTimeRef.current,
+								{
+									maskRect: baseMaskRef.current,
+									canvasWidth: overlay.clientWidth,
+									canvasHeight: overlay.clientHeight,
+								},
+							)
+						: null);
 				const directedLayout = getAutoDirectedWebcamLayout({
 					enabled: webcamAutoDirector && !webcamFullscreen,
 					zoomScale,
 					focusX: animationState.focusX,
 					focusY: animationState.focusY,
+					cursorX: cursor?.cx,
+					cursorY: cursor?.cy,
+					containerWidth: overlay.clientWidth,
+					containerHeight: overlay.clientHeight,
 					positionPreset: webcamPositionPreset,
 					positionX: webcamPositionX,
 					positionY: webcamPositionY,

@@ -5,6 +5,16 @@ export interface HudOverlayWorkArea {
 	height: number;
 }
 
+export function shouldIgnoreHudOverlayMouse({
+	requestedIgnore,
+	sourceSelectionActive,
+}: {
+	requestedIgnore: boolean;
+	sourceSelectionActive: boolean;
+}): boolean {
+	return sourceSelectionActive || requestedIgnore;
+}
+
 const NON_PASSTHROUGH_HUD_WIDTH_DIP = 860;
 const NON_PASSTHROUGH_HUD_COMPACT_HEIGHT_DIP = 160;
 const NON_PASSTHROUGH_HUD_EXPANDED_HEIGHT_DIP = 540;

@@ -4271,7 +4271,7 @@ export function SettingsPanel({
 									<div className="text-[9px] text-muted-foreground/60">
 										{tSettings(
 											"effects.webcamAutoDirectorHint",
-											"Moves and resizes the camera away from the active screen area.",
+											"Moves and slightly shrinks your selfie when it would cover the mouse cursor or active screen area.",
 										)}
 									</div>
 								</div>
@@ -4304,13 +4304,25 @@ export function SettingsPanel({
 								/>
 							</div>
 							<SliderControl
-								label={tSettings("effects.webcamWidth", "Webcam Width")}
+								label={tSettings("effects.webcamSize", "Selfie size")}
 								value={webcamWidth}
 								defaultValue={DEFAULT_WEBCAM_SIZE}
 								min={10}
 								max={100}
 								step={1}
-								onChange={(v) => updateWebcam({ width: v, size: v })}
+								onChange={(v) =>
+									updateWebcam({
+										width: v,
+										height: Math.min(
+											100,
+											Math.max(
+												10,
+												v * (webcamHeight / Math.max(1, webcamWidth)),
+											),
+										),
+										size: v,
+									})
+								}
 								formatValue={(v) => `${Math.round(v)}%`}
 								parseInput={(text) => parseFloat(text.replace(/%$/, ""))}
 							/>

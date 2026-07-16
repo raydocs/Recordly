@@ -65,6 +65,10 @@ export function getAutoDirectedWebcamLayout({
 	zoomScale,
 	focusX,
 	focusY,
+	cursorX,
+	cursorY,
+	containerWidth,
+	containerHeight,
 	positionPreset,
 	positionX,
 	positionY,
@@ -75,6 +79,10 @@ export function getAutoDirectedWebcamLayout({
 	zoomScale: number;
 	focusX: number;
 	focusY: number;
+	cursorX?: number | null;
+	cursorY?: number | null;
+	containerWidth?: number;
+	containerHeight?: number;
 	positionPreset: WebcamPositionPreset;
 	positionX: number;
 	positionY: number;
@@ -102,14 +110,58 @@ export function getAutoDirectedWebcamLayout({
 	const safeFocusY = clamp(Number.isFinite(focusY) ? focusY : 0.5, 0, 1);
 	const targetX = Math.abs(safeFocusX - 0.5) < 0.12 ? basePosition.x : safeFocusX < 0.5 ? 1 : 0;
 	const targetY = Math.abs(safeFocusY - 0.5) < 0.12 ? basePosition.y : safeFocusY < 0.5 ? 1 : 0;
-	const sizeScale = 1 - activity * 0.28;
+	const zoomSizeScale = 1 - activity * 0.28;
+	let directedX = basePosition.x + (targetX - basePosition.x) * activity;
+	let directedY = basePosition.y + (targetY - basePosition.y) * activity;
+	let cursorSizeScale = 1;
+
+	const hasCursor = Number.isFinite(cursorX) && Number.isFinite(cursorY);
+	if (hasCursor) {
+		const safeContainerWidth = Math.max(
+			1,
+			Number.isFinite(containerWidth) ? (containerWidth as number) : 1,
+		);
+		const safeContainerHeight = Math.max(
+			1,
+			Number.isFinite(containerHeight) ? (containerHeight as number) : 1,
+		);
+		const minDimension = Math.min(safeContainerWidth, safeContainerHeight);
+		const normalizedWidth = clamp(
+			(widthPercent * zoomSizeScale * minDimension) / 100 / safeContainerWidth,
+			0,
+			1,
+		);
+		const normalizedHeight = clamp(
+			(heightPercent * zoomSizeScale * minDimension) / 100 / safeContainerHeight,
+			0,
+			1,
+		);
+		const left = directedX * Math.max(0, 1 - normalizedWidth);
+		const top = directedY * Math.max(0, 1 - normalizedHeight);
+		const safeCursorX = clamp(cursorX as number, 0, 1);
+		const safeCursorY = clamp(cursorY as number, 0, 1);
+		const safetyPadding = 0.055;
+		const cursorTouchesWebcam =
+			safeCursorX >= left - safetyPadding &&
+			safeCursorX <= left + normalizedWidth + safetyPadding &&
+			safeCursorY >= top - safetyPadding &&
+			safeCursorY <= top + normalizedHeight + safetyPadding;
+
+		if (cursorTouchesWebcam) {
+			// Pick the corner farthest from the pointer. The renderer animates this
+			// transition, while a small scale reduction keeps nearby content visible.
+			directedX = safeCursorX < 0.5 ? 1 : 0;
+			directedY = safeCursorY < 0.5 ? 1 : 0;
+			cursorSizeScale = 0.88;
+		}
+	}
 
 	return {
 		positionPreset: "custom" as const,
-		positionX: basePosition.x + (targetX - basePosition.x) * activity,
-		positionY: basePosition.y + (targetY - basePosition.y) * activity,
-		widthPercent: widthPercent * sizeScale,
-		heightPercent: heightPercent * sizeScale,
+		positionX: directedX,
+		positionY: directedY,
+		widthPercent: widthPercent * zoomSizeScale * cursorSizeScale,
+		heightPercent: heightPercent * zoomSizeScale * cursorSizeScale,
 	};
 }
 

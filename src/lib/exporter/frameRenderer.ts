@@ -2494,11 +2494,23 @@ export class FrameRenderer {
 			sourceHeight,
 			webcam.cropRegion,
 		);
+		const cursor = mapSmoothedCursorToCanvasNormalized(
+			this.cursorOverlay?.getSmoothedCursorSnapshot() ?? null,
+			{
+				maskRect: this.layoutCache?.maskRect,
+				canvasWidth: width,
+				canvasHeight: height,
+			},
+		);
 		const directedLayout = getAutoDirectedWebcamLayout({
 			enabled: !isFullscreen && (webcam.autoDirector ?? true),
 			zoomScale: this.animationState.appliedScale || 1,
 			focusX: this.animationState.focusX,
 			focusY: this.animationState.focusY,
+			cursorX: cursor?.cx,
+			cursorY: cursor?.cy,
+			containerWidth: width,
+			containerHeight: height,
 			positionPreset: webcam.positionPreset ?? webcam.corner,
 			positionX: webcam.positionX ?? 1,
 			positionY: webcam.positionY ?? 1,

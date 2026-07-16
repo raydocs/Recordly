@@ -4,6 +4,7 @@ import {
 	getHudOverlayWindowBounds,
 	resizeHudOverlayFallbackBounds,
 	shouldExpandHudOverlayFallback,
+	shouldIgnoreHudOverlayMouse,
 } from "./hudOverlayBounds";
 
 describe("getHudOverlayWindowBounds", () => {
@@ -73,6 +74,35 @@ describe("getHudOverlayWindowBounds", () => {
 			width: 640,
 			height: 420,
 		});
+	});
+});
+
+describe("shouldIgnoreHudOverlayMouse", () => {
+	it("keeps transparent HUD regions click-through while recording controls are visible", () => {
+		expect(
+			shouldIgnoreHudOverlayMouse({
+				requestedIgnore: true,
+				sourceSelectionActive: false,
+			}),
+		).toBe(true);
+	});
+
+	it("temporarily captures mouse events only when the renderer requests interaction", () => {
+		expect(
+			shouldIgnoreHudOverlayMouse({
+				requestedIgnore: false,
+				sourceSelectionActive: false,
+			}),
+		).toBe(false);
+	});
+
+	it("always remains click-through while selecting a source", () => {
+		expect(
+			shouldIgnoreHudOverlayMouse({
+				requestedIgnore: false,
+				sourceSelectionActive: true,
+			}),
+		).toBe(true);
 	});
 });
 

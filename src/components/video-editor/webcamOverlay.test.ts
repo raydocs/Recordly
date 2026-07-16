@@ -43,6 +43,57 @@ describe("getAutoDirectedWebcamLayout", () => {
 		expect(layout.positionY).toBe(1);
 		expect(layout.widthPercent).toBeLessThan(40);
 	});
+
+	it("moves away from a cursor that would be covered and slightly zooms out", () => {
+		const layout = getAutoDirectedWebcamLayout({
+			enabled: true,
+			zoomScale: 1,
+			focusX: 0.5,
+			focusY: 0.5,
+			cursorX: 0.92,
+			cursorY: 0.9,
+			containerWidth: 1920,
+			containerHeight: 1080,
+			positionPreset: "bottom-right",
+			positionX: 1,
+			positionY: 1,
+			widthPercent: 40,
+			heightPercent: 40,
+		});
+
+		expect(layout).toMatchObject({
+			positionPreset: "custom",
+			positionX: 0,
+			positionY: 0,
+		});
+		expect(layout.widthPercent).toBeCloseTo(35.2);
+		expect(layout.heightPercent).toBeCloseTo(35.2);
+	});
+
+	it("does not move when the cursor is safely outside the webcam", () => {
+		const layout = getAutoDirectedWebcamLayout({
+			enabled: true,
+			zoomScale: 1,
+			focusX: 0.5,
+			focusY: 0.5,
+			cursorX: 0.1,
+			cursorY: 0.1,
+			containerWidth: 1920,
+			containerHeight: 1080,
+			positionPreset: "bottom-right",
+			positionX: 1,
+			positionY: 1,
+			widthPercent: 40,
+			heightPercent: 40,
+		});
+
+		expect(layout).toMatchObject({
+			positionX: 1,
+			positionY: 1,
+			widthPercent: 40,
+			heightPercent: 40,
+		});
+	});
 });
 
 describe("normalizeWebcamCropRegion", () => {

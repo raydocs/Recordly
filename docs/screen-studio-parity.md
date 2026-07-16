@@ -13,7 +13,7 @@ copying.
 | Background, padding, crop, aspect ratio, device frames | Available | More bundled glass/wallpaper presets |
 | Trim, clips, speed regions, audio gain/normalization | Available | Smart Typing now detects private key timestamps and suggests 2× regions |
 | Sensitive-data masks and focus highlights | Available | Dedicated mask lane, shortcut 4, opacity and disable controls |
-| Webcam crop, mirror, 9 positions, custom placement | Available | Dynamic fullscreen/default/hidden camera layouts are available |
+| Webcam crop, mirror, size, roundness, 9 positions, custom placement | Available | Cursor-aware auto director now moves and slightly shrinks the selfie; dynamic fullscreen/default/hidden layouts are available |
 | Captions and transcript editing | Available | Local model picker/prompt UX parity |
 | RNNoise voice cleanup | Available | Editor-side per-track cleanup preview/toggle |
 | H.264, HEVC and GIF export | Available | Batch export and quick-share widget |
@@ -28,6 +28,7 @@ copying.
 5. Project portability: shareable presets, raw-track extraction and stronger autosave recovery.
 
 Sources: <https://screen.studio/guide>,
+<https://screen.studio>,
 <https://screen.studio/guide/cursor>,
 <https://preview.screen.studio/guide/command-menu>,
 <https://screen.studio/guide/dynamic-camera-layouts->,
