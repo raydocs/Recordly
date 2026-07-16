@@ -7,6 +7,7 @@ import {
 	type ProjectEditorState,
 	stripPersistedDevMotionBlurSettings,
 } from "./projectPersistence";
+import { DEFAULT_WEBCAM_OVERLAY } from "./types";
 
 type PersistedEditorControls = Pick<
 	ProjectEditorState,
@@ -357,6 +358,8 @@ function normalizeEditorControls(
 			...(sanitizedRaw.webcam ?? fallback.webcam),
 			// Timeline layouts are project content, not reusable editor preferences.
 			layouts: [],
+			// Per-recording framing is content, not a reusable preference.
+			cropRegion: DEFAULT_WEBCAM_OVERLAY.cropRegion,
 		},
 		aspectRatio: sanitizedRaw.aspectRatio ?? fallback.aspectRatio,
 		exportEncodingMode: sanitizedRaw.exportEncodingMode ?? fallback.exportEncodingMode,

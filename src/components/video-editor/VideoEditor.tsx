@@ -248,16 +248,17 @@ import {
 	type ZoomTransitionEasing,
 } from "./types";
 import VideoPlayback, { VideoPlaybackRef } from "./VideoPlayback";
+import { stopCursorMovementAtEnd } from "./videoPlayback/cursorEndFreeze";
 import {
 	buildLoopedCursorTelemetry,
 	getDisplayedTimelineWindowMs,
 } from "./videoPlayback/cursorLoopTelemetry";
-import { stopCursorMovementAtEnd } from "./videoPlayback/cursorEndFreeze";
 import { removeCursorShakes as cleanCursorShakes } from "./videoPlayback/cursorShakeRemoval";
 import {
 	forceDefaultCursorType,
 	optimizeOriginalCursorTypes,
 } from "./videoPlayback/cursorTypeOptimization";
+import { applySessionWebcamAppearance } from "./webcamOverlay";
 
 type PendingExportSave = {
 	fileName: string;
@@ -2616,13 +2617,27 @@ export default function VideoEditor() {
 						? sourceVideoUrl
 						: null;
 					applySessionPresentation(sessionResult.session);
-					setWebcam((prev) => ({
-						...prev,
-						enabled: Boolean(sessionResult.session?.webcamPath),
-						sourcePath: sessionResult.session?.webcamPath ?? null,
-						timeOffsetMs:
-							sessionResult.session?.timeOffsetMs ?? DEFAULT_WEBCAM_TIME_OFFSET_MS,
-					}));
+					setWebcam((prev) => {
+						const nextWebcamPath = sessionResult.session?.webcamPath ?? null;
+						const isNewWebcamSource =
+							Boolean(nextWebcamPath) && nextWebcamPath !== prev.sourcePath;
+						const appearancePatch = !isNewWebcamSource
+							? {}
+							: sessionResult.session?.webcamAppearance
+								? applySessionWebcamAppearance(
+										sessionResult.session.webcamAppearance,
+									)
+								: { cropRegion: DEFAULT_WEBCAM_OVERLAY.cropRegion };
+						return {
+							...prev,
+							enabled: Boolean(nextWebcamPath),
+							sourcePath: nextWebcamPath,
+							timeOffsetMs:
+								sessionResult.session?.timeOffsetMs ??
+								DEFAULT_WEBCAM_TIME_OFFSET_MS,
+							...appearancePatch,
+						};
+					});
 					return;
 				}
 
@@ -2690,14 +2705,24 @@ export default function VideoEditor() {
 				return;
 			}
 
-			setWebcam((prev) => ({
-				...prev,
-				enabled: Boolean(sessionWebcamPath),
-				sourcePath: sessionWebcamPath,
-				timeOffsetMs: sessionWebcamPath
-					? (session.timeOffsetMs ?? prev.timeOffsetMs)
-					: DEFAULT_WEBCAM_TIME_OFFSET_MS,
-			}));
+			setWebcam((prev) => {
+				const isNewWebcamSource =
+					Boolean(sessionWebcamPath) && sessionWebcamPath !== prev.sourcePath;
+				const appearancePatch = !isNewWebcamSource
+					? {}
+					: session.webcamAppearance
+						? applySessionWebcamAppearance(session.webcamAppearance)
+						: { cropRegion: DEFAULT_WEBCAM_OVERLAY.cropRegion };
+				return {
+					...prev,
+					enabled: Boolean(sessionWebcamPath),
+					sourcePath: sessionWebcamPath,
+					timeOffsetMs: sessionWebcamPath
+						? (session.timeOffsetMs ?? prev.timeOffsetMs)
+						: DEFAULT_WEBCAM_TIME_OFFSET_MS,
+					...appearancePatch,
+				};
+			});
 			setSourceAudioFallbackRefreshKey((key) => key + 1);
 		});
 	}, [videoSourcePath]);

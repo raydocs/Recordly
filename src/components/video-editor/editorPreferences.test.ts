@@ -113,6 +113,17 @@ describe("editorPreferences", () => {
 		expect(normalized.webcam.layouts).toEqual([]);
 	});
 
+	it("does not carry per-recording webcam crop into global preferences", () => {
+		const normalized = normalizeEditorPreferences({
+			webcam: {
+				...DEFAULT_EDITOR_PREFERENCES.webcam,
+				cropRegion: { x: 0.15, y: 0.2, width: 0.5, height: 0.4 },
+			},
+		});
+
+		expect(normalized.webcam.cropRegion).toEqual({ x: 0, y: 0, width: 1, height: 1 });
+	});
+
 	it("bakes in the stronger split motion blur defaults", () => {
 		expect(DEFAULT_EDITOR_PREFERENCES.zoomMotionBlurTuning).toMatchObject({
 			panVelocityThreshold: 0,

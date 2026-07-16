@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+	applySessionWebcamAppearance,
 	getAutoDirectedWebcamLayout,
 	getCropMatchedWebcamHeightPercent,
 	getWebcamCropSourceRect,
@@ -108,6 +109,40 @@ describe("normalizeWebcamCropRegion", () => {
 		expect(crop.y).toBe(0);
 		expect(crop.width).toBeCloseTo(0.2);
 		expect(crop.height).toBe(1);
+	});
+});
+
+describe("applySessionWebcamAppearance", () => {
+	it("returns an empty patch when appearance is missing", () => {
+		expect(applySessionWebcamAppearance(null)).toEqual({});
+		expect(applySessionWebcamAppearance(undefined)).toEqual({});
+	});
+
+	it("normalizes out-of-range crop regions", () => {
+		expect(
+			applySessionWebcamAppearance({
+				cropRegion: { x: 0.8, y: -1, width: 0.5, height: 2 },
+			}),
+		).toEqual({
+			cropRegion: normalizeWebcamCropRegion({ x: 0.8, y: -1, width: 0.5, height: 2 }),
+		});
+	});
+
+	it("passes through mirror when it is a boolean", () => {
+		expect(applySessionWebcamAppearance({ mirror: false })).toEqual({ mirror: false });
+		expect(applySessionWebcamAppearance({ mirror: true })).toEqual({ mirror: true });
+	});
+
+	it("applies both crop and mirror when present", () => {
+		expect(
+			applySessionWebcamAppearance({
+				cropRegion: { x: 0.1, y: 0.2, width: 0.5, height: 0.4 },
+				mirror: false,
+			}),
+		).toEqual({
+			cropRegion: { x: 0.1, y: 0.2, width: 0.5, height: 0.4 },
+			mirror: false,
+		});
 	});
 });
 

@@ -1,8 +1,10 @@
+import type { RecordingWebcamAppearance } from "../../../electron/ipc/types";
 import type {
 	CropRegion,
 	WebcamCorner,
 	WebcamLayoutMode,
 	WebcamLayoutRegion,
+	WebcamOverlaySettings,
 	WebcamPositionPreset,
 } from "./types";
 
@@ -305,6 +307,24 @@ export function normalizeWebcamCropRegion(cropRegion?: Partial<CropRegion> | nul
 	);
 
 	return { x, y, width, height };
+}
+
+/** Map a recording-session webcam appearance into editor overlay patches. */
+export function applySessionWebcamAppearance(
+	appearance: RecordingWebcamAppearance | null | undefined,
+): Partial<WebcamOverlaySettings> {
+	if (!appearance) {
+		return {};
+	}
+
+	const patch: Partial<WebcamOverlaySettings> = {};
+	if (appearance.cropRegion != null) {
+		patch.cropRegion = normalizeWebcamCropRegion(appearance.cropRegion);
+	}
+	if (typeof appearance.mirror === "boolean") {
+		patch.mirror = appearance.mirror;
+	}
+	return patch;
 }
 
 export function isWebcamCropRegionDefault(cropRegion?: Partial<CropRegion> | null): boolean {
