@@ -74,6 +74,7 @@ import {
 	type Padding,
 	type SpeedRegion,
 	type TrimRegion,
+	type WebcamLayoutRegion,
 	type WebcamOverlaySettings,
 	type ZoomMotionBlurTuning,
 	type ZoomRegion,
@@ -824,6 +825,32 @@ export function normalizeProjectEditor(editor: Partial<ProjectEditorState>): Pro
 	const webcam: Partial<WebcamOverlaySettings> =
 		editor.webcam && typeof editor.webcam === "object" ? editor.webcam : {};
 	const webcamSourcePath = typeof webcam.sourcePath === "string" ? webcam.sourcePath : null;
+	const normalizedWebcamLayouts: WebcamLayoutRegion[] = Array.isArray(webcam.layouts)
+		? webcam.layouts
+				.flatMap((candidate, index) => {
+					if (!candidate || typeof candidate !== "object") return [];
+					const layout = candidate as Partial<WebcamLayoutRegion>;
+					if (!isFiniteNumber(layout.startMs) || !isFiniteNumber(layout.endMs)) return [];
+					const startMs = Math.max(0, Math.round(layout.startMs));
+					const endMs = Math.max(startMs + 1, Math.round(layout.endMs));
+					const mode: WebcamLayoutRegion["mode"] =
+						layout.mode === "fullscreen" || layout.mode === "hidden"
+							? layout.mode
+							: "default";
+					return [
+						{
+							id:
+								typeof layout.id === "string" && layout.id.trim()
+									? layout.id
+									: `webcam-layout-${index + 1}`,
+							startMs,
+							endMs,
+							mode,
+						},
+					];
+				})
+				.sort((left, right) => left.startMs - right.startMs)
+		: [];
 	const legacyZoomScaleEffect = isFiniteNumber(
 		(webcam as Partial<{ zoomScaleEffect: number }>).zoomScaleEffect,
 	)
@@ -1068,6 +1095,7 @@ export function normalizeProjectEditor(editor: Partial<ProjectEditorState>): Pro
 			margin: isFiniteNumber(webcam.margin)
 				? clamp(webcam.margin, 0, 96)
 				: DEFAULT_WEBCAM_MARGIN,
+			layouts: normalizedWebcamLayouts,
 		},
 		sourceAudioTrackSettingsByClip:
 			editor.sourceAudioTrackSettingsByClip &&

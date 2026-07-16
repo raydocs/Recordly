@@ -51,4 +51,15 @@ describe("timelineSelectionUtils", () => {
 			}),
 		).toBe("none");
 	});
+
+	it("recognizes a selected dynamic webcam layout", () => {
+		expect(
+			resolveDeleteSelectionTarget({
+				selectAllBlocksActive: false,
+				selectedKeyframeId: null,
+				selectedZoomId: null,
+				selectedWebcamLayoutId: "webcam-layout-1",
+			}),
+		).toBe("webcam-layout");
+	});
 });

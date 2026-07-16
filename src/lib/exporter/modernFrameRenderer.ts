@@ -62,6 +62,7 @@ import {
 	getAutoDirectedWebcamLayout,
 	getCropMatchedWebcamHeightPercent,
 	getWebcamCropSourceRect,
+	getWebcamLayoutModeAtTime,
 	getWebcamOverlayDimensionsPx,
 	getWebcamOverlayPosition,
 	isWebcamCropRegionDefault,
@@ -466,6 +467,7 @@ export class FrameRenderer {
 	private lastContentTimeMs: number | null = null;
 	private layoutCache: LayoutCache | null = null;
 	private currentVideoTime = 0;
+	private currentTimelineTimeMs = 0;
 	private cursorOverlay: PixiCursorOverlay | null = null;
 	private lastSyncedWebcamTime: number | null = null;
 	private webcamRenderMode: "hidden" | "live" | "cached" = "hidden";
@@ -2841,7 +2843,13 @@ export class FrameRenderer {
 
 	private updateWebcamOverlay(referenceTimeSeconds = this.currentVideoTime): void {
 		const webcam = this.config.webcam;
-		if (!webcam?.enabled || !this.webcamRootContainer || !this.webcamMaskGraphics) {
+		const layoutMode = getWebcamLayoutModeAtTime(webcam?.layouts, this.currentTimelineTimeMs);
+		if (
+			!webcam?.enabled ||
+			layoutMode === "hidden" ||
+			!this.webcamRootContainer ||
+			!this.webcamMaskGraphics
+		) {
 			if (this.webcamRootContainer) {
 				this.webcamRootContainer.visible = false;
 			}
@@ -2897,7 +2905,8 @@ export class FrameRenderer {
 			return;
 		}
 
-		const margin = webcam.margin ?? 24;
+		const isFullscreen = layoutMode === "fullscreen";
+		const margin = isFullscreen ? 0 : (webcam.margin ?? 24);
 		const widthPercent = webcam.width ?? webcam.size ?? 50;
 		const aspectSourceWidth =
 			liveSourceDimensions.width > 0
@@ -2915,7 +2924,7 @@ export class FrameRenderer {
 			webcam.cropRegion,
 		);
 		const directedLayout = getAutoDirectedWebcamLayout({
-			enabled: webcam.autoDirector ?? true,
+			enabled: !isFullscreen && (webcam.autoDirector ?? true),
 			zoomScale: this.animationState.appliedScale || 1,
 			focusX: this.animationState.focusX,
 			focusY: this.animationState.focusY,
@@ -2925,28 +2934,32 @@ export class FrameRenderer {
 			widthPercent,
 			heightPercent,
 		});
-		const dimensions = getWebcamOverlayDimensionsPx({
-			containerWidth: this.config.width,
-			containerHeight: this.config.height,
-			widthPercent: directedLayout.widthPercent,
-			heightPercent: directedLayout.heightPercent,
-			margin,
-			zoomScale: this.animationState.appliedScale || 1,
-			reactToZoom: webcam.reactToZoom ?? true,
-		});
-		const position = getWebcamOverlayPosition({
-			containerWidth: this.config.width,
-			containerHeight: this.config.height,
-			width: dimensions.width,
-			height: dimensions.height,
-			margin,
-			positionPreset: directedLayout.positionPreset,
-			positionX: directedLayout.positionX,
-			positionY: directedLayout.positionY,
-			legacyCorner: webcam.corner,
-		});
-		const radius = Math.max(0, webcam.cornerRadius ?? 18);
-		const shadowStrength = clampUnitInterval(webcam.shadow ?? 0);
+		const dimensions = isFullscreen
+			? { width: this.config.width, height: this.config.height }
+			: getWebcamOverlayDimensionsPx({
+					containerWidth: this.config.width,
+					containerHeight: this.config.height,
+					widthPercent: directedLayout.widthPercent,
+					heightPercent: directedLayout.heightPercent,
+					margin,
+					zoomScale: this.animationState.appliedScale || 1,
+					reactToZoom: webcam.reactToZoom ?? true,
+				});
+		const position = isFullscreen
+			? { x: 0, y: 0 }
+			: getWebcamOverlayPosition({
+					containerWidth: this.config.width,
+					containerHeight: this.config.height,
+					width: dimensions.width,
+					height: dimensions.height,
+					margin,
+					positionPreset: directedLayout.positionPreset,
+					positionX: directedLayout.positionX,
+					positionY: directedLayout.positionY,
+					legacyCorner: webcam.corner,
+				});
+		const radius = isFullscreen ? 0 : Math.max(0, webcam.cornerRadius ?? 18);
+		const shadowStrength = isFullscreen ? 0 : clampUnitInterval(webcam.shadow ?? 0);
 
 		this.webcamRootContainer.visible = true;
 
@@ -2981,6 +2994,7 @@ export class FrameRenderer {
 		}
 
 		this.currentVideoTime = timestamp / 1_000_000;
+		this.currentTimelineTimeMs = backgroundTimelineTimestamp / 1000;
 		const webcamRenderTimeSeconds = Math.max(
 			0,
 			webcamTimeSecondsOverride ?? this.currentVideoTime,
@@ -3177,6 +3191,7 @@ export class FrameRenderer {
 		}
 
 		this.currentVideoTime = timestamp / 1_000_000;
+		this.currentTimelineTimeMs = backgroundTimelineTimestamp / 1000;
 
 		const resolvedVideoSource = await this.resolveDetachedVideoFrameSource(
 			videoFrame,

@@ -337,7 +337,11 @@ function normalizeEditorControls(
 		borderRadius: sanitizedRaw.borderRadius ?? fallback.borderRadius,
 		padding: sanitizedRaw.padding ?? fallback.padding,
 		frame: sanitizedRaw.frame !== undefined ? sanitizedRaw.frame : fallback.frame,
-		webcam: sanitizedRaw.webcam ?? fallback.webcam,
+		webcam: {
+			...(sanitizedRaw.webcam ?? fallback.webcam),
+			// Timeline layouts are project content, not reusable editor preferences.
+			layouts: [],
+		},
 		aspectRatio: sanitizedRaw.aspectRatio ?? fallback.aspectRatio,
 		exportEncodingMode: sanitizedRaw.exportEncodingMode ?? fallback.exportEncodingMode,
 		exportBackendPreference:

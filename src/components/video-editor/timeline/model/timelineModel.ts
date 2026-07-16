@@ -4,9 +4,10 @@ import type {
 	AudioRegion,
 	CaptionCue,
 	ClipRegion,
+	WebcamLayoutRegion,
 	ZoomRegion,
 } from "../../types";
-import { CAPTION_ROW_ID, CLIP_ROW_ID, ZOOM_ROW_ID } from "../core/constants";
+import { CAPTION_ROW_ID, CLIP_ROW_ID, WEBCAM_LAYOUT_ROW_ID, ZOOM_ROW_ID } from "../core/constants";
 import {
 	getAnnotationTrackIndex,
 	getAnnotationTrackRowId,
@@ -48,8 +49,16 @@ export function buildTimelineItems(params: {
 	annotationRegions: AnnotationRegion[];
 	audioRegions: AudioRegion[];
 	captionCues?: CaptionCue[];
+	webcamLayouts?: WebcamLayoutRegion[];
 }): TimelineRenderItem[] {
-	const { zoomRegions, clipRegions, annotationRegions, audioRegions, captionCues = [] } = params;
+	const {
+		zoomRegions,
+		clipRegions,
+		annotationRegions,
+		audioRegions,
+		captionCues = [],
+		webcamLayouts = [],
+	} = params;
 	const zooms: TimelineRenderItem[] = zoomRegions.map((region, index) => ({
 		id: region.id,
 		rowId: ZOOM_ROW_ID,
@@ -105,16 +114,30 @@ export function buildTimelineItems(params: {
 		label: getCaptionLabel(cue),
 		variant: "caption",
 	}));
+	const cameraLayouts: TimelineRenderItem[] = webcamLayouts.map((layout) => ({
+		id: layout.id,
+		rowId: WEBCAM_LAYOUT_ROW_ID,
+		span: { start: layout.startMs, end: layout.endMs },
+		label:
+			layout.mode === "fullscreen"
+				? "Fullscreen"
+				: layout.mode === "hidden"
+					? "Hidden"
+					: "Default",
+		webcamLayoutMode: layout.mode,
+		variant: "webcam-layout",
+	}));
 
-	return [...zooms, ...clips, ...annotations, ...audios, ...captions];
+	return [...zooms, ...clips, ...cameraLayouts, ...annotations, ...audios, ...captions];
 }
 
 export function buildAllRegionSpans(params: {
 	zoomRegions: ZoomRegion[];
 	clipRegions: ClipRegion[];
 	audioRegions: AudioRegion[];
+	webcamLayouts?: WebcamLayoutRegion[];
 }): TimelineRegionSpan[] {
-	const { zoomRegions, clipRegions, audioRegions } = params;
+	const { zoomRegions, clipRegions, audioRegions, webcamLayouts = [] } = params;
 	const zooms = zoomRegions.map((r) => ({
 		id: r.id,
 		start: r.startMs,
@@ -133,7 +156,13 @@ export function buildAllRegionSpans(params: {
 		end: r.endMs,
 		rowId: getAudioTrackRowId(r.trackIndex ?? 0),
 	}));
-	return [...zooms, ...clips, ...audios];
+	const cameraLayouts = webcamLayouts.map((r) => ({
+		id: r.id,
+		start: r.startMs,
+		end: r.endMs,
+		rowId: WEBCAM_LAYOUT_ROW_ID,
+	}));
+	return [...zooms, ...clips, ...cameraLayouts, ...audios];
 }
 
 export function resolveDropRowId(

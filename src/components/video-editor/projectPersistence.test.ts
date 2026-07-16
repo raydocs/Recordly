@@ -43,4 +43,20 @@ describe("normalizeProjectEditor", () => {
 			linked: true,
 		});
 	});
+
+	it("normalizes persisted dynamic webcam layouts", () => {
+		const editor = normalizeProjectEditor({
+			webcam: {
+				layouts: [
+					{ id: "intro", startMs: 800.4, endMs: 3200.7, mode: "fullscreen" },
+					{ id: "hide", startMs: 5000, endMs: 4900, mode: "hidden" },
+				],
+			} as never,
+		});
+
+		expect(editor.webcam.layouts).toEqual([
+			{ id: "intro", startMs: 800, endMs: 3201, mode: "fullscreen" },
+			{ id: "hide", startMs: 5000, endMs: 5001, mode: "hidden" },
+		]);
+	});
 });

@@ -1,6 +1,6 @@
 import type { Span } from "dnd-timeline";
 import type { ShortcutBinding } from "@/lib/shortcuts";
-import type { ZoomMode } from "../../types";
+import type { WebcamLayoutMode, ZoomMode } from "../../types";
 
 export interface TimelineRegionSpan {
 	id: string;
@@ -38,10 +38,19 @@ export interface TimelineRenderItem {
 	audioNormalize?: boolean;
 	zoomDepth?: number;
 	zoomMode?: ZoomMode;
+	webcamLayoutMode?: WebcamLayoutMode;
 	speedValue?: number;
 	showSourceAudio?: boolean;
 	muted?: boolean;
-	variant: "zoom" | "trim" | "clip" | "annotation" | "speed" | "audio" | "caption";
+	variant:
+		| "zoom"
+		| "trim"
+		| "clip"
+		| "annotation"
+		| "speed"
+		| "audio"
+		| "caption"
+		| "webcam-layout";
 }
 
 export interface AudioPeaksData {

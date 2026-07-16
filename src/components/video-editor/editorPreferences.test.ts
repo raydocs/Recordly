@@ -97,6 +97,17 @@ describe("editorPreferences", () => {
 		expect(DEFAULT_EDITOR_PREFERENCES.exportPipelineModel).toBe("modern");
 	});
 
+	it("does not carry project camera layout regions into global preferences", () => {
+		const normalized = normalizeEditorPreferences({
+			webcam: {
+				...DEFAULT_EDITOR_PREFERENCES.webcam,
+				layouts: [{ id: "webcam-layout-1", startMs: 0, endMs: 2000, mode: "fullscreen" }],
+			},
+		});
+
+		expect(normalized.webcam.layouts).toEqual([]);
+	});
+
 	it("bakes in the stronger split motion blur defaults", () => {
 		expect(DEFAULT_EDITOR_PREFERENCES.zoomMotionBlurTuning).toMatchObject({
 			panVelocityThreshold: 0,

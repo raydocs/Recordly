@@ -7,6 +7,7 @@ import type {
 	ClipRegion,
 	SpeedRegion,
 	TrimRegion,
+	WebcamLayoutRegion,
 	ZoomRegion,
 } from "../../types";
 import {
@@ -27,6 +28,7 @@ interface UseTimelineDndBindingsParams {
 	speedRegions: SpeedRegion[];
 	audioRegions: AudioRegion[];
 	captionCues: CaptionCue[];
+	webcamLayouts: WebcamLayoutRegion[];
 	onZoomSpanChange: (id: string, span: Span) => void;
 	onTrimSpanChange?: (id: string, span: Span) => void;
 	onClipSpanChange?: (id: string, span: Span) => void;
@@ -34,6 +36,7 @@ interface UseTimelineDndBindingsParams {
 	onSpeedSpanChange?: (id: string, span: Span) => void;
 	onAudioSpanChange?: (id: string, span: Span, trackIndex?: number) => void;
 	onCaptionSpanChange?: (id: string, span: Span) => void;
+	onWebcamLayoutSpanChange?: (id: string, span: Span) => void;
 }
 
 type TimelineItemKind =
@@ -44,6 +47,7 @@ type TimelineItemKind =
 	| "speed"
 	| "audio"
 	| "caption"
+	| "webcam-layout"
 	| null;
 
 export function useTimelineDndBindings({
@@ -54,6 +58,7 @@ export function useTimelineDndBindings({
 	speedRegions,
 	audioRegions,
 	captionCues,
+	webcamLayouts,
 	onZoomSpanChange,
 	onTrimSpanChange,
 	onClipSpanChange,
@@ -61,6 +66,7 @@ export function useTimelineDndBindings({
 	onSpeedSpanChange,
 	onAudioSpanChange,
 	onCaptionSpanChange,
+	onWebcamLayoutSpanChange,
 }: UseTimelineDndBindingsParams) {
 	const resolveItemKind = useCallback(
 		(id: string): TimelineItemKind => {
@@ -71,6 +77,7 @@ export function useTimelineDndBindings({
 			if (speedRegions.some((r) => r.id === id)) return "speed";
 			if (audioRegions.some((r) => r.id === id)) return "audio";
 			if (captionCues.some((c) => c.id === id)) return "caption";
+			if (webcamLayouts.some((layout) => layout.id === id)) return "webcam-layout";
 			return null;
 		},
 		[
@@ -81,6 +88,7 @@ export function useTimelineDndBindings({
 			speedRegions,
 			audioRegions,
 			captionCues,
+			webcamLayouts,
 		],
 	);
 
@@ -118,6 +126,7 @@ export function useTimelineDndBindings({
 			// Captions share a single lane and must never overlap, so validate a dragged or
 			// resized caption against the other cues just like the other timeline items.
 			if (itemKind === "caption") return checkOverlap(captionCues);
+			if (itemKind === "webcam-layout") return checkOverlap(webcamLayouts);
 
 			if (itemKind === "audio") {
 				const activeTrackIndex = resolveTrackIndex("audio", excludeId, rowId);
@@ -137,6 +146,7 @@ export function useTimelineDndBindings({
 			audioRegions,
 			speedRegions,
 			captionCues,
+			webcamLayouts,
 		],
 	);
 
@@ -148,8 +158,9 @@ export function useTimelineDndBindings({
 				annotationRegions,
 				audioRegions,
 				captionCues,
+				webcamLayouts,
 			}),
-		[zoomRegions, clipRegions, annotationRegions, audioRegions, captionCues],
+		[zoomRegions, clipRegions, annotationRegions, audioRegions, captionCues, webcamLayouts],
 	);
 
 	const allRegionSpans = useMemo(
@@ -158,8 +169,9 @@ export function useTimelineDndBindings({
 				zoomRegions,
 				clipRegions,
 				audioRegions,
+				webcamLayouts,
 			}),
-		[zoomRegions, clipRegions, audioRegions],
+		[zoomRegions, clipRegions, audioRegions, webcamLayouts],
 	);
 
 	const getResolvedDropRowId = useCallback(
@@ -186,6 +198,8 @@ export function useTimelineDndBindings({
 				onAudioSpanChange?.(id, span, nextTrackIndex);
 			} else if (itemKind === "caption") {
 				onCaptionSpanChange?.(id, span);
+			} else if (itemKind === "webcam-layout") {
+				onWebcamLayoutSpanChange?.(id, span);
 			}
 		},
 		[
@@ -198,6 +212,7 @@ export function useTimelineDndBindings({
 			onSpeedSpanChange,
 			onAudioSpanChange,
 			onCaptionSpanChange,
+			onWebcamLayoutSpanChange,
 		],
 	);
 

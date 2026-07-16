@@ -9,6 +9,7 @@ import type {
 	CursorTelemetryPoint,
 	SpeedRegion,
 	TrimRegion,
+	WebcamLayoutRegion,
 	ZoomFocus,
 	ZoomRegion,
 } from "../../types";
@@ -67,6 +68,12 @@ interface UseTimelineEditorRuntimeParams {
 	onCaptionAdded?: (span: Span) => void;
 	selectedCaptionId?: string | null;
 	onSelectCaption?: (id: string | null) => void;
+	webcamLayouts: WebcamLayoutRegion[];
+	onWebcamLayoutAdded?: (span: Span) => void;
+	onWebcamLayoutSpanChange?: (id: string, span: Span) => void;
+	onWebcamLayoutDelete?: (id: string) => void;
+	selectedWebcamLayoutId?: string | null;
+	onSelectWebcamLayout?: (id: string | null) => void;
 	isMac: boolean;
 	keyShortcuts: TimelineShortcutBindings;
 	isTimelineFocusedRef: RefObject<boolean>;
@@ -117,6 +124,12 @@ export function useTimelineEditorRuntime({
 	onCaptionAdded,
 	selectedCaptionId,
 	onSelectCaption,
+	webcamLayouts,
+	onWebcamLayoutAdded,
+	onWebcamLayoutSpanChange,
+	onWebcamLayoutDelete,
+	selectedWebcamLayoutId,
+	onSelectWebcamLayout,
 	isMac,
 	keyShortcuts,
 	isTimelineFocusedRef,
@@ -137,12 +150,14 @@ export function useTimelineEditorRuntime({
 		deleteSelectedAnnotation,
 		deleteSelectedAudio,
 		deleteSelectedCaption,
+		deleteSelectedWebcamLayout,
 		clearSelectedBlocks,
 		handleSelectZoom,
 		handleSelectClip,
 		handleSelectAnnotation,
 		handleSelectAudio,
 		handleSelectCaption,
+		handleSelectWebcamLayout,
 		cycleAnnotationsAtCurrentTime,
 	} = useTimelineSelection({
 		totalMs,
@@ -156,16 +171,19 @@ export function useTimelineEditorRuntime({
 		selectedAnnotationId,
 		selectedAudioId,
 		selectedCaptionId,
+		selectedWebcamLayoutId,
 		onZoomDelete,
 		onClipDelete,
 		onAnnotationDelete,
 		onAudioDelete,
 		onCaptionDelete,
+		onWebcamLayoutDelete,
 		onSelectZoom,
 		onSelectClip,
 		onSelectAnnotation,
 		onSelectAudio,
 		onSelectCaption,
+		onSelectWebcamLayout,
 	});
 
 	useTimelineNormalization({
@@ -179,6 +197,7 @@ export function useTimelineEditorRuntime({
 		onTrimSpanChange,
 		onSpeedSpanChange,
 		onAudioSpanChange,
+		onWebcamLayoutSpanChange,
 	});
 
 	const {
@@ -195,6 +214,7 @@ export function useTimelineEditorRuntime({
 		speedRegions,
 		audioRegions,
 		captionCues,
+		webcamLayouts,
 		onZoomSpanChange,
 		onTrimSpanChange,
 		onClipSpanChange,
@@ -202,6 +222,7 @@ export function useTimelineEditorRuntime({
 		onSpeedSpanChange,
 		onAudioSpanChange,
 		onCaptionSpanChange,
+		onWebcamLayoutSpanChange,
 	});
 
 	const {
@@ -227,6 +248,33 @@ export function useTimelineEditorRuntime({
 			captionRegions: captionCues,
 			onCaptionAdded,
 		});
+
+	const resolveWebcamLayoutSpanAtMs = useCallback(
+		(startMs: number) => {
+			if (!onWebcamLayoutAdded || totalMs <= 0) return null;
+			const start = Math.max(0, Math.min(Math.round(startMs), totalMs));
+			if (webcamLayouts.some((layout) => start >= layout.startMs && start < layout.endMs)) {
+				return null;
+			}
+			const nextStart = webcamLayouts
+				.filter((layout) => layout.startMs > start)
+				.reduce((nearest, layout) => Math.min(nearest, layout.startMs), totalMs);
+			const end = Math.min(nextStart, totalMs, start + 3000);
+			return end - start >= safeMinDurationMs ? { start, end } : null;
+		},
+		[onWebcamLayoutAdded, safeMinDurationMs, totalMs, webcamLayouts],
+	);
+	const canPlaceWebcamLayoutAtMs = useCallback(
+		(startMs: number) => resolveWebcamLayoutSpanAtMs(startMs) !== null,
+		[resolveWebcamLayoutSpanAtMs],
+	);
+	const addWebcamLayoutAtMs = useCallback(
+		(startMs: number) => {
+			const span = resolveWebcamLayoutSpanAtMs(startMs);
+			if (span) onWebcamLayoutAdded?.(span);
+		},
+		[onWebcamLayoutAdded, resolveWebcamLayoutSpanAtMs],
+	);
 
 	const handleSplitClip = useCallback(() => {
 		if (!videoDuration || videoDuration === 0 || totalMs === 0 || !onClipSplit) {
@@ -273,6 +321,7 @@ export function useTimelineEditorRuntime({
 		selectedAnnotationId,
 		selectedAudioId,
 		selectedCaptionId,
+		selectedWebcamLayoutId,
 		selectAllBlocksActive,
 		addKeyframe,
 		handleAddZoom,
@@ -284,6 +333,7 @@ export function useTimelineEditorRuntime({
 		deleteSelectedAnnotation,
 		deleteSelectedAudio,
 		deleteSelectedCaption,
+		deleteSelectedWebcamLayout,
 		cycleAnnotationsAtCurrentTime,
 	});
 
@@ -320,6 +370,7 @@ export function useTimelineEditorRuntime({
 		handleSelectAnnotation,
 		handleSelectAudio,
 		handleSelectCaption,
+		handleSelectWebcamLayout,
 		hasOverlap,
 		timelineItems,
 		allRegionSpans,
@@ -330,6 +381,9 @@ export function useTimelineEditorRuntime({
 		canPlaceCaptionAtMs,
 		addCaptionAtMs,
 		resolveCaptionSpanAtMs,
+		canPlaceWebcamLayoutAtMs,
+		addWebcamLayoutAtMs,
+		resolveWebcamLayoutSpanAtMs,
 		handleAddZoom,
 		handleSuggestZooms,
 		handleSplitClip,

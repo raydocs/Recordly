@@ -53,6 +53,7 @@ import {
 	getAutoDirectedWebcamLayout,
 	getCropMatchedWebcamHeightPercent,
 	getWebcamCropSourceRect,
+	getWebcamLayoutModeAtTime,
 	getWebcamOverlayDimensionsPx,
 	getWebcamOverlayPosition,
 } from "@/components/video-editor/webcamOverlay";
@@ -270,6 +271,7 @@ export class FrameRenderer {
 	private motionBlurState: MotionBlurState;
 	private layoutCache: LayoutCache | null = null;
 	private currentVideoTime = 0;
+	private currentTimelineTimeMs = 0;
 	private springScale: SpringState;
 	private springX: SpringState;
 	private springY: SpringState;
@@ -1458,6 +1460,7 @@ export class FrameRenderer {
 		}
 
 		this.currentVideoTime = timestamp / 1000000;
+		this.currentTimelineTimeMs = backgroundTimelineTimestamp / 1000;
 
 		// Create or update video sprite from VideoFrame
 		if (!this.videoSprite) {
@@ -2074,6 +2077,7 @@ export class FrameRenderer {
 		}
 
 		this.currentVideoTime = timestamp / 1_000_000;
+		this.currentTimelineTimeMs = backgroundTimelineTimestamp / 1000;
 
 		if (this.webcamForwardFrameSource || this.webcamVideoElement) {
 			await this.syncWebcamFrame(Math.max(0, this.currentVideoTime));
@@ -2337,9 +2341,10 @@ export class FrameRenderer {
 
 	private drawWebcamOverlay(ctx: CanvasRenderingContext2D, width: number, height: number): void {
 		const webcam = this.config.webcam;
+		const layoutMode = getWebcamLayoutModeAtTime(webcam?.layouts, this.currentTimelineTimeMs);
 		const webcamDecodedFrame = this.webcamDecodedFrame;
 		const webcamVideo = this.webcamVideoElement;
-		if (!webcam?.enabled || (!webcamDecodedFrame && !webcamVideo)) {
+		if (!webcam?.enabled || layoutMode === "hidden" || (!webcamDecodedFrame && !webcamVideo)) {
 			return;
 		}
 
@@ -2440,7 +2445,8 @@ export class FrameRenderer {
 				: "videoHeight" in webcamFrameSource
 					? webcamFrameSource.videoHeight
 					: webcamFrameSource.height) || sourceWidth;
-		const margin = webcam.margin ?? 24;
+		const isFullscreen = layoutMode === "fullscreen";
+		const margin = isFullscreen ? 0 : (webcam.margin ?? 24);
 		const widthPercent = webcam.width ?? webcam.size ?? 50;
 		const heightPercent = getCropMatchedWebcamHeightPercent(
 			widthPercent,
@@ -2450,7 +2456,7 @@ export class FrameRenderer {
 			webcam.cropRegion,
 		);
 		const directedLayout = getAutoDirectedWebcamLayout({
-			enabled: webcam.autoDirector ?? true,
+			enabled: !isFullscreen && (webcam.autoDirector ?? true),
 			zoomScale: this.animationState.appliedScale || 1,
 			focusX: this.animationState.focusX,
 			focusY: this.animationState.focusY,
@@ -2460,27 +2466,31 @@ export class FrameRenderer {
 			widthPercent,
 			heightPercent,
 		});
-		const dimensions = getWebcamOverlayDimensionsPx({
-			containerWidth: width,
-			containerHeight: height,
-			widthPercent: directedLayout.widthPercent,
-			heightPercent: directedLayout.heightPercent,
-			margin,
-			zoomScale: this.animationState.appliedScale || 1,
-			reactToZoom: webcam.reactToZoom ?? true,
-		});
-		const { x, y } = getWebcamOverlayPosition({
-			containerWidth: width,
-			containerHeight: height,
-			width: dimensions.width,
-			height: dimensions.height,
-			margin,
-			positionPreset: directedLayout.positionPreset,
-			positionX: directedLayout.positionX,
-			positionY: directedLayout.positionY,
-			legacyCorner: webcam.corner,
-		});
-		const radius = Math.max(0, webcam.cornerRadius ?? 18);
+		const dimensions = isFullscreen
+			? { width, height }
+			: getWebcamOverlayDimensionsPx({
+					containerWidth: width,
+					containerHeight: height,
+					widthPercent: directedLayout.widthPercent,
+					heightPercent: directedLayout.heightPercent,
+					margin,
+					zoomScale: this.animationState.appliedScale || 1,
+					reactToZoom: webcam.reactToZoom ?? true,
+				});
+		const { x, y } = isFullscreen
+			? { x: 0, y: 0 }
+			: getWebcamOverlayPosition({
+					containerWidth: width,
+					containerHeight: height,
+					width: dimensions.width,
+					height: dimensions.height,
+					margin,
+					positionPreset: directedLayout.positionPreset,
+					positionX: directedLayout.positionX,
+					positionY: directedLayout.positionY,
+					legacyCorner: webcam.corner,
+				});
+		const radius = isFullscreen ? 0 : Math.max(0, webcam.cornerRadius ?? 18);
 		const bubbleWidth = Math.max(1, Math.ceil(dimensions.width));
 		const bubbleHeight = Math.max(1, Math.ceil(dimensions.height));
 		if (bubbleCanvas.width !== bubbleWidth || bubbleCanvas.height !== bubbleHeight) {
@@ -2541,7 +2551,7 @@ export class FrameRenderer {
 		}
 		bubbleCtx.restore();
 
-		if ((webcam.shadow ?? 0) > 0) {
+		if (!isFullscreen && (webcam.shadow ?? 0) > 0) {
 			const shadow = Math.max(0, Math.min(1, webcam.shadow));
 			const shadowSize = Math.min(dimensions.width, dimensions.height);
 			ctx.save();

@@ -19,6 +19,7 @@ import {
 	CAPTION_ROW_ID,
 	CLIP_ROW_ID,
 	SOURCE_AUDIO_ROW_ID,
+	WEBCAM_LAYOUT_ROW_ID,
 	ZOOM_ROW_ID,
 } from "../../core/constants";
 import {
@@ -60,6 +61,7 @@ interface TimelineCanvasProps {
 	onSelectAnnotation?: (id: string | null) => void;
 	onSelectAudio?: (id: string | null) => void;
 	onSelectCaption?: (id: string | null) => void;
+	onSelectWebcamLayout?: (id: string | null) => void;
 	onAddZoomAtMs?: (startMs: number) => void;
 	onAddCaptionAtMs?: (startMs: number) => void;
 	canPlaceCaptionAtMs?: (startMs: number) => boolean;
@@ -71,6 +73,11 @@ interface TimelineCanvasProps {
 	selectedAnnotationId?: string | null;
 	selectedAudioId?: string | null;
 	selectedCaptionId?: string | null;
+	selectedWebcamLayoutId?: string | null;
+	onAddWebcamLayoutAtMs?: (startMs: number) => void;
+	canPlaceWebcamLayoutAtMs?: (startMs: number) => boolean;
+	resolveWebcamLayoutSpanAtMs?: (startMs: number) => { start: number; end: number } | null;
+	webcamLayoutsEnabled?: boolean;
 	selectAllBlocksActive?: boolean;
 	onClearBlockSelection?: () => void;
 	keyframes?: { id: string; time: number }[];
@@ -237,6 +244,10 @@ interface TimelineHoverParams {
 	resolveCaptionSpanAtMs?: (startMs: number) => { start: number; end: number } | null;
 	captionsEnabled?: boolean;
 	captionQuickAddEnabled?: boolean;
+	onAddWebcamLayoutAtMs?: (startMs: number) => void;
+	canPlaceWebcamLayoutAtMs?: (startMs: number) => boolean;
+	resolveWebcamLayoutSpanAtMs?: (startMs: number) => { start: number; end: number } | null;
+	webcamLayoutsEnabled?: boolean;
 	isDragging: boolean;
 	valueToPixels: (value: number) => number;
 }
@@ -254,6 +265,10 @@ function useTimelineHover({
 	resolveCaptionSpanAtMs,
 	captionsEnabled,
 	captionQuickAddEnabled = true,
+	onAddWebcamLayoutAtMs,
+	canPlaceWebcamLayoutAtMs,
+	resolveWebcamLayoutSpanAtMs,
+	webcamLayoutsEnabled = false,
 	isDragging,
 	valueToPixels,
 }: TimelineHoverParams) {
@@ -320,12 +335,27 @@ function useTimelineHover({
 		resolveGhostSpanMs: resolveCaptionSpanAtMs,
 	});
 
+	const webcamLayout = useTimelineLaneHover({
+		direction,
+		rangeStart,
+		visibleDurationMs,
+		videoDurationMs,
+		valueToPixels,
+		ghostDurationMs: Math.min(3000, videoDurationMs),
+		enabled: webcamLayoutsEnabled,
+		isDragging,
+		onAddAtMs: onAddWebcamLayoutAtMs,
+		canPlaceAtMs: canPlaceWebcamLayoutAtMs,
+		resolveGhostSpanMs: resolveWebcamLayoutSpanAtMs,
+	});
+
 	const handleTimelineMouseLeave = useCallback(() => {
 		setIsTimelineHovered(false);
 		setTimelineHoverMs(null);
 		zoom.reset();
 		caption.reset();
-	}, [zoom.reset, caption.reset]);
+		webcamLayout.reset();
+	}, [zoom.reset, caption.reset, webcamLayout.reset]);
 
 	const timelineGhostOffsetPx =
 		timelineHoverMs === null ? 0 : valueToPixels(Math.max(0, timelineHoverMs - rangeStart));
@@ -355,6 +385,15 @@ function useTimelineHover({
 		handleCaptionRowMouseLeave: caption.onMouseLeave,
 		handleCaptionRowMouseDown: caption.onMouseDown,
 		handleCaptionRowClick: caption.onClick,
+		canShowGhostWebcamLayout: webcamLayout.canShowGhost,
+		webcamLayoutGhostStartMs: webcamLayout.ghostStartMs,
+		webcamLayoutGhostStartOffsetPx: webcamLayout.ghostStartOffsetPx,
+		webcamLayoutGhostWidthPx: webcamLayout.ghostWidthPx,
+		handleWebcamLayoutRowMouseEnter: webcamLayout.onMouseEnter,
+		handleWebcamLayoutRowMouseMove: webcamLayout.onMouseMove,
+		handleWebcamLayoutRowMouseLeave: webcamLayout.onMouseLeave,
+		handleWebcamLayoutRowMouseDown: webcamLayout.onMouseDown,
+		handleWebcamLayoutRowClick: webcamLayout.onClick,
 	};
 }
 
@@ -367,11 +406,13 @@ interface TimelineCanvasRowsProps {
 	selectedAnnotationId?: string | null;
 	selectedAudioId?: string | null;
 	selectedCaptionId?: string | null;
+	selectedWebcamLayoutId?: string | null;
 	onSelectZoom?: (id: string | null) => void;
 	onSelectClip?: (id: string | null) => void;
 	onSelectAnnotation?: (id: string | null) => void;
 	onSelectAudio?: (id: string | null) => void;
 	onSelectCaption?: (id: string | null) => void;
+	onSelectWebcamLayout?: (id: string | null) => void;
 	sourceAudioTracks?: SourceAudioTrackWithPeaks[];
 	getSourceAudioTrackSettingsForClip?: (clipId: string | null) => SourceAudioTrackSettings;
 	showSourceAudioTrack?: boolean;
@@ -397,6 +438,16 @@ interface TimelineCanvasRowsProps {
 	onCaptionRowMouseLeave: MouseEventHandler<HTMLDivElement>;
 	onCaptionRowMouseDown: MouseEventHandler<HTMLDivElement>;
 	onCaptionRowClick: MouseEventHandler<HTMLDivElement>;
+	webcamLayoutsEnabled?: boolean;
+	canShowGhostWebcamLayout: boolean;
+	webcamLayoutGhostStartMs: number | null;
+	webcamLayoutGhostStartOffsetPx: number;
+	webcamLayoutGhostWidthPx: number;
+	onWebcamLayoutRowMouseEnter: MouseEventHandler<HTMLDivElement>;
+	onWebcamLayoutRowMouseMove: MouseEventHandler<HTMLDivElement>;
+	onWebcamLayoutRowMouseLeave: MouseEventHandler<HTMLDivElement>;
+	onWebcamLayoutRowMouseDown: MouseEventHandler<HTMLDivElement>;
+	onWebcamLayoutRowClick: MouseEventHandler<HTMLDivElement>;
 }
 
 interface AudioItemWithWaveformProps {
@@ -446,11 +497,13 @@ const TimelineCanvasRows = memo(function TimelineCanvasRows({
 	selectedAnnotationId,
 	selectedAudioId,
 	selectedCaptionId,
+	selectedWebcamLayoutId,
 	onSelectZoom,
 	onSelectClip,
 	onSelectAnnotation,
 	onSelectAudio,
 	onSelectCaption,
+	onSelectWebcamLayout,
 	sourceAudioTracks = [],
 	getSourceAudioTrackSettingsForClip,
 	showSourceAudioTrack = false,
@@ -476,64 +529,81 @@ const TimelineCanvasRows = memo(function TimelineCanvasRows({
 	onCaptionRowMouseLeave,
 	onCaptionRowMouseDown,
 	onCaptionRowClick,
+	webcamLayoutsEnabled = false,
+	canShowGhostWebcamLayout,
+	webcamLayoutGhostStartMs,
+	webcamLayoutGhostStartOffsetPx,
+	webcamLayoutGhostWidthPx,
+	onWebcamLayoutRowMouseEnter,
+	onWebcamLayoutRowMouseMove,
+	onWebcamLayoutRowMouseLeave,
+	onWebcamLayoutRowMouseDown,
+	onWebcamLayoutRowClick,
 }: TimelineCanvasRowsProps) {
 	const hiddenIds = useMemo(() => new Set(liveHiddenItemIds ?? []), [liveHiddenItemIds]);
-	const { clipItems, zoomItems, captionItems, annotationRows, audioRows } = useMemo(() => {
-		const nextClipItems: TimelineRenderItem[] = [];
-		const nextZoomItems: TimelineRenderItem[] = [];
-		const nextCaptionItems: TimelineRenderItem[] = [];
-		const annotationBuckets = new Map<number, TimelineRenderItem[]>();
-		const audioBuckets = new Map<number, TimelineRenderItem[]>();
+	const { clipItems, zoomItems, captionItems, webcamLayoutItems, annotationRows, audioRows } =
+		useMemo(() => {
+			const nextClipItems: TimelineRenderItem[] = [];
+			const nextZoomItems: TimelineRenderItem[] = [];
+			const nextCaptionItems: TimelineRenderItem[] = [];
+			const nextWebcamLayoutItems: TimelineRenderItem[] = [];
+			const annotationBuckets = new Map<number, TimelineRenderItem[]>();
+			const audioBuckets = new Map<number, TimelineRenderItem[]>();
 
-		for (const item of items) {
-			if (item.rowId === CLIP_ROW_ID) {
-				nextClipItems.push(item);
-				continue;
+			for (const item of items) {
+				if (item.rowId === CLIP_ROW_ID) {
+					nextClipItems.push(item);
+					continue;
+				}
+				if (item.rowId === ZOOM_ROW_ID) {
+					nextZoomItems.push(item);
+					continue;
+				}
+				if (item.rowId === CAPTION_ROW_ID) {
+					nextCaptionItems.push(item);
+					continue;
+				}
+				if (item.rowId === WEBCAM_LAYOUT_ROW_ID) {
+					nextWebcamLayoutItems.push(item);
+					continue;
+				}
+				if (isAnnotationTrackRowId(item.rowId)) {
+					const trackIndex = getAnnotationTrackIndex(item.rowId);
+					const bucket = annotationBuckets.get(trackIndex);
+					if (bucket) bucket.push(item);
+					else annotationBuckets.set(trackIndex, [item]);
+					continue;
+				}
+				if (isAudioTrackRowId(item.rowId)) {
+					const trackIndex = getAudioTrackIndex(item.rowId);
+					const bucket = audioBuckets.get(trackIndex);
+					if (bucket) bucket.push(item);
+					else audioBuckets.set(trackIndex, [item]);
+				}
 			}
-			if (item.rowId === ZOOM_ROW_ID) {
-				nextZoomItems.push(item);
-				continue;
-			}
-			if (item.rowId === CAPTION_ROW_ID) {
-				nextCaptionItems.push(item);
-				continue;
-			}
-			if (isAnnotationTrackRowId(item.rowId)) {
-				const trackIndex = getAnnotationTrackIndex(item.rowId);
-				const bucket = annotationBuckets.get(trackIndex);
-				if (bucket) bucket.push(item);
-				else annotationBuckets.set(trackIndex, [item]);
-				continue;
-			}
-			if (isAudioTrackRowId(item.rowId)) {
-				const trackIndex = getAudioTrackIndex(item.rowId);
-				const bucket = audioBuckets.get(trackIndex);
-				if (bucket) bucket.push(item);
-				else audioBuckets.set(trackIndex, [item]);
-			}
-		}
 
-		const annotationRowsSorted = Array.from(annotationBuckets.entries())
-			.sort(([left], [right]) => left - right)
-			.map(([trackIndex, rowItems]) => ({
-				rowId: getAnnotationTrackRowId(trackIndex),
-				items: rowItems,
-			}));
-		const audioRowsSorted = Array.from(audioBuckets.entries())
-			.sort(([left], [right]) => left - right)
-			.map(([trackIndex, rowItems]) => ({
-				rowId: getAudioTrackRowId(trackIndex),
-				items: rowItems,
-			}));
+			const annotationRowsSorted = Array.from(annotationBuckets.entries())
+				.sort(([left], [right]) => left - right)
+				.map(([trackIndex, rowItems]) => ({
+					rowId: getAnnotationTrackRowId(trackIndex),
+					items: rowItems,
+				}));
+			const audioRowsSorted = Array.from(audioBuckets.entries())
+				.sort(([left], [right]) => left - right)
+				.map(([trackIndex, rowItems]) => ({
+					rowId: getAudioTrackRowId(trackIndex),
+					items: rowItems,
+				}));
 
-		return {
-			clipItems: nextClipItems,
-			zoomItems: nextZoomItems,
-			captionItems: nextCaptionItems,
-			annotationRows: annotationRowsSorted,
-			audioRows: audioRowsSorted,
-		};
-	}, [items]);
+			return {
+				clipItems: nextClipItems,
+				zoomItems: nextZoomItems,
+				captionItems: nextCaptionItems,
+				webcamLayoutItems: nextWebcamLayoutItems,
+				annotationRows: annotationRowsSorted,
+				audioRows: audioRowsSorted,
+			};
+		}, [items]);
 
 	return (
 		<>
@@ -644,6 +714,63 @@ const TimelineCanvasRows = memo(function TimelineCanvasRows({
 						</Item>
 					))}
 			</Row>
+
+			{(webcamLayoutsEnabled || webcamLayoutItems.length > 0) && (
+				<Row
+					id={WEBCAM_LAYOUT_ROW_ID}
+					isEmpty={webcamLayoutItems.length === 0}
+					hint="Click to add camera layout"
+					onMouseEnter={onWebcamLayoutRowMouseEnter}
+					onMouseMove={onWebcamLayoutRowMouseMove}
+					onMouseLeave={onWebcamLayoutRowMouseLeave}
+					onMouseDown={onWebcamLayoutRowMouseDown}
+					onClick={onWebcamLayoutRowClick}
+				>
+					{canShowGhostWebcamLayout && webcamLayoutGhostStartMs !== null && (
+						<div className="absolute inset-0 z-[3] pointer-events-none">
+							<div
+								className="absolute top-1/2 -translate-y-1/2 h-[85%] min-h-[22px]"
+								style={
+									direction === "rtl"
+										? {
+												right: `${webcamLayoutGhostStartOffsetPx}px`,
+												width: `${webcamLayoutGhostWidthPx}px`,
+											}
+										: {
+												left: `${webcamLayoutGhostStartOffsetPx}px`,
+												width: `${webcamLayoutGhostWidthPx}px`,
+											}
+								}
+							>
+								<div
+									className={cn(
+										glassStyles.glassGreen,
+										"w-full h-full overflow-hidden flex items-center justify-center cursor-default relative opacity-80",
+									)}
+								>
+									<div className="relative z-10 inline-flex h-4 w-4 items-center justify-center rounded-full border border-white/45 bg-white/15 text-white">
+										<Plus className="h-2.5 w-2.5" />
+									</div>
+								</div>
+							</div>
+						</div>
+					)}
+					{webcamLayoutItems.map((item) => (
+						<Item
+							id={item.id}
+							key={item.id}
+							rowId={item.rowId}
+							span={item.span}
+							isSelected={item.id === selectedWebcamLayoutId}
+							onSelectId={onSelectWebcamLayout}
+							variant="webcam-layout"
+							webcamLayoutMode={item.webcamLayoutMode}
+						>
+							{item.label}
+						</Item>
+					))}
+				</Row>
+			)}
 
 			{(captionsEnabled || captionItems.length > 0) && (
 				<Row
@@ -763,11 +890,17 @@ export default function TimelineCanvas({
 	onSelectAnnotation,
 	onSelectAudio,
 	onSelectCaption,
+	onSelectWebcamLayout,
 	selectedZoomId,
 	selectedClipId,
 	selectedAnnotationId,
 	selectedAudioId,
 	selectedCaptionId,
+	selectedWebcamLayoutId,
+	onAddWebcamLayoutAtMs,
+	canPlaceWebcamLayoutAtMs,
+	resolveWebcamLayoutSpanAtMs,
+	webcamLayoutsEnabled = false,
 	selectAllBlocksActive = false,
 	onClearBlockSelection,
 	keyframes = [],
@@ -807,6 +940,7 @@ export default function TimelineCanvas({
 				onSelectAnnotation?.(null);
 				onSelectAudio?.(null);
 				onSelectCaption?.(null);
+				onSelectWebcamLayout?.(null);
 			}
 
 			const rect = e.currentTarget.getBoundingClientRect();
@@ -827,6 +961,7 @@ export default function TimelineCanvas({
 			onSelectAnnotation,
 			onSelectAudio,
 			onSelectCaption,
+			onSelectWebcamLayout,
 			onClearBlockSelection,
 			videoDurationMs,
 			sidebarWidth,
@@ -864,6 +999,7 @@ export default function TimelineCanvas({
 				onSelectAnnotation?.(null);
 				onSelectAudio?.(null);
 				onSelectCaption?.(null);
+				onSelectWebcamLayout?.(null);
 			}
 
 			const rect = localTimelineRef.current.getBoundingClientRect();
@@ -878,6 +1014,7 @@ export default function TimelineCanvas({
 			onSelectAnnotation,
 			onSelectAudio,
 			onSelectCaption,
+			onSelectWebcamLayout,
 			onSelectClip,
 			onSelectZoom,
 			videoDurationMs,
@@ -932,18 +1069,34 @@ export default function TimelineCanvas({
 		const annotationRowIds = new Set<string>();
 		const audioRowIds = new Set<string>();
 		let hasCaptionRow = false;
+		let hasWebcamLayoutRow = false;
 		for (const item of items) {
 			if (isAnnotationTrackRowId(item.rowId)) annotationRowIds.add(item.rowId);
 			if (isAudioTrackRowId(item.rowId)) audioRowIds.add(item.rowId);
 			if (item.rowId === CAPTION_ROW_ID) hasCaptionRow = true;
+			if (item.rowId === WEBCAM_LAYOUT_ROW_ID) hasWebcamLayoutRow = true;
 		}
 		const sourceAudioRows = showSourceAudioTrack ? sourceAudioTracks.length : 0;
 		// The caption lane is always shown when captions are enabled (even before any cue
 		// exists), so count it whenever captionsEnabled — not only when a caption item is
 		// present — or the min-height/stretch math undersizes the empty lane.
 		const captionRows = hasCaptionRow || captionsEnabled ? 1 : 0;
-		return 2 + sourceAudioRows + annotationRowIds.size + audioRowIds.size + captionRows;
-	}, [items, showSourceAudioTrack, sourceAudioTracks.length, captionsEnabled]);
+		const webcamLayoutRows = hasWebcamLayoutRow || webcamLayoutsEnabled ? 1 : 0;
+		return (
+			2 +
+			sourceAudioRows +
+			annotationRowIds.size +
+			audioRowIds.size +
+			captionRows +
+			webcamLayoutRows
+		);
+	}, [
+		items,
+		showSourceAudioTrack,
+		sourceAudioTracks.length,
+		captionsEnabled,
+		webcamLayoutsEnabled,
+	]);
 	const timelineRowsMinHeightPx = getTimelineRowsMinHeightPx(timelineRowCount);
 	const timelineContentMinHeightPx = getTimelineContentMinHeightPx(timelineRowCount);
 	const timelineViewportStretchFactor = getTimelineViewportStretchFactor(timelineRowCount);
@@ -972,6 +1125,15 @@ export default function TimelineCanvas({
 		handleCaptionRowMouseLeave,
 		handleCaptionRowMouseDown,
 		handleCaptionRowClick,
+		canShowGhostWebcamLayout,
+		webcamLayoutGhostStartMs,
+		webcamLayoutGhostStartOffsetPx,
+		webcamLayoutGhostWidthPx,
+		handleWebcamLayoutRowMouseEnter,
+		handleWebcamLayoutRowMouseMove,
+		handleWebcamLayoutRowMouseLeave,
+		handleWebcamLayoutRowMouseDown,
+		handleWebcamLayoutRowClick,
 	} = useTimelineHover({
 		direction,
 		sidebarWidth,
@@ -985,6 +1147,10 @@ export default function TimelineCanvas({
 		resolveCaptionSpanAtMs,
 		captionsEnabled,
 		captionQuickAddEnabled,
+		onAddWebcamLayoutAtMs,
+		canPlaceWebcamLayoutAtMs,
+		resolveWebcamLayoutSpanAtMs,
+		webcamLayoutsEnabled,
 		isDragging,
 		valueToPixels,
 	});
@@ -1040,11 +1206,13 @@ export default function TimelineCanvas({
 					selectedAnnotationId={selectedAnnotationId}
 					selectedAudioId={selectedAudioId}
 					selectedCaptionId={selectedCaptionId}
+					selectedWebcamLayoutId={selectedWebcamLayoutId}
 					onSelectZoom={onSelectZoom}
 					onSelectClip={onSelectClip}
 					onSelectAnnotation={onSelectAnnotation}
 					onSelectAudio={onSelectAudio}
 					onSelectCaption={onSelectCaption}
+					onSelectWebcamLayout={onSelectWebcamLayout}
 					sourceAudioTracks={sourceAudioTracks}
 					getSourceAudioTrackSettingsForClip={getSourceAudioTrackSettingsForClip}
 					showSourceAudioTrack={showSourceAudioTrack}
@@ -1070,6 +1238,16 @@ export default function TimelineCanvas({
 					onCaptionRowMouseLeave={handleCaptionRowMouseLeave}
 					onCaptionRowMouseDown={handleCaptionRowMouseDown}
 					onCaptionRowClick={handleCaptionRowClick}
+					webcamLayoutsEnabled={webcamLayoutsEnabled}
+					canShowGhostWebcamLayout={canShowGhostWebcamLayout}
+					webcamLayoutGhostStartMs={webcamLayoutGhostStartMs}
+					webcamLayoutGhostStartOffsetPx={webcamLayoutGhostStartOffsetPx}
+					webcamLayoutGhostWidthPx={webcamLayoutGhostWidthPx}
+					onWebcamLayoutRowMouseEnter={handleWebcamLayoutRowMouseEnter}
+					onWebcamLayoutRowMouseMove={handleWebcamLayoutRowMouseMove}
+					onWebcamLayoutRowMouseLeave={handleWebcamLayoutRowMouseLeave}
+					onWebcamLayoutRowMouseDown={handleWebcamLayoutRowMouseDown}
+					onWebcamLayoutRowClick={handleWebcamLayoutRowClick}
 				/>
 			</div>
 		</div>

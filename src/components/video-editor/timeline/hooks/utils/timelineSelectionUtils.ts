@@ -5,6 +5,7 @@ export type DeleteSelectionTarget =
 	| "annotation"
 	| "audio"
 	| "caption"
+	| "webcam-layout"
 	| "none";
 
 interface ResolveDeleteSelectionTargetParams {
@@ -15,6 +16,7 @@ interface ResolveDeleteSelectionTargetParams {
 	selectedAnnotationId?: string | null;
 	selectedAudioId?: string | null;
 	selectedCaptionId?: string | null;
+	selectedWebcamLayoutId?: string | null;
 }
 
 export function resolveDeleteSelectionTarget({
@@ -25,6 +27,7 @@ export function resolveDeleteSelectionTarget({
 	selectedAnnotationId,
 	selectedAudioId,
 	selectedCaptionId,
+	selectedWebcamLayoutId,
 }: ResolveDeleteSelectionTargetParams): DeleteSelectionTarget {
 	if (selectAllBlocksActive) return "zoom";
 	if (selectedKeyframeId) return "keyframe";
@@ -33,5 +36,6 @@ export function resolveDeleteSelectionTarget({
 	if (selectedAnnotationId) return "annotation";
 	if (selectedAudioId) return "audio";
 	if (selectedCaptionId) return "caption";
+	if (selectedWebcamLayoutId) return "webcam-layout";
 	return "none";
 }

@@ -16,6 +16,7 @@ import type {
 	CursorTelemetryPoint,
 	SpeedRegion,
 	TrimRegion,
+	WebcamLayoutRegion,
 	ZoomFocus,
 	ZoomRegion,
 } from "../types";
@@ -77,6 +78,13 @@ export interface TimelineEditorProps {
 	captionQuickAddEnabled?: boolean;
 	selectedCaptionId?: string | null;
 	onSelectCaption?: (id: string | null) => void;
+	webcamLayouts?: WebcamLayoutRegion[];
+	onWebcamLayoutAdded?: (span: Span) => void;
+	onWebcamLayoutSpanChange?: (id: string, span: Span) => void;
+	onWebcamLayoutDelete?: (id: string) => void;
+	selectedWebcamLayoutId?: string | null;
+	onSelectWebcamLayout?: (id: string | null) => void;
+	webcamLayoutsEnabled?: boolean;
 	videoPath?: string | null;
 	videoSourcePath?: string | null;
 	cursorTelemetrySourcePath?: string | null;
@@ -160,6 +168,13 @@ const TimelineEditor = forwardRef<TimelineEditorHandle, TimelineEditorProps>(
 			captionQuickAddEnabled = true,
 			selectedCaptionId,
 			onSelectCaption,
+			webcamLayouts = [],
+			onWebcamLayoutAdded,
+			onWebcamLayoutSpanChange,
+			onWebcamLayoutDelete,
+			selectedWebcamLayoutId,
+			onSelectWebcamLayout,
+			webcamLayoutsEnabled = false,
 			videoPath,
 			videoSourcePath,
 			cursorTelemetrySourcePath,
@@ -342,6 +357,7 @@ const TimelineEditor = forwardRef<TimelineEditorHandle, TimelineEditorProps>(
 			handleSelectAnnotation,
 			handleSelectAudio,
 			handleSelectCaption,
+			handleSelectWebcamLayout,
 			hasOverlap,
 			timelineItems,
 			allRegionSpans,
@@ -352,6 +368,9 @@ const TimelineEditor = forwardRef<TimelineEditorHandle, TimelineEditorProps>(
 			canPlaceCaptionAtMs,
 			addCaptionAtMs,
 			resolveCaptionSpanAtMs,
+			canPlaceWebcamLayoutAtMs,
+			addWebcamLayoutAtMs,
+			resolveWebcamLayoutSpanAtMs,
 		} = useTimelineEditorRuntime({
 			ref,
 			videoDuration,
@@ -397,6 +416,12 @@ const TimelineEditor = forwardRef<TimelineEditorHandle, TimelineEditorProps>(
 			onCaptionAdded,
 			selectedCaptionId,
 			onSelectCaption,
+			webcamLayouts,
+			onWebcamLayoutAdded,
+			onWebcamLayoutSpanChange,
+			onWebcamLayoutDelete,
+			selectedWebcamLayoutId,
+			onSelectWebcamLayout,
 			isMac,
 			keyShortcuts,
 			isTimelineFocusedRef,
@@ -496,11 +521,17 @@ const TimelineEditor = forwardRef<TimelineEditorHandle, TimelineEditorProps>(
 							onSelectAnnotation={handleSelectAnnotation}
 							onSelectAudio={handleSelectAudio}
 							onSelectCaption={handleSelectCaption}
+							onSelectWebcamLayout={handleSelectWebcamLayout}
 							selectedZoomId={selectedZoomId}
 							selectedClipId={selectedClipId}
 							selectedAnnotationId={selectedAnnotationId}
 							selectedAudioId={selectedAudioId}
 							selectedCaptionId={selectedCaptionId}
+							selectedWebcamLayoutId={selectedWebcamLayoutId}
+							onAddWebcamLayoutAtMs={addWebcamLayoutAtMs}
+							canPlaceWebcamLayoutAtMs={canPlaceWebcamLayoutAtMs}
+							resolveWebcamLayoutSpanAtMs={resolveWebcamLayoutSpanAtMs}
+							webcamLayoutsEnabled={webcamLayoutsEnabled}
 							selectAllBlocksActive={selectAllBlocksActive}
 							onClearBlockSelection={clearSelectedBlocks}
 							keyframes={keyframes}

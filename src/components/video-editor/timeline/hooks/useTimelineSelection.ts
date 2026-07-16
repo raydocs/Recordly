@@ -13,16 +13,19 @@ interface UseTimelineSelectionParams {
 	selectedAnnotationId?: string | null;
 	selectedAudioId?: string | null;
 	selectedCaptionId?: string | null;
+	selectedWebcamLayoutId?: string | null;
 	onZoomDelete: (id: string) => void;
 	onClipDelete?: (id: string) => void;
 	onAnnotationDelete?: (id: string) => void;
 	onAudioDelete?: (id: string) => void;
 	onCaptionDelete?: (id: string) => void;
+	onWebcamLayoutDelete?: (id: string) => void;
 	onSelectZoom: (id: string | null) => void;
 	onSelectClip?: (id: string | null) => void;
 	onSelectAnnotation?: (id: string | null) => void;
 	onSelectAudio?: (id: string | null) => void;
 	onSelectCaption?: (id: string | null) => void;
+	onSelectWebcamLayout?: (id: string | null) => void;
 }
 
 export function useTimelineSelection({
@@ -35,16 +38,19 @@ export function useTimelineSelection({
 	selectedAnnotationId,
 	selectedAudioId,
 	selectedCaptionId,
+	selectedWebcamLayoutId,
 	onZoomDelete,
 	onClipDelete,
 	onAnnotationDelete,
 	onAudioDelete,
 	onCaptionDelete,
+	onWebcamLayoutDelete,
 	onSelectZoom,
 	onSelectClip,
 	onSelectAnnotation,
 	onSelectAudio,
 	onSelectCaption,
+	onSelectWebcamLayout,
 }: UseTimelineSelectionParams) {
 	const [keyframes, setKeyframes] = useState<{ id: string; time: number }[]>([]);
 	const [selectedKeyframeId, setSelectedKeyframeId] = useState<string | null>(null);
@@ -55,10 +61,7 @@ export function useTimelineSelection({
 		if (totalMs === 0) return;
 		const time = Math.max(0, Math.min(currentTimeMs, totalMs));
 		if (keyframes.some((kf) => Math.abs(kf.time - time) < 1)) return;
-		setKeyframes((prev) => [
-			...prev,
-			{ id: globalThis.crypto.randomUUID(), time },
-		]);
+		setKeyframes((prev) => [...prev, { id: globalThis.crypto.randomUUID(), time }]);
 	}, [currentTimeMs, totalMs, keyframes]);
 
 	const deleteSelectedKeyframe = useCallback(() => {
@@ -129,14 +132,28 @@ export function useTimelineSelection({
 		onSelectCaption?.(null);
 	}, [selectedCaptionId, onCaptionDelete, onSelectCaption]);
 
+	const deleteSelectedWebcamLayout = useCallback(() => {
+		if (!selectedWebcamLayoutId || !onWebcamLayoutDelete) return;
+		onWebcamLayoutDelete(selectedWebcamLayoutId);
+		onSelectWebcamLayout?.(null);
+	}, [selectedWebcamLayoutId, onWebcamLayoutDelete, onSelectWebcamLayout]);
+
 	const clearSelectedBlocks = useCallback(() => {
 		onSelectZoom(null);
 		onSelectClip?.(null);
 		onSelectAnnotation?.(null);
 		onSelectAudio?.(null);
 		onSelectCaption?.(null);
+		onSelectWebcamLayout?.(null);
 		setSelectAllBlocksActive(false);
-	}, [onSelectZoom, onSelectClip, onSelectAnnotation, onSelectAudio, onSelectCaption]);
+	}, [
+		onSelectZoom,
+		onSelectClip,
+		onSelectAnnotation,
+		onSelectAudio,
+		onSelectCaption,
+		onSelectWebcamLayout,
+	]);
 
 	const activateSelectAllZooms = useCallback(() => {
 		onSelectZoom(null);
@@ -144,9 +161,17 @@ export function useTimelineSelection({
 		onSelectAnnotation?.(null);
 		onSelectAudio?.(null);
 		onSelectCaption?.(null);
+		onSelectWebcamLayout?.(null);
 		setSelectedKeyframeId(null);
 		setSelectAllBlocksActive(true);
-	}, [onSelectZoom, onSelectClip, onSelectAnnotation, onSelectAudio, onSelectCaption]);
+	}, [
+		onSelectZoom,
+		onSelectClip,
+		onSelectAnnotation,
+		onSelectAudio,
+		onSelectCaption,
+		onSelectWebcamLayout,
+	]);
 
 	const handleSelectZoom = useCallback(
 		(id: string | null) => {
@@ -186,6 +211,14 @@ export function useTimelineSelection({
 			onSelectCaption?.(id);
 		},
 		[onSelectCaption],
+	);
+
+	const handleSelectWebcamLayout = useCallback(
+		(id: string | null) => {
+			setSelectAllBlocksActive(false);
+			onSelectWebcamLayout?.(id);
+		},
+		[onSelectWebcamLayout],
 	);
 
 	const cycleAnnotationsAtCurrentTime = useCallback(
@@ -228,12 +261,14 @@ export function useTimelineSelection({
 		deleteSelectedAnnotation,
 		deleteSelectedAudio,
 		deleteSelectedCaption,
+		deleteSelectedWebcamLayout,
 		clearSelectedBlocks,
 		handleSelectZoom,
 		handleSelectClip,
 		handleSelectAnnotation,
 		handleSelectAudio,
 		handleSelectCaption,
+		handleSelectWebcamLayout,
 		cycleAnnotationsAtCurrentTime,
 	};
 }

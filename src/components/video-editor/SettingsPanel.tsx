@@ -67,6 +67,7 @@ import type {
 	EditorEffectSection,
 	FigureData,
 	Padding,
+	WebcamLayoutMode,
 	WebcamOverlaySettings,
 	WebcamPositionPreset,
 	ZoomDepth,
@@ -807,6 +808,9 @@ interface SettingsPanelProps {
 	webcamPreviewCurrentTime?: number;
 	webcamPreviewPlaying?: boolean;
 	onWebcamChange?: (webcam: WebcamOverlaySettings) => void;
+	selectedWebcamLayoutId?: string | null;
+	onWebcamLayoutModeChange?: (mode: WebcamLayoutMode) => void;
+	onWebcamLayoutDelete?: (id: string) => void;
 	onUploadWebcam?: () => void;
 	onClearWebcam?: () => void;
 	padding?: Padding;
@@ -1251,6 +1255,9 @@ export function SettingsPanel({
 	webcamPreviewCurrentTime = 0,
 	webcamPreviewPlaying = false,
 	onWebcamChange,
+	selectedWebcamLayoutId = null,
+	onWebcamLayoutModeChange,
+	onWebcamLayoutDelete,
 	onUploadWebcam,
 	onClearWebcam,
 	padding = DEFAULT_PADDING,
@@ -1708,6 +1715,9 @@ export function SettingsPanel({
 	const webcamWidth = webcam?.width ?? webcam?.size ?? DEFAULT_WEBCAM_SIZE;
 	const webcamHeight = webcam?.height ?? webcam?.size ?? DEFAULT_WEBCAM_SIZE;
 	const webcamCrop = normalizeWebcamCropRegion(webcam?.cropRegion);
+	const selectedWebcamLayout = webcam?.layouts.find(
+		(layout) => layout.id === selectedWebcamLayoutId,
+	);
 
 	const getWallpaperTileState = (candidateValue: string, previewPath?: string) => {
 		if (!selected) return false;
@@ -3945,6 +3955,63 @@ export function SettingsPanel({
 									onCheckedChange={(enabled) => updateWebcam({ enabled })}
 									className="data-[state=checked]:bg-[#2563EB] scale-75"
 								/>
+							</div>
+							<div className="rounded-lg border border-foreground/10 bg-foreground/[0.03] px-2.5 py-2">
+								<div className="mb-1 text-[10px] font-medium text-foreground/80">
+									{tSettings(
+										"effects.webcamDynamicLayouts",
+										"Dynamic camera layouts",
+									)}
+								</div>
+								{selectedWebcamLayout ? (
+									<>
+										<div className="mb-2 text-[9px] text-muted-foreground/65">
+											{tSettings(
+												"effects.webcamDynamicLayoutsSelectedHint",
+												"Editing the selected camera region on the timeline.",
+											)}
+										</div>
+										<div className="grid grid-cols-3 gap-1">
+											{(
+												[
+													["default", "Default"],
+													["fullscreen", "Fullscreen"],
+													["hidden", "Hidden"],
+												] as const
+											).map(([mode, label]) => (
+												<Button
+													key={mode}
+													type="button"
+													onClick={() => onWebcamLayoutModeChange?.(mode)}
+													className={cn(
+														"h-7 rounded-md border px-1 text-[9px]",
+														selectedWebcamLayout.mode === mode
+															? "border-[#2563EB] bg-[#2563EB] text-white"
+															: "border-foreground/10 bg-foreground/5 text-muted-foreground hover:bg-foreground/10",
+													)}
+												>
+													{label}
+												</Button>
+											))}
+										</div>
+										<button
+											type="button"
+											onClick={() =>
+												onWebcamLayoutDelete?.(selectedWebcamLayout.id)
+											}
+											className="mt-2 text-[9px] text-red-400 hover:text-red-300"
+										>
+											{t("common.actions.delete", "Delete layout")}
+										</button>
+									</>
+								) : (
+									<div className="text-[9px] leading-4 text-muted-foreground/65">
+										{tSettings(
+											"effects.webcamDynamicLayoutsHint",
+											"Click the camera layout lane to add a fullscreen region, then select it to switch between Default, Fullscreen, and Hidden.",
+										)}
+									</div>
+								)}
 							</div>
 							<div className="flex items-center justify-between rounded-lg bg-foreground/[0.03] px-2.5 py-1.5">
 								<div className="min-w-0 pr-3">

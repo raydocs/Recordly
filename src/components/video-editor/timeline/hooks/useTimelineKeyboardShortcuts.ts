@@ -16,6 +16,7 @@ interface UseTimelineKeyboardShortcutsParams {
 	selectedAnnotationId?: string | null;
 	selectedAudioId?: string | null;
 	selectedCaptionId?: string | null;
+	selectedWebcamLayoutId?: string | null;
 	selectAllBlocksActive: boolean;
 	addKeyframe: () => void;
 	handleAddZoom: () => void;
@@ -27,6 +28,7 @@ interface UseTimelineKeyboardShortcutsParams {
 	deleteSelectedAnnotation: () => void;
 	deleteSelectedAudio: () => void;
 	deleteSelectedCaption: () => void;
+	deleteSelectedWebcamLayout: () => void;
 	cycleAnnotationsAtCurrentTime: (backward?: boolean) => boolean;
 }
 
@@ -43,6 +45,7 @@ export function useTimelineKeyboardShortcuts({
 	selectedAnnotationId,
 	selectedAudioId,
 	selectedCaptionId,
+	selectedWebcamLayoutId,
 	selectAllBlocksActive,
 	addKeyframe,
 	handleAddZoom,
@@ -54,6 +57,7 @@ export function useTimelineKeyboardShortcuts({
 	deleteSelectedAnnotation,
 	deleteSelectedAudio,
 	deleteSelectedCaption,
+	deleteSelectedWebcamLayout,
 	cycleAnnotationsAtCurrentTime,
 }: UseTimelineKeyboardShortcutsParams) {
 	useEffect(() => {
@@ -107,6 +111,7 @@ export function useTimelineKeyboardShortcuts({
 					selectedAnnotationId,
 					selectedAudioId,
 					selectedCaptionId,
+					selectedWebcamLayoutId,
 				});
 				if (target !== "none") {
 					e.preventDefault();
@@ -123,6 +128,8 @@ export function useTimelineKeyboardShortcuts({
 					deleteSelectedAudio();
 				} else if (target === "caption") {
 					deleteSelectedCaption();
+				} else if (target === "webcam-layout") {
+					deleteSelectedWebcamLayout();
 				}
 			}
 		};
@@ -140,6 +147,7 @@ export function useTimelineKeyboardShortcuts({
 		deleteSelectedClip,
 		deleteSelectedKeyframe,
 		deleteSelectedZoom,
+		deleteSelectedWebcamLayout,
 		handleAddAnnotation,
 		handleAddZoom,
 		handleSplitClip,
@@ -154,5 +162,6 @@ export function useTimelineKeyboardShortcuts({
 		selectedClipId,
 		selectedKeyframeId,
 		selectedZoomId,
+		selectedWebcamLayoutId,
 	]);
 }

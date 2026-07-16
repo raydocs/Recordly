@@ -229,6 +229,7 @@ import {
 	type SpeedRegion,
 	type TrimRegion,
 	trimsToClips,
+	type WebcamLayoutMode,
 	type WebcamOverlaySettings,
 	type ZoomDepth,
 	type ZoomFocus,
@@ -540,6 +541,7 @@ export default function VideoEditor() {
 	const [webcam, setWebcam] = useState<WebcamOverlaySettings>(
 		initialEditorPreferences.webcam ?? DEFAULT_WEBCAM_OVERLAY,
 	);
+	const [selectedWebcamLayoutId, setSelectedWebcamLayoutId] = useState<string | null>(null);
 	const [resolvedWebcamVideoUrl, setResolvedWebcamVideoUrl] = useState<string | null>(null);
 	const [zoomRegions, setZoomRegions] = useState<ZoomRegion[]>([]);
 	const [cursorTelemetry, setCursorTelemetry] = useState<CursorTelemetryPoint[]>([]);
@@ -694,6 +696,7 @@ export default function VideoEditor() {
 	const nextZoomIdRef = useRef(1);
 	const nextClipIdRef = useRef(1);
 	const nextAudioIdRef = useRef(1);
+	const nextWebcamLayoutIdRef = useRef(1);
 
 	const { shortcuts, isMac } = useShortcuts();
 	const nextAnnotationIdRef = useRef(1);
@@ -1960,10 +1963,12 @@ export default function VideoEditor() {
 			annotationRegions,
 			audioRegions,
 			autoCaptions,
+			webcamLayouts: webcam.layouts,
 			selectedZoomId,
 			selectedClipId,
 			selectedAnnotationId,
 			selectedAudioId,
+			selectedWebcamLayoutId,
 		};
 	}, [
 		zoomRegions,
@@ -1972,10 +1977,12 @@ export default function VideoEditor() {
 		annotationRegions,
 		audioRegions,
 		autoCaptions,
+		webcam.layouts,
 		selectedZoomId,
 		selectedClipId,
 		selectedAnnotationId,
 		selectedAudioId,
+		selectedWebcamLayoutId,
 	]);
 
 	const applyHistorySnapshot = useCallback((snapshot: EditorHistorySnapshot) => {
@@ -1987,10 +1994,12 @@ export default function VideoEditor() {
 		setAnnotationRegions(cloned.annotationRegions);
 		setAudioRegions(cloned.audioRegions);
 		setAutoCaptions(cloned.autoCaptions);
+		setWebcam((previous) => ({ ...previous, layouts: cloned.webcamLayouts ?? [] }));
 		setSelectedZoomId(cloned.selectedZoomId);
 		setSelectedClipId(cloned.selectedClipId);
 		setSelectedAnnotationId(cloned.selectedAnnotationId);
 		setSelectedAudioId(cloned.selectedAudioId);
+		setSelectedWebcamLayoutId(cloned.selectedWebcamLayoutId ?? null);
 
 		nextZoomIdRef.current = deriveNextId(
 			"zoom",
@@ -2007,6 +2016,10 @@ export default function VideoEditor() {
 		nextAudioIdRef.current = deriveNextId(
 			"audio",
 			cloned.audioRegions.map((region) => region.id),
+		);
+		nextWebcamLayoutIdRef.current = deriveNextId(
+			"webcam-layout",
+			(cloned.webcamLayouts ?? []).map((region) => region.id),
 		);
 		nextAnnotationZIndexRef.current =
 			cloned.annotationRegions.reduce((max, region) => Math.max(max, region.zIndex), 0) + 1;
@@ -2150,6 +2163,7 @@ export default function VideoEditor() {
 			setSelectedClipId(null);
 			setSelectedAnnotationId(null);
 			setSelectedAudioId(null);
+			setSelectedWebcamLayoutId(null);
 
 			nextZoomIdRef.current = deriveNextId(
 				"zoom",
@@ -2166,6 +2180,10 @@ export default function VideoEditor() {
 			nextAnnotationIdRef.current = deriveNextId(
 				"annotation",
 				normalizedEditor.annotationRegions.map((region) => region.id),
+			);
+			nextWebcamLayoutIdRef.current = deriveNextId(
+				"webcam-layout",
+				normalizedEditor.webcam.layouts.map((layout) => layout.id),
 			);
 			nextAnnotationZIndexRef.current =
 				normalizedEditor.annotationRegions.reduce(
@@ -2305,6 +2323,7 @@ export default function VideoEditor() {
 		setSpeedRegions([]);
 		setAnnotationRegions([]);
 		setAudioRegions([]);
+		setWebcam((previous) => ({ ...previous, layouts: [] }));
 		setCursorTelemetry([]);
 		setCursorTelemetrySourcePath(null);
 		setSourceAudioTrackSettingsByClip({});
@@ -2316,9 +2335,11 @@ export default function VideoEditor() {
 		setSelectedClipId(null);
 		setSelectedAnnotationId(null);
 		setSelectedAudioId(null);
+		setSelectedWebcamLayoutId(null);
 		nextZoomIdRef.current = 1;
 		nextClipIdRef.current = 1;
 		nextAudioIdRef.current = 1;
+		nextWebcamLayoutIdRef.current = 1;
 		nextAnnotationIdRef.current = 1;
 		nextAnnotationZIndexRef.current = 1;
 		pendingFreshRecordingAutoSuggestTelemetryCountRef.current = 0;
@@ -2339,6 +2360,7 @@ export default function VideoEditor() {
 			enabled: true,
 			sourcePath: result.path ?? null,
 			timeOffsetMs: DEFAULT_WEBCAM_TIME_OFFSET_MS,
+			layouts: [],
 		}));
 
 		await syncRecordingSessionWebcam(result.path, DEFAULT_WEBCAM_TIME_OFFSET_MS);
@@ -2351,7 +2373,9 @@ export default function VideoEditor() {
 			enabled: false,
 			sourcePath: null,
 			timeOffsetMs: DEFAULT_WEBCAM_TIME_OFFSET_MS,
+			layouts: [],
 		}));
+		setSelectedWebcamLayoutId(null);
 
 		await syncRecordingSessionWebcam(null);
 		toast.success(t("settings.effects.webcamFootageRemoved"));
@@ -3695,6 +3719,7 @@ export default function VideoEditor() {
 			setSelectedClipId(null);
 			setSelectedAnnotationId(null);
 			setSelectedAudioId(null);
+			setSelectedWebcamLayoutId(null);
 			const cue = autoCaptions.find((value) => value.id === id);
 			if (cue) {
 				handleSeek(mapSourceTimeToTimelineTime(cue.startMs) / 1000, { pause: true });
@@ -3808,6 +3833,7 @@ export default function VideoEditor() {
 			setSelectedAnnotationId(null);
 			setSelectedAudioId(null);
 			setSelectedCaptionId(null);
+			setSelectedWebcamLayoutId(null);
 		} else {
 			setActiveEffectSection((s) => (s === "zoom" ? "scene" : s));
 		}
@@ -3819,6 +3845,7 @@ export default function VideoEditor() {
 			setSelectedZoomId(null);
 			setSelectedAudioId(null);
 			setSelectedCaptionId(null);
+			setSelectedWebcamLayoutId(null);
 		}
 	}, []);
 
@@ -3842,6 +3869,7 @@ export default function VideoEditor() {
 			setSelectedZoomId(id);
 			setSelectedAnnotationId(null);
 			setSelectedCaptionId(null);
+			setSelectedWebcamLayoutId(null);
 			extensionHost.emitEvent({
 				type: "timeline:region-added",
 				data: { id, startMs: newRegion.startMs, endMs: newRegion.endMs },
@@ -4038,6 +4066,81 @@ export default function VideoEditor() {
 		[selectedZoomId],
 	);
 
+	const handleWebcamLayoutAdded = useCallback((span: Span) => {
+		const id = `webcam-layout-${nextWebcamLayoutIdRef.current++}`;
+		setWebcam((previous) => ({
+			...previous,
+			layouts: [
+				...previous.layouts,
+				{
+					id,
+					startMs: Math.round(span.start),
+					endMs: Math.round(span.end),
+					mode: "fullscreen" as const,
+				},
+			].sort((left, right) => left.startMs - right.startMs),
+		}));
+		setSelectedWebcamLayoutId(id);
+		setSelectedZoomId(null);
+		setSelectedClipId(null);
+		setSelectedAnnotationId(null);
+		setSelectedAudioId(null);
+		setSelectedCaptionId(null);
+		setActiveEffectSection("webcam");
+	}, []);
+
+	const handleWebcamLayoutSpanChange = useCallback((id: string, span: Span) => {
+		setWebcam((previous) => ({
+			...previous,
+			layouts: previous.layouts
+				.map((layout) =>
+					layout.id === id
+						? {
+								...layout,
+								startMs: Math.round(span.start),
+								endMs: Math.round(span.end),
+							}
+						: layout,
+				)
+				.sort((left, right) => left.startMs - right.startMs),
+		}));
+	}, []);
+
+	const handleWebcamLayoutModeChange = useCallback(
+		(mode: WebcamLayoutMode) => {
+			if (!selectedWebcamLayoutId) return;
+			setWebcam((previous) => ({
+				...previous,
+				layouts: previous.layouts.map((layout) =>
+					layout.id === selectedWebcamLayoutId ? { ...layout, mode } : layout,
+				),
+			}));
+		},
+		[selectedWebcamLayoutId],
+	);
+
+	const handleWebcamLayoutDelete = useCallback(
+		(id: string) => {
+			setWebcam((previous) => ({
+				...previous,
+				layouts: previous.layouts.filter((layout) => layout.id !== id),
+			}));
+			if (selectedWebcamLayoutId === id) setSelectedWebcamLayoutId(null);
+		},
+		[selectedWebcamLayoutId],
+	);
+
+	const handleSelectWebcamLayout = useCallback((id: string | null) => {
+		setSelectedWebcamLayoutId(id);
+		if (!id) return;
+		setSelectedZoomId(null);
+		setSelectedClipId(null);
+		setSelectedAnnotationId(null);
+		setSelectedAudioId(null);
+		setSelectedCaptionId(null);
+		setActiveEffectSection("webcam");
+	}, []);
+
 	const handleSelectClip = useCallback((id: string | null) => {
 		setSelectedClipId(id);
 		if (id) {
@@ -4046,6 +4149,7 @@ export default function VideoEditor() {
 			setSelectedAnnotationId(null);
 			setSelectedAudioId(null);
 			setSelectedCaptionId(null);
+			setSelectedWebcamLayoutId(null);
 		} else {
 			setActiveEffectSection((s) => (s === "clip" ? "scene" : s));
 		}
@@ -4237,6 +4341,7 @@ export default function VideoEditor() {
 			setSelectedZoomId(null);
 			setSelectedAnnotationId(null);
 			setSelectedCaptionId(null);
+			setSelectedWebcamLayoutId(null);
 			setActiveEffectSection("audio");
 		}
 	}, []);
@@ -5588,6 +5693,7 @@ export default function VideoEditor() {
 			cropRegion={cropRegion}
 			webcam={webcam}
 			webcamVideoPath={webcam.sourcePath ? resolvedWebcamVideoUrl : null}
+			webcamLayoutTimeMs={timelinePlayheadTime * 1000}
 			trimRegions={trimRegions}
 			speedRegions={effectiveSpeedRegions}
 			annotationRegions={annotationRegions}
@@ -6529,6 +6635,9 @@ export default function VideoEditor() {
 								webcamPreviewCurrentTime={currentTime}
 								webcamPreviewPlaying={isPlaying}
 								onWebcamChange={setWebcam}
+								selectedWebcamLayoutId={selectedWebcamLayoutId}
+								onWebcamLayoutModeChange={handleWebcamLayoutModeChange}
+								onWebcamLayoutDelete={handleWebcamLayoutDelete}
 								onUploadWebcam={handleUploadWebcam}
 								onClearWebcam={handleClearWebcam}
 								padding={padding}
@@ -6868,6 +6977,13 @@ export default function VideoEditor() {
 						onZoomDelete={handleZoomDelete}
 						selectedZoomId={selectedZoomId}
 						onSelectZoom={handleSelectZoom}
+						webcamLayouts={webcam.layouts}
+						onWebcamLayoutAdded={handleWebcamLayoutAdded}
+						onWebcamLayoutSpanChange={handleWebcamLayoutSpanChange}
+						onWebcamLayoutDelete={handleWebcamLayoutDelete}
+						selectedWebcamLayoutId={selectedWebcamLayoutId}
+						onSelectWebcamLayout={handleSelectWebcamLayout}
+						webcamLayoutsEnabled={webcam.enabled && Boolean(webcam.sourcePath)}
 						trimRegions={trimRegions}
 						clipRegions={clipRegions}
 						onClipSplit={handleClipSplit}

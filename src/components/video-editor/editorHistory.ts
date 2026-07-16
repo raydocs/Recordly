@@ -4,6 +4,7 @@ import type {
 	CaptionCue,
 	ClipRegion,
 	SpeedRegion,
+	WebcamLayoutRegion,
 	ZoomRegion,
 } from "./types";
 
@@ -18,6 +19,8 @@ export type EditorHistorySnapshot = {
 	selectedClipId: string | null;
 	selectedAnnotationId: string | null;
 	selectedAudioId: string | null;
+	webcamLayouts?: WebcamLayoutRegion[];
+	selectedWebcamLayoutId?: string | null;
 };
 
 export type EditorHistoryStack = {
@@ -44,9 +47,7 @@ export function resetEditorHistoryStack(stack: EditorHistoryStack): void {
 	stack.future = [];
 }
 
-export function cloneEditorHistorySnapshot(
-	snapshot: EditorHistorySnapshot,
-): EditorHistorySnapshot {
+export function cloneEditorHistorySnapshot(snapshot: EditorHistorySnapshot): EditorHistorySnapshot {
 	return globalThis.structuredClone(snapshot);
 }
 

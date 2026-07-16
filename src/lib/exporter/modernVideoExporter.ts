@@ -72,13 +72,13 @@ import {
 	withFinalizationTimeout,
 } from "./finalizationTimeout";
 import { getLocalFilePath } from "./localMediaSource";
-import { captureCanvasFrameForNativeExport } from "./nativeFrameCapture";
 import { FrameRenderer as ModernFrameRenderer } from "./modernFrameRenderer";
 import {
 	getOrderedSupportedMp4EncoderCandidates,
 	type SupportedMp4EncoderPath,
 } from "./mp4Support";
 import { VideoMuxer } from "./muxer";
+import { captureCanvasFrameForNativeExport } from "./nativeFrameCapture";
 import { roundNativeStaticLayoutContentSize } from "./nativeStaticLayoutGeometry";
 import { buildNativeStaticLayoutCursorTelemetry } from "./nativeStaticLayoutTelemetry";
 import { resolveSourceAudioFallbackPaths } from "./sourceAudioFallback";
@@ -1579,6 +1579,9 @@ export class ModernVideoExporter {
 
 		if (this.config.webcam?.enabled && !this.getNativeWebcamSourcePath()) {
 			reasons.push("unsupported-webcam-source");
+		}
+		if ((this.config.webcam?.layouts?.length ?? 0) > 0) {
+			reasons.push("unsupported-dynamic-webcam-layouts");
 		}
 		if (this.hasUnsupportedNativeStaticLayoutWebcamShape()) {
 			reasons.push("unsupported-rectangular-webcam-overlay");

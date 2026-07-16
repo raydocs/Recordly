@@ -1,4 +1,6 @@
 import {
+	Camera,
+	EyeSlash,
 	FilmSlate as Film,
 	Gauge,
 	ChatCircle as MessageSquare,
@@ -35,7 +37,16 @@ interface ItemProps {
 	waveformGain?: number;
 	waveformNormalize?: boolean;
 	muted?: boolean;
-	variant?: "zoom" | "trim" | "clip" | "annotation" | "speed" | "audio" | "caption";
+	variant?:
+		| "zoom"
+		| "trim"
+		| "clip"
+		| "annotation"
+		| "speed"
+		| "audio"
+		| "caption"
+		| "webcam-layout";
+	webcamLayoutMode?: "default" | "fullscreen" | "hidden";
 	isLoading?: boolean;
 	loadingLabel?: string;
 }
@@ -77,6 +88,7 @@ export default function Item({
 	waveformNormalize = false,
 	muted = false,
 	variant = "zoom",
+	webcamLayoutMode = "fullscreen",
 	isLoading = false,
 	loadingLabel,
 	children,
@@ -126,6 +138,7 @@ export default function Item({
 	const isSpeed = variant === "speed";
 	const isAudio = variant === "audio";
 	const isCaption = variant === "caption";
+	const isWebcamLayout = variant === "webcam-layout";
 	const showAudioWaveform = isAudio && Boolean(waveformPeaks);
 	const clipSpeedLabel = isClip ? formatClipSpeedLabel(speedValue ?? 1) : null;
 
@@ -141,7 +154,9 @@ export default function Item({
 						? glassStyles.glassDarkGreen
 						: isCaption
 							? glassStyles.glassCaption
-							: glassStyles.glassYellow;
+							: isWebcamLayout
+								? glassStyles.glassGreen
+								: glassStyles.glassYellow;
 
 	const MIN_ITEM_PX = 6;
 	const handleSelect = () => {
@@ -256,6 +271,17 @@ export default function Item({
 								<>
 									<Music className="w-3.5 h-3.5 shrink-0" />
 									<span className="text-[11px] font-semibold tracking-tight truncate max-w-full">
+										{children}
+									</span>
+								</>
+							) : isWebcamLayout ? (
+								<>
+									{webcamLayoutMode === "hidden" ? (
+										<EyeSlash className="w-3.5 h-3.5 shrink-0" />
+									) : (
+										<Camera className="w-3.5 h-3.5 shrink-0" />
+									)}
+									<span className="text-[11px] font-semibold tracking-tight whitespace-nowrap">
 										{children}
 									</span>
 								</>

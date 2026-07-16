@@ -739,6 +739,24 @@ describe("ModernVideoExporter native static-layout eligibility", () => {
 		).toBe("unsupported-rectangular-webcam-overlay");
 	});
 
+	it("skips native static layout for time-varying webcam layouts", () => {
+		const exporter = createExporter({
+			webcam: {
+				enabled: true,
+				sourcePath: "C:\\recordly\\webcam.mp4",
+				layouts: [{ id: "webcam-layout-1", startMs: 0, endMs: 2000, mode: "fullscreen" }],
+			},
+		});
+
+		expect(
+			exporter.getNativeStaticLayoutSkipReason(
+				{ audioMode: "edited-track", strategy: "offline-render-fallback" },
+				videoInfo,
+				60,
+			),
+		).toBe("unsupported-dynamic-webcam-layouts");
+	});
+
 	it("allows native speed timelines with a resolvable webcam source", () => {
 		const speedRegions: SpeedRegion[] = [
 			{ id: "speed-1", startMs: 1_000, endMs: 4_000, speed: 1.5 },

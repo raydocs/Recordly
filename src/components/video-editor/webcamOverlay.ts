@@ -1,9 +1,37 @@
-import type { CropRegion, WebcamCorner, WebcamPositionPreset } from "./types";
+import type {
+	CropRegion,
+	WebcamCorner,
+	WebcamLayoutMode,
+	WebcamLayoutRegion,
+	WebcamPositionPreset,
+} from "./types";
 
 const MIN_WEBCAM_OVERLAY_SIZE_PX = 56;
 
 function clamp(value: number, min: number, max: number) {
 	return Math.min(max, Math.max(min, value));
+}
+
+export function getActiveWebcamLayout(
+	layouts: readonly WebcamLayoutRegion[] | null | undefined,
+	timeMs: number,
+): WebcamLayoutRegion | null {
+	const safeTimeMs = Number.isFinite(timeMs) ? Math.max(0, timeMs) : 0;
+	let active: WebcamLayoutRegion | null = null;
+
+	for (const layout of layouts ?? []) {
+		if (layout.startMs > safeTimeMs || layout.endMs <= safeTimeMs) continue;
+		if (!active || layout.startMs >= active.startMs) active = layout;
+	}
+
+	return active;
+}
+
+export function getWebcamLayoutModeAtTime(
+	layouts: readonly WebcamLayoutRegion[] | null | undefined,
+	timeMs: number,
+): WebcamLayoutMode {
+	return getActiveWebcamLayout(layouts, timeMs)?.mode ?? "default";
 }
 
 export function getWebcamPositionForPreset(preset: WebcamPositionPreset): { x: number; y: number } {

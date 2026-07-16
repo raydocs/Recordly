@@ -186,6 +186,7 @@ import {
 	getAutoDirectedWebcamLayout,
 	getCropMatchedWebcamHeightPercent,
 	getWebcamCropSourceRect,
+	getWebcamLayoutModeAtTime,
 	getWebcamOverlayDimensionsPx,
 	getWebcamOverlayPosition,
 } from "./webcamOverlay";
@@ -352,6 +353,7 @@ interface VideoPlaybackProps {
 	cropRegion?: import("./types").CropRegion;
 	webcam?: WebcamOverlaySettings;
 	webcamVideoPath?: string | null;
+	webcamLayoutTimeMs?: number;
 	trimRegions?: TrimRegion[];
 	speedRegions?: SpeedRegion[];
 	aspectRatio: AspectRatio;
@@ -437,6 +439,7 @@ const VideoPlayback = forwardRef<VideoPlaybackRef, VideoPlaybackProps>(
 			cropRegion,
 			webcam,
 			webcamVideoPath,
+			webcamLayoutTimeMs,
 			trimRegions = [],
 			speedRegions = [],
 			aspectRatio,
@@ -909,7 +912,12 @@ const VideoPlayback = forwardRef<VideoPlaybackRef, VideoPlaybackProps>(
 			return () => cancelAnimationFrame(frame);
 		}, [activeCaptionLayout, autoCaptionSettings]);
 		const motionBlurStateRef = useRef<MotionBlurState>(createMotionBlurState());
-		const webcamEnabled = webcam?.enabled ?? false;
+		const webcamLayoutMode = getWebcamLayoutModeAtTime(
+			webcam?.layouts,
+			webcamLayoutTimeMs ?? currentTime * 1000,
+		);
+		const webcamFullscreen = webcamLayoutMode === "fullscreen";
+		const webcamEnabled = (webcam?.enabled ?? false) && webcamLayoutMode !== "hidden";
 		const webcamMargin = webcam?.margin ?? 24;
 		const webcamWidth = webcam?.width ?? webcam?.size ?? DEFAULT_WEBCAM_SIZE;
 		const rawWebcamHeight = webcam?.height ?? webcam?.size ?? DEFAULT_WEBCAM_SIZE;
@@ -941,7 +949,10 @@ const VideoPlayback = forwardRef<VideoPlaybackRef, VideoPlaybackProps>(
 				webcamVideoDimensions.width,
 				webcamVideoDimensions.height,
 			);
-			const targetAspect = Math.max(0.01, webcamWidth) / Math.max(0.01, webcamHeight);
+			const stageSize = stageSizeRef.current;
+			const targetAspect = webcamFullscreen
+				? Math.max(1, stageSize.width) / Math.max(1, stageSize.height)
+				: Math.max(0.01, webcamWidth) / Math.max(0.01, webcamHeight);
 			const coverScale = Math.max(targetAspect / sw, 1 / sh);
 			const drawWidth = webcamVideoDimensions.width * coverScale;
 			const drawHeight = webcamVideoDimensions.height * coverScale;
@@ -956,7 +967,7 @@ const VideoPlayback = forwardRef<VideoPlaybackRef, VideoPlaybackProps>(
 				maxWidth: "none",
 				willChange: "left, top, width, height",
 			};
-		}, [webcamCropRegion, webcamHeight, webcamVideoDimensions, webcamWidth]);
+		}, [webcamCropRegion, webcamFullscreen, webcamHeight, webcamVideoDimensions, webcamWidth]);
 
 		const applyWebcamBubbleLayout = useCallback(
 			(zoomScale: number) => {
@@ -972,7 +983,7 @@ const VideoPlayback = forwardRef<VideoPlaybackRef, VideoPlaybackProps>(
 
 				const animationState = animationStateRef.current;
 				const directedLayout = getAutoDirectedWebcamLayout({
-					enabled: webcamAutoDirector,
+					enabled: webcamAutoDirector && !webcamFullscreen,
 					zoomScale,
 					focusX: animationState.focusX,
 					focusY: animationState.focusY,
@@ -982,26 +993,30 @@ const VideoPlayback = forwardRef<VideoPlaybackRef, VideoPlaybackProps>(
 					widthPercent: webcamWidth,
 					heightPercent: webcamHeight,
 				});
-				const scaledDimensions = getWebcamOverlayDimensionsPx({
-					containerWidth: overlay.clientWidth,
-					containerHeight: overlay.clientHeight,
-					widthPercent: directedLayout.widthPercent,
-					heightPercent: directedLayout.heightPercent,
-					margin: webcamMargin,
-					zoomScale,
-					reactToZoom: webcamReactToZoom,
-				});
-				const { x, y } = getWebcamOverlayPosition({
-					containerWidth: overlay.clientWidth,
-					containerHeight: overlay.clientHeight,
-					width: scaledDimensions.width,
-					height: scaledDimensions.height,
-					margin: webcamMargin,
-					positionPreset: directedLayout.positionPreset,
-					positionX: directedLayout.positionX,
-					positionY: directedLayout.positionY,
-					legacyCorner: webcamCorner,
-				});
+				const scaledDimensions = webcamFullscreen
+					? { width: overlay.clientWidth, height: overlay.clientHeight }
+					: getWebcamOverlayDimensionsPx({
+							containerWidth: overlay.clientWidth,
+							containerHeight: overlay.clientHeight,
+							widthPercent: directedLayout.widthPercent,
+							heightPercent: directedLayout.heightPercent,
+							margin: webcamMargin,
+							zoomScale,
+							reactToZoom: webcamReactToZoom,
+						});
+				const { x, y } = webcamFullscreen
+					? { x: 0, y: 0 }
+					: getWebcamOverlayPosition({
+							containerWidth: overlay.clientWidth,
+							containerHeight: overlay.clientHeight,
+							width: scaledDimensions.width,
+							height: scaledDimensions.height,
+							margin: webcamMargin,
+							positionPreset: directedLayout.positionPreset,
+							positionX: directedLayout.positionX,
+							positionY: directedLayout.positionY,
+							legacyCorner: webcamCorner,
+						});
 
 				bubble.style.display = "block";
 				bubble.style.left = `${x}px`;
@@ -1017,12 +1032,14 @@ const VideoPlayback = forwardRef<VideoPlaybackRef, VideoPlaybackProps>(
 					y: 0,
 					width: scaledDimensions.width,
 					height: scaledDimensions.height,
-					radius: webcamCornerRadius,
+					radius: webcamFullscreen ? 0 : webcamCornerRadius,
 				});
 				const shadowSize = Math.min(scaledDimensions.width, scaledDimensions.height);
-				bubble.style.filter = `drop-shadow(0 ${Math.round(shadowSize * 0.06)}px ${Math.round(
-					shadowSize * 0.22,
-				)}px rgba(0, 0, 0, ${webcamShadow}))`;
+				bubble.style.filter = webcamFullscreen
+					? "none"
+					: `drop-shadow(0 ${Math.round(shadowSize * 0.06)}px ${Math.round(
+							shadowSize * 0.22,
+						)}px rgba(0, 0, 0, ${webcamShadow}))`;
 				bubble.style.borderRadius = "0px";
 				bubble.style.boxShadow = "none";
 
@@ -1044,6 +1061,7 @@ const VideoPlayback = forwardRef<VideoPlaybackRef, VideoPlaybackProps>(
 				webcamReactToZoom,
 				webcamShadow,
 				webcamHeight,
+				webcamFullscreen,
 				webcamVideoPath,
 				webcamWidth,
 			],

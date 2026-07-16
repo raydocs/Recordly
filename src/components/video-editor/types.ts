@@ -126,6 +126,21 @@ export type WebcamPositionPreset =
 	| "bottom-center"
 	| "custom";
 
+export type WebcamLayoutMode = "default" | "fullscreen" | "hidden";
+
+/**
+ * A time-bounded webcam presentation override. Regions intentionally only
+ * store presentation mode: the default mode continues to use the editable
+ * webcam position/size settings, while fullscreen and hidden are reversible
+ * timeline decisions.
+ */
+export interface WebcamLayoutRegion {
+	id: string;
+	startMs: number;
+	endMs: number;
+	mode: WebcamLayoutMode;
+}
+
 export interface WebcamOverlaySettings {
 	enabled: boolean;
 	sourcePath: string | null;
@@ -144,6 +159,7 @@ export interface WebcamOverlaySettings {
 	cornerRadius: number;
 	shadow: number;
 	margin: number;
+	layouts: WebcamLayoutRegion[];
 }
 
 export const DEFAULT_CURSOR_SIZE = 3.0;
@@ -210,6 +226,7 @@ export const DEFAULT_WEBCAM_OVERLAY: WebcamOverlaySettings = {
 	cornerRadius: DEFAULT_WEBCAM_CORNER_RADIUS,
 	shadow: DEFAULT_WEBCAM_SHADOW,
 	margin: DEFAULT_WEBCAM_MARGIN,
+	layouts: [],
 };
 
 export interface TrimRegion {

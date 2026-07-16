@@ -35,16 +35,34 @@ describe("timeline model", () => {
 			],
 			clipRegions: [{ id: "c1", startMs: 0, endMs: 4000, speed: 1 }],
 			annotationRegions: [
-				{ ...BASE_ANNOTATION, type: "text" as const, content: "Hello timeline", trackIndex: 1 },
+				{
+					...BASE_ANNOTATION,
+					type: "text" as const,
+					content: "Hello timeline",
+					trackIndex: 1,
+				},
 			],
 			audioRegions: [
-				{ id: "au1", startMs: 500, endMs: 2000, audioPath: "/tmp/foo.mp3", volume: 1, trackIndex: 0 },
+				{
+					id: "au1",
+					startMs: 500,
+					endMs: 2000,
+					audioPath: "/tmp/foo.mp3",
+					volume: 1,
+					trackIndex: 0,
+				},
 			],
+			webcamLayouts: [{ id: "wl1", startMs: 1000, endMs: 2500, mode: "fullscreen" }],
 		});
 
-		expect(items).toHaveLength(4);
+		expect(items).toHaveLength(5);
 		expect(items.find((i) => i.id === "a1")?.rowId).toBe("row-annotation-1");
 		expect(items.find((i) => i.id === "au1")?.label).toBe("foo");
+		expect(items.find((i) => i.id === "wl1")).toMatchObject({
+			rowId: "row-webcam-layout",
+			label: "Fullscreen",
+			webcamLayoutMode: "fullscreen",
+		});
 	});
 
 	it("exposes clip speed for non-default speed labels", () => {
@@ -80,8 +98,18 @@ describe("timeline model", () => {
 			"Annotation",
 		);
 
-		expect(getAudioLabel({ id: "1", startMs: 0, endMs: 1, audioPath: "C:\\x\\y\\z.wav", volume: 1 })).toBe("z");
-		expect(getAudioLabel({ id: "2", startMs: 0, endMs: 1, audioPath: "", volume: 1 })).toBe("Audio");
+		expect(
+			getAudioLabel({
+				id: "1",
+				startMs: 0,
+				endMs: 1,
+				audioPath: "C:\\x\\y\\z.wav",
+				volume: 1,
+			}),
+		).toBe("z");
+		expect(getAudioLabel({ id: "2", startMs: 0, endMs: 1, audioPath: "", volume: 1 })).toBe(
+			"Audio",
+		);
 	});
 
 	it("builds row spans for dnd constraints", () => {
@@ -91,17 +119,48 @@ describe("timeline model", () => {
 			],
 			clipRegions: [{ id: "c1", startMs: 0, endMs: 4000, speed: 1 }],
 			audioRegions: [
-				{ id: "au1", startMs: 500, endMs: 2000, audioPath: "x.wav", volume: 1, trackIndex: 2 },
+				{
+					id: "au1",
+					startMs: 500,
+					endMs: 2000,
+					audioPath: "x.wav",
+					volume: 1,
+					trackIndex: 2,
+				},
 			],
+			webcamLayouts: [{ id: "wl1", startMs: 1000, endMs: 2200, mode: "hidden" }],
 		});
-		expect(spans.map((s) => s.rowId)).toEqual(["row-zoom", "row-clip", "row-audio-2"]);
+		expect(spans.map((s) => s.rowId)).toEqual([
+			"row-zoom",
+			"row-clip",
+			"row-webcam-layout",
+			"row-audio-2",
+		]);
 	});
 
 	it("keeps items in their domain rows during dnd", () => {
 		const items = [
-			{ id: "a1", rowId: "row-annotation-1", span: { start: 0, end: 1 }, label: "A", variant: "annotation" as const },
-			{ id: "au1", rowId: "row-audio-2", span: { start: 0, end: 1 }, label: "X", variant: "audio" as const },
-			{ id: "z1", rowId: "row-zoom", span: { start: 0, end: 1 }, label: "Z", variant: "zoom" as const },
+			{
+				id: "a1",
+				rowId: "row-annotation-1",
+				span: { start: 0, end: 1 },
+				label: "A",
+				variant: "annotation" as const,
+			},
+			{
+				id: "au1",
+				rowId: "row-audio-2",
+				span: { start: 0, end: 1 },
+				label: "X",
+				variant: "audio" as const,
+			},
+			{
+				id: "z1",
+				rowId: "row-zoom",
+				span: { start: 0, end: 1 },
+				label: "Z",
+				variant: "zoom" as const,
+			},
 		];
 		expect(resolveDropRowId("a1", "row-audio-0", items)).toBe("row-annotation-1");
 		expect(resolveDropRowId("a1", "row-annotation-3", items)).toBe("row-annotation-3");
