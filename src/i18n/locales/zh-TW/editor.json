@@ -44,7 +44,6 @@
 		"solidColor": "純色 (審查)",
 		"borderRadius": "邊框半徑"
 	},
-
 	"fontStyles": {
 		"classic": "經典",
 		"editor": "編輯器",
@@ -136,7 +135,10 @@
 	},
 	"timeline": {
 		"expand": "展開時間軸",
-		"collapse": "摺疊時間軸"
+		"collapse": "摺疊時間軸",
+		"noTypingTelemetry": "找不到鍵盤時間資料，請先使用更新後的錄製器重新錄製影片。",
+		"noTypingSegments": "在此範圍內找不到持續打字片段。",
+		"typingSegmentsAdded": "已加入 {{count}} 個智慧打字變速區域。"
 	},
 	"openRecordingsFolder": "打開錄製資料夾"
 }

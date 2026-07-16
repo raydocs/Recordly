@@ -15,7 +15,11 @@
 		"playbackSpeed": "Afspeelsnelheid",
 		"selectRegion": "Selecteer een snelheidsgebied om aan te passen",
 		"deleteRegion": "Snelheidsgebied verwijderen",
-		"label": "Snelheid"
+		"label": "Snelheid",
+		"smartTypingRegion": "Smart Typing",
+		"detectTyping": "Detect & speed up typing",
+		"privacyHint": "Uses private timestamps only · no typed text is saved",
+		"recordingHint": "Available for new recordings with keyboard telemetry"
 	},
 	"clip": {
 		"title": "Clip",

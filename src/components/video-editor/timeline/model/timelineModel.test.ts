@@ -34,6 +34,7 @@ describe("timeline model", () => {
 				{ id: "z1", startMs: 0, endMs: 1000, depth: 2, focus: { cx: 0.5, cy: 0.5 } },
 			],
 			clipRegions: [{ id: "c1", startMs: 0, endMs: 4000, speed: 1 }],
+			speedRegions: [{ id: "s1", startMs: 1200, endMs: 2200, speed: 2 }],
 			annotationRegions: [
 				{
 					...BASE_ANNOTATION,
@@ -55,7 +56,12 @@ describe("timeline model", () => {
 			webcamLayouts: [{ id: "wl1", startMs: 1000, endMs: 2500, mode: "fullscreen" }],
 		});
 
-		expect(items).toHaveLength(5);
+		expect(items).toHaveLength(6);
+		expect(items.find((i) => i.id === "s1")).toMatchObject({
+			rowId: "row-speed",
+			label: "2×",
+			variant: "speed",
+		});
 		expect(items.find((i) => i.id === "a1")?.rowId).toBe("row-annotation-1");
 		expect(items.find((i) => i.id === "au1")?.label).toBe("foo");
 		expect(items.find((i) => i.id === "wl1")).toMatchObject({
@@ -118,6 +124,7 @@ describe("timeline model", () => {
 				{ id: "z1", startMs: 0, endMs: 1000, depth: 2, focus: { cx: 0.5, cy: 0.5 } },
 			],
 			clipRegions: [{ id: "c1", startMs: 0, endMs: 4000, speed: 1 }],
+			speedRegions: [{ id: "s1", startMs: 1000, endMs: 1800, speed: 1.5 }],
 			audioRegions: [
 				{
 					id: "au1",
@@ -133,6 +140,7 @@ describe("timeline model", () => {
 		expect(spans.map((s) => s.rowId)).toEqual([
 			"row-zoom",
 			"row-clip",
+			"row-speed",
 			"row-webcam-layout",
 			"row-audio-2",
 		]);

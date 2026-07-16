@@ -17,6 +17,7 @@ export type EditorHistorySnapshot = {
 	autoCaptions: CaptionCue[];
 	selectedZoomId: string | null;
 	selectedClipId: string | null;
+	selectedSpeedId?: string | null;
 	selectedAnnotationId: string | null;
 	selectedAudioId: string | null;
 	webcamLayouts?: WebcamLayoutRegion[];

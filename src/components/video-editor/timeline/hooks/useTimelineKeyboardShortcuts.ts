@@ -13,6 +13,7 @@ interface UseTimelineKeyboardShortcutsParams {
 	selectedKeyframeId: string | null;
 	selectedZoomId: string | null;
 	selectedClipId?: string | null;
+	selectedSpeedId?: string | null;
 	selectedAnnotationId?: string | null;
 	selectedAudioId?: string | null;
 	selectedCaptionId?: string | null;
@@ -25,6 +26,7 @@ interface UseTimelineKeyboardShortcutsParams {
 	deleteSelectedKeyframe: () => void;
 	deleteSelectedZoom: () => void;
 	deleteSelectedClip: () => void;
+	deleteSelectedSpeed: () => void;
 	deleteSelectedAnnotation: () => void;
 	deleteSelectedAudio: () => void;
 	deleteSelectedCaption: () => void;
@@ -42,6 +44,7 @@ export function useTimelineKeyboardShortcuts({
 	selectedKeyframeId,
 	selectedZoomId,
 	selectedClipId,
+	selectedSpeedId,
 	selectedAnnotationId,
 	selectedAudioId,
 	selectedCaptionId,
@@ -54,6 +57,7 @@ export function useTimelineKeyboardShortcuts({
 	deleteSelectedKeyframe,
 	deleteSelectedZoom,
 	deleteSelectedClip,
+	deleteSelectedSpeed,
 	deleteSelectedAnnotation,
 	deleteSelectedAudio,
 	deleteSelectedCaption,
@@ -108,6 +112,7 @@ export function useTimelineKeyboardShortcuts({
 					selectedKeyframeId,
 					selectedZoomId,
 					selectedClipId,
+					selectedSpeedId,
 					selectedAnnotationId,
 					selectedAudioId,
 					selectedCaptionId,
@@ -122,6 +127,8 @@ export function useTimelineKeyboardShortcuts({
 					deleteSelectedZoom();
 				} else if (target === "clip") {
 					deleteSelectedClip();
+				} else if (target === "speed") {
+					deleteSelectedSpeed();
 				} else if (target === "annotation") {
 					deleteSelectedAnnotation();
 				} else if (target === "audio") {
@@ -145,6 +152,7 @@ export function useTimelineKeyboardShortcuts({
 		deleteSelectedAudio,
 		deleteSelectedCaption,
 		deleteSelectedClip,
+		deleteSelectedSpeed,
 		deleteSelectedKeyframe,
 		deleteSelectedZoom,
 		deleteSelectedWebcamLayout,
@@ -160,6 +168,7 @@ export function useTimelineKeyboardShortcuts({
 		selectedAudioId,
 		selectedCaptionId,
 		selectedClipId,
+		selectedSpeedId,
 		selectedKeyframeId,
 		selectedZoomId,
 		selectedWebcamLayoutId,

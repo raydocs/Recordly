@@ -1,5 +1,6 @@
 import {
 	CursorClick,
+	Keyboard,
 	Palette,
 	PresentationChart,
 	Trash as Trash2,
@@ -67,6 +68,7 @@ import type {
 	EditorEffectSection,
 	FigureData,
 	Padding,
+	PlaybackSpeed,
 	WebcamLayoutMode,
 	WebcamOverlaySettings,
 	WebcamPositionPreset,
@@ -712,10 +714,15 @@ interface SettingsPanelProps {
 	selectedClipSpeed?: number | null;
 	selectedClipMuted?: boolean | null;
 	selectedClipShowSourceAudio?: boolean | null;
+	selectedSpeedRegionSpeed?: PlaybackSpeed | null;
 	hasClipSourceAudio?: boolean;
 	onClipSpeedChange?: (speed: number) => void;
 	onClipMutedChange?: (muted: boolean) => void;
 	onClipShowSourceAudioChange?: (show: boolean) => void;
+	onSpeedRegionSpeedChange?: (speed: PlaybackSpeed) => void;
+	onSpeedRegionDelete?: () => void;
+	onSuggestSmartTyping?: () => void;
+	typingTelemetryAvailable?: boolean;
 	sourceAudioTrackMeta?: Array<{ id: string; label: string }>;
 	sourceAudioTrackSettings?: Record<string, { volume: number; normalize: boolean }>;
 	onSourceAudioTrackVolumeChange?: (id: string, volume: number) => void;
@@ -1177,10 +1184,15 @@ export function SettingsPanel({
 	selectedClipSpeed,
 	selectedClipMuted,
 	selectedClipShowSourceAudio = false,
+	selectedSpeedRegionSpeed = null,
 	hasClipSourceAudio = false,
 	onClipSpeedChange,
 	onClipMutedChange,
 	onClipShowSourceAudioChange,
+	onSpeedRegionSpeedChange,
+	onSpeedRegionDelete,
+	onSuggestSmartTyping,
+	typingTelemetryAvailable = false,
 	sourceAudioTrackMeta = [],
 	sourceAudioTrackSettings = {},
 	onSourceAudioTrackVolumeChange,
@@ -3462,16 +3474,48 @@ export function SettingsPanel({
 			</section>
 		);
 
+		const activeClipSpeed = selectedSpeedRegionSpeed ?? selectedClipSpeed;
 		const clipSectionContent = (
 			<section className="flex flex-col gap-2">
 				<div className="flex items-center justify-between gap-3">
-					<SectionLabel>{tSettings("clip.title", "Clip")}</SectionLabel>
-					{selectedClipSpeed != null && selectedClipSpeed !== 1 && (
+					<SectionLabel>
+						{selectedSpeedRegionSpeed != null
+							? tSettings("speed.smartTypingRegion", "Smart Typing")
+							: tSettings("clip.title", "Clip")}
+					</SectionLabel>
+					{activeClipSpeed != null && activeClipSpeed !== 1 && (
 						<span className="rounded-full bg-[#06b6d4]/10 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider text-[#06b6d4]">
-							{selectedClipSpeed}×
+							{activeClipSpeed}×
 						</span>
 					)}
 				</div>
+
+				<Button
+					type="button"
+					onClick={() => onSuggestSmartTyping?.()}
+					disabled={!typingTelemetryAvailable || !onSuggestSmartTyping}
+					className="h-auto w-full justify-start gap-3 rounded-xl border border-amber-400/20 bg-amber-400/10 px-3 py-2.5 text-left text-foreground shadow-none hover:bg-amber-400/15 disabled:opacity-45"
+				>
+					<span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-amber-400/15 text-amber-500">
+						<Keyboard className="h-4 w-4" weight="fill" />
+					</span>
+					<span className="min-w-0">
+						<span className="block text-[11px] font-semibold">
+							{tSettings("speed.detectTyping", "Detect & speed up typing")}
+						</span>
+						<span className="block text-[9px] font-normal text-muted-foreground">
+							{typingTelemetryAvailable
+								? tSettings(
+										"speed.privacyHint",
+										"Uses private timestamps only · no typed text is saved",
+									)
+								: tSettings(
+										"speed.recordingHint",
+										"Available for new recordings with keyboard telemetry",
+									)}
+						</span>
+					</span>
+				</Button>
 
 				<div className="flex items-center gap-3">
 					<SectionLabel>{tSettings("speed.label", "Speed")}</SectionLabel>
@@ -3484,6 +3528,7 @@ export function SettingsPanel({
 						{ speed: 1, label: "1×" },
 						{ speed: 1.25, label: "1.25×" },
 						{ speed: 1.5, label: "1.5×" },
+						{ speed: 1.75, label: "1.75×" },
 						{ speed: 2, label: "2×" },
 						{ speed: 2.5, label: "2.5×" },
 						{ speed: 3, label: "3×" },
@@ -3494,62 +3539,86 @@ export function SettingsPanel({
 						{ speed: 15, label: "15×" },
 						{ speed: 20, label: "20×" },
 						{ speed: 30, label: "30×" },
-					].map((option) => {
-						const isActive = selectedClipSpeed === option.speed;
-						return (
-							<Button
-								key={option.speed}
-								type="button"
-								onClick={() => onClipSpeedChange?.(option.speed)}
-								className={cn(
-									"h-auto w-full rounded-lg border px-0.5 py-2 text-center shadow-sm transition-all duration-200 ease-out cursor-pointer",
-									isActive
-										? "border-[#06b6d4] bg-[#06b6d4] text-white"
-										: "border-foreground/5 bg-foreground/5 text-muted-foreground hover:bg-foreground/10 hover:border-foreground/10 hover:text-foreground",
-								)}
-							>
-								<span className="text-[10px] font-semibold">{option.label}</span>
-							</Button>
-						);
-					})}
+					]
+						.filter(
+							(option) =>
+								selectedSpeedRegionSpeed == null ||
+								option.speed === 0.25 ||
+								option.speed === 0.5 ||
+								option.speed === 0.75 ||
+								option.speed === 1.25 ||
+								option.speed === 1.5 ||
+								option.speed === 1.75 ||
+								option.speed === 2,
+						)
+						.map((option) => {
+							const isActive = activeClipSpeed === option.speed;
+							return (
+								<Button
+									key={option.speed}
+									type="button"
+									onClick={() => {
+										if (selectedSpeedRegionSpeed != null) {
+											onSpeedRegionSpeedChange?.(
+												option.speed as PlaybackSpeed,
+											);
+										} else {
+											onClipSpeedChange?.(option.speed);
+										}
+									}}
+									className={cn(
+										"h-auto w-full rounded-lg border px-0.5 py-2 text-center shadow-sm transition-all duration-200 ease-out cursor-pointer",
+										isActive
+											? "border-[#06b6d4] bg-[#06b6d4] text-white"
+											: "border-foreground/5 bg-foreground/5 text-muted-foreground hover:bg-foreground/10 hover:border-foreground/10 hover:text-foreground",
+									)}
+								>
+									<span className="text-[10px] font-semibold">
+										{option.label}
+									</span>
+								</Button>
+							);
+						})}
 				</div>
 
-				<div className="mt-2 flex flex-col gap-2 border-t border-foreground/5 pt-3">
-					<SectionLabel>{tSettings("audio.title", "Audio")}</SectionLabel>
+				{selectedSpeedRegionSpeed == null && (
+					<div className="mt-2 flex flex-col gap-2 border-t border-foreground/5 pt-3">
+						<SectionLabel>{tSettings("audio.title", "Audio")}</SectionLabel>
 
-					<div className="flex items-center justify-between rounded-lg bg-foreground/[0.03] px-2.5 py-1.5">
-						<div>
-							<span className="text-[10px] text-muted-foreground">
-								{tSettings("clip.mute", "Mute")}
-							</span>
-							<p className="text-[9px] text-muted-foreground/50 mt-0.5">
-								{selectedClipMuted
-									? tSettings("clip.mutedState", "Audio is muted")
-									: tSettings("clip.unmutedState", "Audio is playing")}
-							</p>
-						</div>
-						<Switch
-							checked={selectedClipMuted ?? false}
-							onCheckedChange={(v) => onClipMutedChange?.(v)}
-							className="data-[state=checked]:bg-[#06b6d4] scale-75"
-						/>
-					</div>
-					{hasClipSourceAudio && (
 						<div className="flex items-center justify-between rounded-lg bg-foreground/[0.03] px-2.5 py-1.5">
-							<span className="text-[10px] text-muted-foreground">
-								{tSettings(
-									"clip.separateClipFromAudio",
-									"Separate clip from audio",
-								)}
-							</span>
+							<div>
+								<span className="text-[10px] text-muted-foreground">
+									{tSettings("clip.mute", "Mute")}
+								</span>
+								<p className="text-[9px] text-muted-foreground/50 mt-0.5">
+									{selectedClipMuted
+										? tSettings("clip.mutedState", "Audio is muted")
+										: tSettings("clip.unmutedState", "Audio is playing")}
+								</p>
+							</div>
 							<Switch
-								checked={selectedClipShowSourceAudio ?? false}
-								onCheckedChange={(v) => onClipShowSourceAudioChange?.(v)}
+								checked={selectedClipMuted ?? false}
+								onCheckedChange={(v) => onClipMutedChange?.(v)}
 								className="data-[state=checked]:bg-[#06b6d4] scale-75"
 							/>
 						</div>
-					)}
-				</div>
+						{hasClipSourceAudio && (
+							<div className="flex items-center justify-between rounded-lg bg-foreground/[0.03] px-2.5 py-1.5">
+								<span className="text-[10px] text-muted-foreground">
+									{tSettings(
+										"clip.separateClipFromAudio",
+										"Separate clip from audio",
+									)}
+								</span>
+								<Switch
+									checked={selectedClipShowSourceAudio ?? false}
+									onCheckedChange={(v) => onClipShowSourceAudioChange?.(v)}
+									className="data-[state=checked]:bg-[#06b6d4] scale-75"
+								/>
+							</div>
+						)}
+					</div>
+				)}
 
 				{selectedClipId && hasClipSourceAudio && sourceAudioTrackMeta.length > 0 && (
 					<div className="mt-1 flex flex-col gap-3">
@@ -4324,7 +4393,11 @@ export function SettingsPanel({
 				className={cn(
 					"flex-shrink-0 border-t border-foreground/10 bg-editor-panel p-4 pt-3",
 					(() => {
-						if (activeEffectSection === "clip" && selectedClipId) return false;
+						if (
+							activeEffectSection === "clip" &&
+							(selectedClipId || selectedSpeedRegionSpeed != null)
+						)
+							return false;
 						if (activeEffectSection === "zoom" && selectedZoomId) return false;
 						if (activeEffectSection === "audio" && selectedAudioId) return false;
 						if (selectedAnnotationId) return false; // Annotation editor handles its own but let's see
@@ -4343,6 +4416,17 @@ export function SettingsPanel({
 					>
 						<Trash2 className="h-3 w-3" />
 						{tSettings("clip.delete", "Delete Clip")}
+					</Button>
+				)}
+				{activeEffectSection === "clip" && selectedSpeedRegionSpeed != null && (
+					<Button
+						onClick={() => onSpeedRegionDelete?.()}
+						variant="destructive"
+						size="sm"
+						className="h-8 w-full gap-2 border border-red-500/20 bg-red-500/10 text-xs text-red-400 transition-all hover:border-red-500/30 hover:bg-red-500/20"
+					>
+						<Trash2 className="h-3 w-3" />
+						{tSettings("speed.deleteRegion", "Delete Speed Region")}
 					</Button>
 				)}
 				{activeEffectSection === "zoom" && selectedZoomId && (

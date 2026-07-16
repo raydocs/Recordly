@@ -15,7 +15,11 @@
 		"playbackSpeed": "播放速度",
 		"selectRegion": "選取要調整的速度區域",
 		"deleteRegion": "刪除速度區域",
-		"label": "速度"
+		"label": "速度",
+		"smartTypingRegion": "智慧打字",
+		"detectTyping": "偵測並加速打字片段",
+		"privacyHint": "僅使用私密時間戳 · 不會儲存輸入內容",
+		"recordingHint": "適用於含鍵盤時間資料的新錄影"
 	},
 	"clip": {
 		"title": "片段",

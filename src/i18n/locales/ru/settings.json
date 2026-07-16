@@ -15,7 +15,11 @@
 		"playbackSpeed": "Скорость воспроизведения",
 		"selectRegion": "Диапазон скорости",
 		"deleteRegion": "Удалить",
-		"label": "Скорость"
+		"label": "Скорость",
+		"smartTypingRegion": "Smart Typing",
+		"detectTyping": "Detect & speed up typing",
+		"privacyHint": "Uses private timestamps only · no typed text is saved",
+		"recordingHint": "Available for new recordings with keyboard telemetry"
 	},
 	"clip": {
 		"title": "Клип",

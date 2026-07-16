@@ -4,10 +4,17 @@ import type {
 	AudioRegion,
 	CaptionCue,
 	ClipRegion,
+	SpeedRegion,
 	WebcamLayoutRegion,
 	ZoomRegion,
 } from "../../types";
-import { CAPTION_ROW_ID, CLIP_ROW_ID, WEBCAM_LAYOUT_ROW_ID, ZOOM_ROW_ID } from "../core/constants";
+import {
+	CAPTION_ROW_ID,
+	CLIP_ROW_ID,
+	SPEED_ROW_ID,
+	WEBCAM_LAYOUT_ROW_ID,
+	ZOOM_ROW_ID,
+} from "../core/constants";
 import {
 	getAnnotationTrackIndex,
 	getAnnotationTrackRowId,
@@ -46,6 +53,7 @@ function getCaptionLabel(cue: CaptionCue): string {
 export function buildTimelineItems(params: {
 	zoomRegions: ZoomRegion[];
 	clipRegions: ClipRegion[];
+	speedRegions?: SpeedRegion[];
 	annotationRegions: AnnotationRegion[];
 	audioRegions: AudioRegion[];
 	captionCues?: CaptionCue[];
@@ -54,6 +62,7 @@ export function buildTimelineItems(params: {
 	const {
 		zoomRegions,
 		clipRegions,
+		speedRegions = [],
 		annotationRegions,
 		audioRegions,
 		captionCues = [],
@@ -87,6 +96,14 @@ export function buildTimelineItems(params: {
 			variant: "clip",
 		};
 	});
+	const speeds: TimelineRenderItem[] = speedRegions.map((region) => ({
+		id: region.id,
+		rowId: SPEED_ROW_ID,
+		span: { start: region.startMs, end: region.endMs },
+		label: `${region.speed}×`,
+		speedValue: region.speed,
+		variant: "speed",
+	}));
 
 	const annotations: TimelineRenderItem[] = annotationRegions.map((region) => ({
 		id: region.id,
@@ -128,16 +145,31 @@ export function buildTimelineItems(params: {
 		variant: "webcam-layout",
 	}));
 
-	return [...zooms, ...clips, ...cameraLayouts, ...annotations, ...audios, ...captions];
+	return [
+		...zooms,
+		...clips,
+		...speeds,
+		...cameraLayouts,
+		...annotations,
+		...audios,
+		...captions,
+	];
 }
 
 export function buildAllRegionSpans(params: {
 	zoomRegions: ZoomRegion[];
 	clipRegions: ClipRegion[];
+	speedRegions?: SpeedRegion[];
 	audioRegions: AudioRegion[];
 	webcamLayouts?: WebcamLayoutRegion[];
 }): TimelineRegionSpan[] {
-	const { zoomRegions, clipRegions, audioRegions, webcamLayouts = [] } = params;
+	const {
+		zoomRegions,
+		clipRegions,
+		speedRegions = [],
+		audioRegions,
+		webcamLayouts = [],
+	} = params;
 	const zooms = zoomRegions.map((r) => ({
 		id: r.id,
 		start: r.startMs,
@@ -149,6 +181,12 @@ export function buildAllRegionSpans(params: {
 		start: r.startMs,
 		end: r.endMs,
 		rowId: CLIP_ROW_ID,
+	}));
+	const speeds = speedRegions.map((r) => ({
+		id: r.id,
+		start: r.startMs,
+		end: r.endMs,
+		rowId: SPEED_ROW_ID,
 	}));
 	const audios = audioRegions.map((r) => ({
 		id: r.id,
@@ -162,7 +200,7 @@ export function buildAllRegionSpans(params: {
 		end: r.endMs,
 		rowId: WEBCAM_LAYOUT_ROW_ID,
 	}));
-	return [...zooms, ...clips, ...cameraLayouts, ...audios];
+	return [...zooms, ...clips, ...speeds, ...cameraLayouts, ...audios];
 }
 
 export function resolveDropRowId(

@@ -44,7 +44,6 @@
 		"solidColor": "Сплошной цвет (цензура)",
 		"borderRadius": "Скругление углов"
 	},
-
 	"fontStyles": {
 		"classic": "Классический",
 		"editor": "Базовый",
@@ -136,7 +135,10 @@
 	},
 	"timeline": {
 		"expand": "Развернуть таймлайн",
-		"collapse": "Свернуть таймлайн"
+		"collapse": "Свернуть таймлайн",
+		"noTypingTelemetry": "No keyboard timing data was found. Record a new video with the updated recorder first.",
+		"noTypingSegments": "No sustained typing segments were found in this range.",
+		"typingSegmentsAdded": "Added {{count}} Smart Typing speed region(s)."
 	},
 	"openRecordingsFolder": "Открыть папку с записями"
 }

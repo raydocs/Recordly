@@ -19,6 +19,7 @@ import {
 	CAPTION_ROW_ID,
 	CLIP_ROW_ID,
 	SOURCE_AUDIO_ROW_ID,
+	SPEED_ROW_ID,
 	WEBCAM_LAYOUT_ROW_ID,
 	ZOOM_ROW_ID,
 } from "../../core/constants";
@@ -58,6 +59,7 @@ interface TimelineCanvasProps {
 	canPlaceZoomAtMs?: (startMs: number) => boolean;
 	onSelectZoom?: (id: string | null) => void;
 	onSelectClip?: (id: string | null) => void;
+	onSelectSpeed?: (id: string | null) => void;
 	onSelectAnnotation?: (id: string | null) => void;
 	onSelectAudio?: (id: string | null) => void;
 	onSelectCaption?: (id: string | null) => void;
@@ -70,6 +72,7 @@ interface TimelineCanvasProps {
 	captionQuickAddEnabled?: boolean;
 	selectedZoomId: string | null;
 	selectedClipId?: string | null;
+	selectedSpeedId?: string | null;
 	selectedAnnotationId?: string | null;
 	selectedAudioId?: string | null;
 	selectedCaptionId?: string | null;
@@ -403,12 +406,14 @@ interface TimelineCanvasRowsProps {
 	selectAllBlocksActive: boolean;
 	selectedZoomId: string | null;
 	selectedClipId?: string | null;
+	selectedSpeedId?: string | null;
 	selectedAnnotationId?: string | null;
 	selectedAudioId?: string | null;
 	selectedCaptionId?: string | null;
 	selectedWebcamLayoutId?: string | null;
 	onSelectZoom?: (id: string | null) => void;
 	onSelectClip?: (id: string | null) => void;
+	onSelectSpeed?: (id: string | null) => void;
 	onSelectAnnotation?: (id: string | null) => void;
 	onSelectAudio?: (id: string | null) => void;
 	onSelectCaption?: (id: string | null) => void;
@@ -494,12 +499,14 @@ const TimelineCanvasRows = memo(function TimelineCanvasRows({
 	selectAllBlocksActive,
 	selectedZoomId,
 	selectedClipId,
+	selectedSpeedId,
 	selectedAnnotationId,
 	selectedAudioId,
 	selectedCaptionId,
 	selectedWebcamLayoutId,
 	onSelectZoom,
 	onSelectClip,
+	onSelectSpeed,
 	onSelectAnnotation,
 	onSelectAudio,
 	onSelectCaption,
@@ -541,69 +548,82 @@ const TimelineCanvasRows = memo(function TimelineCanvasRows({
 	onWebcamLayoutRowClick,
 }: TimelineCanvasRowsProps) {
 	const hiddenIds = useMemo(() => new Set(liveHiddenItemIds ?? []), [liveHiddenItemIds]);
-	const { clipItems, zoomItems, captionItems, webcamLayoutItems, annotationRows, audioRows } =
-		useMemo(() => {
-			const nextClipItems: TimelineRenderItem[] = [];
-			const nextZoomItems: TimelineRenderItem[] = [];
-			const nextCaptionItems: TimelineRenderItem[] = [];
-			const nextWebcamLayoutItems: TimelineRenderItem[] = [];
-			const annotationBuckets = new Map<number, TimelineRenderItem[]>();
-			const audioBuckets = new Map<number, TimelineRenderItem[]>();
+	const {
+		clipItems,
+		speedItems,
+		zoomItems,
+		captionItems,
+		webcamLayoutItems,
+		annotationRows,
+		audioRows,
+	} = useMemo(() => {
+		const nextClipItems: TimelineRenderItem[] = [];
+		const nextSpeedItems: TimelineRenderItem[] = [];
+		const nextZoomItems: TimelineRenderItem[] = [];
+		const nextCaptionItems: TimelineRenderItem[] = [];
+		const nextWebcamLayoutItems: TimelineRenderItem[] = [];
+		const annotationBuckets = new Map<number, TimelineRenderItem[]>();
+		const audioBuckets = new Map<number, TimelineRenderItem[]>();
 
-			for (const item of items) {
-				if (item.rowId === CLIP_ROW_ID) {
-					nextClipItems.push(item);
-					continue;
-				}
-				if (item.rowId === ZOOM_ROW_ID) {
-					nextZoomItems.push(item);
-					continue;
-				}
-				if (item.rowId === CAPTION_ROW_ID) {
-					nextCaptionItems.push(item);
-					continue;
-				}
-				if (item.rowId === WEBCAM_LAYOUT_ROW_ID) {
-					nextWebcamLayoutItems.push(item);
-					continue;
-				}
-				if (isAnnotationTrackRowId(item.rowId)) {
-					const trackIndex = getAnnotationTrackIndex(item.rowId);
-					const bucket = annotationBuckets.get(trackIndex);
-					if (bucket) bucket.push(item);
-					else annotationBuckets.set(trackIndex, [item]);
-					continue;
-				}
-				if (isAudioTrackRowId(item.rowId)) {
-					const trackIndex = getAudioTrackIndex(item.rowId);
-					const bucket = audioBuckets.get(trackIndex);
-					if (bucket) bucket.push(item);
-					else audioBuckets.set(trackIndex, [item]);
-				}
+		for (const item of items) {
+			if (item.rowId === CLIP_ROW_ID) {
+				nextClipItems.push(item);
+				continue;
 			}
+			if (item.rowId === ZOOM_ROW_ID) {
+				nextZoomItems.push(item);
+				continue;
+			}
+			if (item.rowId === SPEED_ROW_ID) {
+				nextSpeedItems.push(item);
+				continue;
+			}
+			if (item.rowId === CAPTION_ROW_ID) {
+				nextCaptionItems.push(item);
+				continue;
+			}
+			if (item.rowId === WEBCAM_LAYOUT_ROW_ID) {
+				nextWebcamLayoutItems.push(item);
+				continue;
+			}
+			if (isAnnotationTrackRowId(item.rowId)) {
+				const trackIndex = getAnnotationTrackIndex(item.rowId);
+				const bucket = annotationBuckets.get(trackIndex);
+				if (bucket) bucket.push(item);
+				else annotationBuckets.set(trackIndex, [item]);
+				continue;
+			}
+			if (isAudioTrackRowId(item.rowId)) {
+				const trackIndex = getAudioTrackIndex(item.rowId);
+				const bucket = audioBuckets.get(trackIndex);
+				if (bucket) bucket.push(item);
+				else audioBuckets.set(trackIndex, [item]);
+			}
+		}
 
-			const annotationRowsSorted = Array.from(annotationBuckets.entries())
-				.sort(([left], [right]) => left - right)
-				.map(([trackIndex, rowItems]) => ({
-					rowId: getAnnotationTrackRowId(trackIndex),
-					items: rowItems,
-				}));
-			const audioRowsSorted = Array.from(audioBuckets.entries())
-				.sort(([left], [right]) => left - right)
-				.map(([trackIndex, rowItems]) => ({
-					rowId: getAudioTrackRowId(trackIndex),
-					items: rowItems,
-				}));
+		const annotationRowsSorted = Array.from(annotationBuckets.entries())
+			.sort(([left], [right]) => left - right)
+			.map(([trackIndex, rowItems]) => ({
+				rowId: getAnnotationTrackRowId(trackIndex),
+				items: rowItems,
+			}));
+		const audioRowsSorted = Array.from(audioBuckets.entries())
+			.sort(([left], [right]) => left - right)
+			.map(([trackIndex, rowItems]) => ({
+				rowId: getAudioTrackRowId(trackIndex),
+				items: rowItems,
+			}));
 
-			return {
-				clipItems: nextClipItems,
-				zoomItems: nextZoomItems,
-				captionItems: nextCaptionItems,
-				webcamLayoutItems: nextWebcamLayoutItems,
-				annotationRows: annotationRowsSorted,
-				audioRows: audioRowsSorted,
-			};
-		}, [items]);
+		return {
+			clipItems: nextClipItems,
+			speedItems: nextSpeedItems,
+			zoomItems: nextZoomItems,
+			captionItems: nextCaptionItems,
+			webcamLayoutItems: nextWebcamLayoutItems,
+			annotationRows: annotationRowsSorted,
+			audioRows: audioRowsSorted,
+		};
+	}, [items]);
 
 	return (
 		<>
@@ -624,6 +644,24 @@ const TimelineCanvasRows = memo(function TimelineCanvasRows({
 					</Item>
 				))}
 			</Row>
+			{speedItems.length > 0 && (
+				<Row id={SPEED_ROW_ID} isEmpty={false} hint="Smart typing speed-up">
+					{speedItems.map((item) => (
+						<Item
+							id={item.id}
+							key={item.id}
+							rowId={item.rowId}
+							span={item.span}
+							isSelected={item.id === selectedSpeedId}
+							onSelectId={onSelectSpeed}
+							variant="speed"
+							speedValue={item.speedValue}
+						>
+							{item.label}
+						</Item>
+					))}
+				</Row>
+			)}
 			{showSourceAudioTrack &&
 				sourceAudioTracks.map((track) => (
 					<Row key={track.id} id={`${SOURCE_AUDIO_ROW_ID}-${track.id}`}>
@@ -887,12 +925,14 @@ export default function TimelineCanvas({
 	captionQuickAddEnabled,
 	onSelectZoom,
 	onSelectClip,
+	onSelectSpeed,
 	onSelectAnnotation,
 	onSelectAudio,
 	onSelectCaption,
 	onSelectWebcamLayout,
 	selectedZoomId,
 	selectedClipId,
+	selectedSpeedId,
 	selectedAnnotationId,
 	selectedAudioId,
 	selectedCaptionId,
@@ -937,6 +977,7 @@ export default function TimelineCanvas({
 			} else {
 				onSelectZoom?.(null);
 				onSelectClip?.(null);
+				onSelectSpeed?.(null);
 				onSelectAnnotation?.(null);
 				onSelectAudio?.(null);
 				onSelectCaption?.(null);
@@ -958,6 +999,7 @@ export default function TimelineCanvas({
 			onSeek,
 			onSelectZoom,
 			onSelectClip,
+			onSelectSpeed,
 			onSelectAnnotation,
 			onSelectAudio,
 			onSelectCaption,
@@ -996,6 +1038,7 @@ export default function TimelineCanvas({
 			} else {
 				onSelectZoom?.(null);
 				onSelectClip?.(null);
+				onSelectSpeed?.(null);
 				onSelectAnnotation?.(null);
 				onSelectAudio?.(null);
 				onSelectCaption?.(null);
@@ -1016,6 +1059,7 @@ export default function TimelineCanvas({
 			onSelectCaption,
 			onSelectWebcamLayout,
 			onSelectClip,
+			onSelectSpeed,
 			onSelectZoom,
 			videoDurationMs,
 		],
@@ -1070,11 +1114,13 @@ export default function TimelineCanvas({
 		const audioRowIds = new Set<string>();
 		let hasCaptionRow = false;
 		let hasWebcamLayoutRow = false;
+		let hasSpeedRow = false;
 		for (const item of items) {
 			if (isAnnotationTrackRowId(item.rowId)) annotationRowIds.add(item.rowId);
 			if (isAudioTrackRowId(item.rowId)) audioRowIds.add(item.rowId);
 			if (item.rowId === CAPTION_ROW_ID) hasCaptionRow = true;
 			if (item.rowId === WEBCAM_LAYOUT_ROW_ID) hasWebcamLayoutRow = true;
+			if (item.rowId === SPEED_ROW_ID) hasSpeedRow = true;
 		}
 		const sourceAudioRows = showSourceAudioTrack ? sourceAudioTracks.length : 0;
 		// The caption lane is always shown when captions are enabled (even before any cue
@@ -1084,6 +1130,7 @@ export default function TimelineCanvas({
 		const webcamLayoutRows = hasWebcamLayoutRow || webcamLayoutsEnabled ? 1 : 0;
 		return (
 			2 +
+			(hasSpeedRow ? 1 : 0) +
 			sourceAudioRows +
 			annotationRowIds.size +
 			audioRowIds.size +
@@ -1203,12 +1250,14 @@ export default function TimelineCanvas({
 					selectAllBlocksActive={selectAllBlocksActive}
 					selectedZoomId={selectedZoomId}
 					selectedClipId={selectedClipId}
+					selectedSpeedId={selectedSpeedId}
 					selectedAnnotationId={selectedAnnotationId}
 					selectedAudioId={selectedAudioId}
 					selectedCaptionId={selectedCaptionId}
 					selectedWebcamLayoutId={selectedWebcamLayoutId}
 					onSelectZoom={onSelectZoom}
 					onSelectClip={onSelectClip}
+					onSelectSpeed={onSelectSpeed}
 					onSelectAnnotation={onSelectAnnotation}
 					onSelectAudio={onSelectAudio}
 					onSelectCaption={onSelectCaption}

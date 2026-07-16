@@ -21,6 +21,7 @@ function createSnapshot(id: string | null): EditorHistorySnapshot {
 		autoCaptions: [],
 		selectedZoomId: id,
 		selectedClipId: id ? `clip-${id}` : null,
+		selectedSpeedId: id ? `speed-${id}` : null,
 		selectedAnnotationId: null,
 		selectedAudioId: null,
 	};

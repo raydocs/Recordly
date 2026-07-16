@@ -1866,7 +1866,12 @@ export class FrameRenderer {
 		for (const point of telemetry) {
 			if (point.timeMs > timeMs) break;
 			if (point.timeMs < timeMs - 100) continue;
-			if (!point.interactionType || point.interactionType === "move") continue;
+			if (
+				!point.interactionType ||
+				point.interactionType === "move" ||
+				point.interactionType === "key"
+			)
+				continue;
 			if (point.timeMs === this.lastEmittedClickTimeMs) continue;
 
 			const mappedCursor = mapCursorToCanvasNormalized(

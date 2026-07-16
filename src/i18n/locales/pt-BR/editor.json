@@ -44,7 +44,6 @@
 		"solidColor": "Cor sólida (censura)",
 		"borderRadius": "Raio da borda"
 	},
-
 	"fontStyles": {
 		"classic": "Classic",
 		"editor": "Editor",
@@ -136,7 +135,10 @@
 	},
 	"timeline": {
 		"expand": "Expandir linha do tempo",
-		"collapse": "Recolher linha do tempo"
+		"collapse": "Recolher linha do tempo",
+		"noTypingTelemetry": "No keyboard timing data was found. Record a new video with the updated recorder first.",
+		"noTypingSegments": "No sustained typing segments were found in this range.",
+		"typingSegmentsAdded": "Added {{count}} Smart Typing speed region(s)."
 	},
 	"openRecordingsFolder": "Abrir pasta de gravações"
 }

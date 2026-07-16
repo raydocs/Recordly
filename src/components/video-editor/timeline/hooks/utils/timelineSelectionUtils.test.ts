@@ -62,4 +62,15 @@ describe("timelineSelectionUtils", () => {
 			}),
 		).toBe("webcam-layout");
 	});
+
+	it("recognizes a selected Smart Typing speed region", () => {
+		expect(
+			resolveDeleteSelectionTarget({
+				selectAllBlocksActive: false,
+				selectedKeyframeId: null,
+				selectedZoomId: null,
+				selectedSpeedId: "smart-typing-1",
+			}),
+		).toBe("speed");
+	});
 });

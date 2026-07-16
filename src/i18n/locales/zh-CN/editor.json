@@ -136,7 +136,10 @@
 	},
 	"timeline": {
 		"expand": "展开时间轴",
-		"collapse": "折叠时间轴"
+		"collapse": "折叠时间轴",
+		"noTypingTelemetry": "未找到键盘时间数据，请先用更新后的录制器新录一段视频。",
+		"noTypingSegments": "在此范围内未发现持续打字片段。",
+		"typingSegmentsAdded": "已添加 {{count}} 个智能打字变速区域。"
 	},
 	"openRecordingsFolder": "打开录制文件夹"
 }

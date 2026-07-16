@@ -64,6 +64,9 @@ export interface TimelineEditorProps {
 	onSelectAnnotation?: (id: string | null) => void;
 	speedRegions?: SpeedRegion[];
 	onSpeedSpanChange?: (id: string, span: Span) => void;
+	onSpeedDelete?: (id: string) => void;
+	selectedSpeedId?: string | null;
+	onSelectSpeed?: (id: string | null) => void;
 	audioRegions?: AudioRegion[];
 	onAudioAdded?: (span: Span, audioPath: string, trackIndex?: number) => void;
 	onAudioSpanChange?: (id: string, span: Span, trackIndex?: number) => void;
@@ -154,6 +157,9 @@ const TimelineEditor = forwardRef<TimelineEditorHandle, TimelineEditorProps>(
 			onSelectAnnotation,
 			speedRegions = [],
 			onSpeedSpanChange,
+			onSpeedDelete,
+			selectedSpeedId,
+			onSelectSpeed,
 			audioRegions = [],
 			onAudioAdded,
 			onAudioSpanChange,
@@ -354,6 +360,7 @@ const TimelineEditor = forwardRef<TimelineEditorHandle, TimelineEditorProps>(
 			clearSelectedBlocks,
 			handleSelectZoom,
 			handleSelectClip,
+			handleSelectSpeed,
 			handleSelectAnnotation,
 			handleSelectAudio,
 			handleSelectCaption,
@@ -404,6 +411,9 @@ const TimelineEditor = forwardRef<TimelineEditorHandle, TimelineEditorProps>(
 			onSelectAnnotation,
 			speedRegions,
 			onSpeedSpanChange,
+			onSpeedDelete,
+			selectedSpeedId,
+			onSelectSpeed,
 			audioRegions,
 			onAudioAdded,
 			onAudioSpanChange,
@@ -518,12 +528,14 @@ const TimelineEditor = forwardRef<TimelineEditorHandle, TimelineEditorProps>(
 							captionQuickAddEnabled={captionQuickAddEnabled}
 							onSelectZoom={handleSelectZoom}
 							onSelectClip={handleSelectClip}
+							onSelectSpeed={handleSelectSpeed}
 							onSelectAnnotation={handleSelectAnnotation}
 							onSelectAudio={handleSelectAudio}
 							onSelectCaption={handleSelectCaption}
 							onSelectWebcamLayout={handleSelectWebcamLayout}
 							selectedZoomId={selectedZoomId}
 							selectedClipId={selectedClipId}
+							selectedSpeedId={selectedSpeedId}
 							selectedAnnotationId={selectedAnnotationId}
 							selectedAudioId={selectedAudioId}
 							selectedCaptionId={selectedCaptionId}

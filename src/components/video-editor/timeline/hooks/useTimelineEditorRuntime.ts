@@ -56,6 +56,9 @@ interface UseTimelineEditorRuntimeParams {
 	onSelectAnnotation?: (id: string | null) => void;
 	speedRegions: SpeedRegion[];
 	onSpeedSpanChange?: (id: string, span: Span) => void;
+	onSpeedDelete?: (id: string) => void;
+	selectedSpeedId?: string | null;
+	onSelectSpeed?: (id: string | null) => void;
 	audioRegions: AudioRegion[];
 	onAudioAdded?: (span: Span, audioPath: string, trackIndex?: number) => void;
 	onAudioSpanChange?: (id: string, span: Span, trackIndex?: number) => void;
@@ -112,6 +115,9 @@ export function useTimelineEditorRuntime({
 	onSelectAnnotation,
 	speedRegions,
 	onSpeedSpanChange,
+	onSpeedDelete,
+	selectedSpeedId,
+	onSelectSpeed,
 	audioRegions,
 	onAudioAdded,
 	onAudioSpanChange,
@@ -147,6 +153,7 @@ export function useTimelineEditorRuntime({
 		handleKeyframeMove,
 		deleteSelectedZoom,
 		deleteSelectedClip,
+		deleteSelectedSpeed,
 		deleteSelectedAnnotation,
 		deleteSelectedAudio,
 		deleteSelectedCaption,
@@ -154,6 +161,7 @@ export function useTimelineEditorRuntime({
 		clearSelectedBlocks,
 		handleSelectZoom,
 		handleSelectClip,
+		handleSelectSpeed,
 		handleSelectAnnotation,
 		handleSelectAudio,
 		handleSelectCaption,
@@ -164,22 +172,26 @@ export function useTimelineEditorRuntime({
 		currentTimeMs,
 		zoomRegions,
 		clipRegions,
+		speedRegions,
 		annotationRegions,
 		audioRegions,
 		selectedZoomId,
 		selectedClipId,
+		selectedSpeedId,
 		selectedAnnotationId,
 		selectedAudioId,
 		selectedCaptionId,
 		selectedWebcamLayoutId,
 		onZoomDelete,
 		onClipDelete,
+		onSpeedDelete,
 		onAnnotationDelete,
 		onAudioDelete,
 		onCaptionDelete,
 		onWebcamLayoutDelete,
 		onSelectZoom,
 		onSelectClip,
+		onSelectSpeed,
 		onSelectAnnotation,
 		onSelectAudio,
 		onSelectCaption,
@@ -318,6 +330,7 @@ export function useTimelineEditorRuntime({
 		selectedKeyframeId,
 		selectedZoomId,
 		selectedClipId,
+		selectedSpeedId,
 		selectedAnnotationId,
 		selectedAudioId,
 		selectedCaptionId,
@@ -330,6 +343,7 @@ export function useTimelineEditorRuntime({
 		deleteSelectedKeyframe,
 		deleteSelectedZoom,
 		deleteSelectedClip,
+		deleteSelectedSpeed,
 		deleteSelectedAnnotation,
 		deleteSelectedAudio,
 		deleteSelectedCaption,
@@ -367,6 +381,7 @@ export function useTimelineEditorRuntime({
 		clearSelectedBlocks,
 		handleSelectZoom,
 		handleSelectClip,
+		handleSelectSpeed,
 		handleSelectAnnotation,
 		handleSelectAudio,
 		handleSelectCaption,

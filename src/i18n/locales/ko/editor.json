@@ -14,7 +14,6 @@
 		"arrow": "화살표",
 		"blur": "흐리게",
 		"textContent": "텍스트 내용",
-
 		"textPlaceholder": "텍스트를 입력하세요...",
 		"fontStyle": "글꼴 스타일",
 		"selectStyle": "스타일 선택",
@@ -45,7 +44,6 @@
 		"solidColor": "단색 (검열)",
 		"borderRadius": "테두리 반경"
 	},
-
 	"fontStyles": {
 		"classic": "클래식",
 		"editor": "에디터",
@@ -137,7 +135,10 @@
 	},
 	"timeline": {
 		"expand": "타임라인 펼치기",
-		"collapse": "타임라인 접기"
+		"collapse": "타임라인 접기",
+		"noTypingTelemetry": "No keyboard timing data was found. Record a new video with the updated recorder first.",
+		"noTypingSegments": "No sustained typing segments were found in this range.",
+		"typingSegmentsAdded": "Added {{count}} Smart Typing speed region(s)."
 	},
 	"openRecordingsFolder": "녹화 폴더 열기"
 }

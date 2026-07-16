@@ -86,6 +86,15 @@ describe("cursor telemetry pause clock", () => {
 	it("normalizes cursor telemetry samples before persisting them", async () => {
 		const samples = normalizeCursorTelemetrySamples([
 			{ timeMs: 30, cx: 2, cy: -1, interactionType: "click", cursorType: "pointer" },
+			{
+				timeMs: 20,
+				cx: 0.4,
+				cy: 0.6,
+				interactionType: "key",
+				cursorType: "text",
+				keycode: 42,
+				text: "typed-value",
+			},
 			{ timeMs: -10, cx: Number.NaN, cy: 0.2, interactionType: "drag", cursorType: "ibeam" },
 			{ timeMs: 10, cx: 0.25, cy: 0.75, interactionType: "move", cursorType: "text" },
 		]);
@@ -93,6 +102,7 @@ describe("cursor telemetry pause clock", () => {
 		expect(samples).toEqual([
 			{ timeMs: 0, cx: 0.5, cy: 0.2, interactionType: undefined, cursorType: undefined },
 			{ timeMs: 10, cx: 0.25, cy: 0.75, interactionType: "move", cursorType: "text" },
+			{ timeMs: 20, cx: 0.4, cy: 0.6, interactionType: "key", cursorType: "text" },
 			{ timeMs: 30, cx: 1, cy: 0, interactionType: "click", cursorType: "pointer" },
 		]);
 

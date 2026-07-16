@@ -15,7 +15,11 @@
 		"playbackSpeed": "재생 속도",
 		"selectRegion": "조정할 속도 구간을 선택하세요",
 		"deleteRegion": "속도 구간 삭제",
-		"label": "속도"
+		"label": "속도",
+		"smartTypingRegion": "Smart Typing",
+		"detectTyping": "Detect & speed up typing",
+		"privacyHint": "Uses private timestamps only · no typed text is saved",
+		"recordingHint": "Available for new recordings with keyboard telemetry"
 	},
 	"clip": {
 		"title": "클립",

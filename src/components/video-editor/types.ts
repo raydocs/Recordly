@@ -23,6 +23,7 @@ export interface CursorTelemetryPoint {
 	pressure?: number;
 	interactionType?:
 		| "move"
+		| "key"
 		| "click"
 		| "double-click"
 		| "right-click"

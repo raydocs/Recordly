@@ -2,6 +2,7 @@ export type DeleteSelectionTarget =
 	| "keyframe"
 	| "zoom"
 	| "clip"
+	| "speed"
 	| "annotation"
 	| "audio"
 	| "caption"
@@ -13,6 +14,7 @@ interface ResolveDeleteSelectionTargetParams {
 	selectedKeyframeId: string | null;
 	selectedZoomId: string | null;
 	selectedClipId?: string | null;
+	selectedSpeedId?: string | null;
 	selectedAnnotationId?: string | null;
 	selectedAudioId?: string | null;
 	selectedCaptionId?: string | null;
@@ -24,6 +26,7 @@ export function resolveDeleteSelectionTarget({
 	selectedKeyframeId,
 	selectedZoomId,
 	selectedClipId,
+	selectedSpeedId,
 	selectedAnnotationId,
 	selectedAudioId,
 	selectedCaptionId,
@@ -33,6 +36,7 @@ export function resolveDeleteSelectionTarget({
 	if (selectedKeyframeId) return "keyframe";
 	if (selectedZoomId) return "zoom";
 	if (selectedClipId) return "clip";
+	if (selectedSpeedId) return "speed";
 	if (selectedAnnotationId) return "annotation";
 	if (selectedAudioId) return "audio";
 	if (selectedCaptionId) return "caption";

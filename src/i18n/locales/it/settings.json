@@ -15,7 +15,11 @@
 		"playbackSpeed": "Velocità di riproduzione",
 		"selectRegion": "Seleziona una regione di velocità da modificare",
 		"deleteRegion": "Elimina regione di velocità",
-		"label": "Velocità"
+		"label": "Velocità",
+		"smartTypingRegion": "Smart Typing",
+		"detectTyping": "Detect & speed up typing",
+		"privacyHint": "Uses private timestamps only · no typed text is saved",
+		"recordingHint": "Available for new recordings with keyboard telemetry"
 	},
 	"clip": {
 		"title": "Clip",

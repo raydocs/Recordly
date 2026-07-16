@@ -6,22 +6,26 @@ interface UseTimelineSelectionParams {
 	currentTimeMs: number;
 	zoomRegions: TimelineRegion[];
 	clipRegions: TimelineRegion[];
+	speedRegions: TimelineRegion[];
 	annotationRegions: (TimelineRegion & { zIndex: number })[];
 	audioRegions: TimelineRegion[];
 	selectedZoomId: string | null;
 	selectedClipId?: string | null;
+	selectedSpeedId?: string | null;
 	selectedAnnotationId?: string | null;
 	selectedAudioId?: string | null;
 	selectedCaptionId?: string | null;
 	selectedWebcamLayoutId?: string | null;
 	onZoomDelete: (id: string) => void;
 	onClipDelete?: (id: string) => void;
+	onSpeedDelete?: (id: string) => void;
 	onAnnotationDelete?: (id: string) => void;
 	onAudioDelete?: (id: string) => void;
 	onCaptionDelete?: (id: string) => void;
 	onWebcamLayoutDelete?: (id: string) => void;
 	onSelectZoom: (id: string | null) => void;
 	onSelectClip?: (id: string | null) => void;
+	onSelectSpeed?: (id: string | null) => void;
 	onSelectAnnotation?: (id: string | null) => void;
 	onSelectAudio?: (id: string | null) => void;
 	onSelectCaption?: (id: string | null) => void;
@@ -35,18 +39,21 @@ export function useTimelineSelection({
 	annotationRegions,
 	selectedZoomId,
 	selectedClipId,
+	selectedSpeedId,
 	selectedAnnotationId,
 	selectedAudioId,
 	selectedCaptionId,
 	selectedWebcamLayoutId,
 	onZoomDelete,
 	onClipDelete,
+	onSpeedDelete,
 	onAnnotationDelete,
 	onAudioDelete,
 	onCaptionDelete,
 	onWebcamLayoutDelete,
 	onSelectZoom,
 	onSelectClip,
+	onSelectSpeed,
 	onSelectAnnotation,
 	onSelectAudio,
 	onSelectCaption,
@@ -114,6 +121,12 @@ export function useTimelineSelection({
 		onSelectClip(null);
 	}, [selectedClipId, onClipDelete, onSelectClip]);
 
+	const deleteSelectedSpeed = useCallback(() => {
+		if (!selectedSpeedId || !onSpeedDelete || !onSelectSpeed) return;
+		onSpeedDelete(selectedSpeedId);
+		onSelectSpeed(null);
+	}, [selectedSpeedId, onSpeedDelete, onSelectSpeed]);
+
 	const deleteSelectedAnnotation = useCallback(() => {
 		if (!selectedAnnotationId || !onAnnotationDelete || !onSelectAnnotation) return;
 		onAnnotationDelete(selectedAnnotationId);
@@ -141,6 +154,7 @@ export function useTimelineSelection({
 	const clearSelectedBlocks = useCallback(() => {
 		onSelectZoom(null);
 		onSelectClip?.(null);
+		onSelectSpeed?.(null);
 		onSelectAnnotation?.(null);
 		onSelectAudio?.(null);
 		onSelectCaption?.(null);
@@ -149,6 +163,7 @@ export function useTimelineSelection({
 	}, [
 		onSelectZoom,
 		onSelectClip,
+		onSelectSpeed,
 		onSelectAnnotation,
 		onSelectAudio,
 		onSelectCaption,
@@ -158,6 +173,7 @@ export function useTimelineSelection({
 	const activateSelectAllZooms = useCallback(() => {
 		onSelectZoom(null);
 		onSelectClip?.(null);
+		onSelectSpeed?.(null);
 		onSelectAnnotation?.(null);
 		onSelectAudio?.(null);
 		onSelectCaption?.(null);
@@ -167,6 +183,7 @@ export function useTimelineSelection({
 	}, [
 		onSelectZoom,
 		onSelectClip,
+		onSelectSpeed,
 		onSelectAnnotation,
 		onSelectAudio,
 		onSelectCaption,
@@ -187,6 +204,14 @@ export function useTimelineSelection({
 			onSelectClip?.(id);
 		},
 		[onSelectClip],
+	);
+
+	const handleSelectSpeed = useCallback(
+		(id: string | null) => {
+			setSelectAllBlocksActive(false);
+			onSelectSpeed?.(id);
+		},
+		[onSelectSpeed],
 	);
 
 	const handleSelectAnnotation = useCallback(
@@ -258,6 +283,7 @@ export function useTimelineSelection({
 		handleKeyframeMove,
 		deleteSelectedZoom,
 		deleteSelectedClip,
+		deleteSelectedSpeed,
 		deleteSelectedAnnotation,
 		deleteSelectedAudio,
 		deleteSelectedCaption,
@@ -265,6 +291,7 @@ export function useTimelineSelection({
 		clearSelectedBlocks,
 		handleSelectZoom,
 		handleSelectClip,
+		handleSelectSpeed,
 		handleSelectAnnotation,
 		handleSelectAudio,
 		handleSelectCaption,

@@ -155,12 +155,21 @@ export function useTimelineDndBindings({
 			buildTimelineItems({
 				zoomRegions,
 				clipRegions,
+				speedRegions,
 				annotationRegions,
 				audioRegions,
 				captionCues,
 				webcamLayouts,
 			}),
-		[zoomRegions, clipRegions, annotationRegions, audioRegions, captionCues, webcamLayouts],
+		[
+			zoomRegions,
+			clipRegions,
+			speedRegions,
+			annotationRegions,
+			audioRegions,
+			captionCues,
+			webcamLayouts,
+		],
 	);
 
 	const allRegionSpans = useMemo(
@@ -168,10 +177,11 @@ export function useTimelineDndBindings({
 			buildAllRegionSpans({
 				zoomRegions,
 				clipRegions,
+				speedRegions,
 				audioRegions,
 				webcamLayouts,
 			}),
-		[zoomRegions, clipRegions, audioRegions, webcamLayouts],
+		[zoomRegions, clipRegions, speedRegions, audioRegions, webcamLayouts],
 	);
 
 	const getResolvedDropRowId = useCallback(

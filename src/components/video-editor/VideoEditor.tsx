@@ -183,6 +183,7 @@ import {
 	RECORDLY_ISSUES_URL,
 } from "./TutorialHelp";
 import TimelineEditor, { type TimelineEditorHandle } from "./timeline/TimelineEditor";
+import { suggestTypingSpeedRegions } from "./timeline/typingSpeedSuggestions";
 import {
 	normalizeCursorTelemetry,
 	shouldAutoApplyFreshRecordingZoomsForSource,
@@ -224,6 +225,7 @@ import {
 	getClipSourceEndMs,
 	getTimelineDurationMs,
 	type Padding,
+	type PlaybackSpeed,
 	mapSourceTimeToTimelineTime as resolveSourceTimeToTimelineTime,
 	mapTimelineTimeToSourceTime as resolveTimelineTimeToSourceTime,
 	type SpeedRegion,
@@ -556,6 +558,7 @@ export default function VideoEditor() {
 	const [clipRegions, setClipRegions] = useState<ClipRegion[]>([]);
 	const [selectedClipId, setSelectedClipId] = useState<string | null>(null);
 	const [speedRegions, setSpeedRegions] = useState<SpeedRegion[]>([]);
+	const [selectedSpeedId, setSelectedSpeedId] = useState<string | null>(null);
 	const [annotationRegions, setAnnotationRegions] = useState<AnnotationRegion[]>([]);
 	const [selectedAnnotationId, setSelectedAnnotationId] = useState<string | null>(null);
 	const [audioRegions, setAudioRegions] = useState<AudioRegion[]>([]);
@@ -1966,6 +1969,7 @@ export default function VideoEditor() {
 			webcamLayouts: webcam.layouts,
 			selectedZoomId,
 			selectedClipId,
+			selectedSpeedId,
 			selectedAnnotationId,
 			selectedAudioId,
 			selectedWebcamLayoutId,
@@ -1980,6 +1984,7 @@ export default function VideoEditor() {
 		webcam.layouts,
 		selectedZoomId,
 		selectedClipId,
+		selectedSpeedId,
 		selectedAnnotationId,
 		selectedAudioId,
 		selectedWebcamLayoutId,
@@ -1997,6 +2002,7 @@ export default function VideoEditor() {
 		setWebcam((previous) => ({ ...previous, layouts: cloned.webcamLayouts ?? [] }));
 		setSelectedZoomId(cloned.selectedZoomId);
 		setSelectedClipId(cloned.selectedClipId);
+		setSelectedSpeedId(cloned.selectedSpeedId ?? null);
 		setSelectedAnnotationId(cloned.selectedAnnotationId);
 		setSelectedAudioId(cloned.selectedAudioId);
 		setSelectedWebcamLayoutId(cloned.selectedWebcamLayoutId ?? null);
@@ -2161,6 +2167,8 @@ export default function VideoEditor() {
 
 			setSelectedZoomId(null);
 			setSelectedClipId(null);
+			setSelectedSpeedId(null);
+			setSelectedSpeedId(null);
 			setSelectedAnnotationId(null);
 			setSelectedAudioId(null);
 			setSelectedWebcamLayoutId(null);
@@ -2333,6 +2341,7 @@ export default function VideoEditor() {
 		setAutoCaptionSettings((prev) => ({ ...prev, enabled: false }));
 		setSelectedZoomId(null);
 		setSelectedClipId(null);
+		setSelectedSpeedId(null);
 		setSelectedAnnotationId(null);
 		setSelectedAudioId(null);
 		setSelectedWebcamLayoutId(null);
@@ -3633,6 +3642,74 @@ export default function VideoEditor() {
 		}
 		return result;
 	}, [clipRegions, speedRegions]);
+	const typingTelemetryAvailable = useMemo(
+		() => normalizedCursorTelemetry.some((point) => point.interactionType === "key"),
+		[normalizedCursorTelemetry],
+	);
+	const handleSuggestSmartTyping = useCallback(() => {
+		const selectedClip = selectedClipId
+			? clipRegions.find((clip) => clip.id === selectedClipId)
+			: null;
+		const result = suggestTypingSpeedRegions(normalizedCursorTelemetry, {
+			totalMs: Math.max(0, Math.round(duration * 1000)),
+			existingRegions: effectiveSpeedRegions,
+			window: selectedClip
+				? { startMs: selectedClip.startMs, endMs: getClipSourceEndMs(selectedClip) }
+				: null,
+			speed: 2,
+		});
+
+		if (result.status === "no-telemetry") {
+			toast.info(
+				t(
+					"editor.timeline.noTypingTelemetry",
+					"No keyboard timing data was found. Record a new video with the updated recorder first.",
+				),
+			);
+			return;
+		}
+		if (result.status === "no-typing") {
+			toast.info(
+				t(
+					"editor.timeline.noTypingSegments",
+					"No sustained typing segments were found in this range.",
+				),
+			);
+			return;
+		}
+
+		const regions: SpeedRegion[] = result.suggestions.map((suggestion) => ({
+			id: `smart-typing-${globalThis.crypto.randomUUID()}`,
+			startMs: suggestion.startMs,
+			endMs: suggestion.endMs,
+			speed: suggestion.speed,
+		}));
+		setSpeedRegions((previous) =>
+			[...previous, ...regions].sort((left, right) => left.startMs - right.startMs),
+		);
+		setSelectedSpeedId(regions[0].id);
+		setSelectedClipId(null);
+		setSelectedZoomId(null);
+		setSelectedAnnotationId(null);
+		setSelectedAudioId(null);
+		setSelectedCaptionId(null);
+		setSelectedWebcamLayoutId(null);
+		setActiveEffectSection("clip");
+		toast.success(
+			t(
+				"editor.timeline.typingSegmentsAdded",
+				"Added {{count}} Smart Typing speed region(s).",
+				{ count: regions.length },
+			),
+		);
+	}, [
+		clipRegions,
+		duration,
+		effectiveSpeedRegions,
+		normalizedCursorTelemetry,
+		selectedClipId,
+		t,
+	]);
 	const audio = useVideoEditorAudio({
 		currentSourcePath,
 		selectedClipId,
@@ -3830,6 +3907,8 @@ export default function VideoEditor() {
 		setSelectedZoomId(id);
 		if (id) {
 			setActiveEffectSection("zoom");
+			setSelectedClipId(null);
+			setSelectedSpeedId(null);
 			setSelectedAnnotationId(null);
 			setSelectedAudioId(null);
 			setSelectedCaptionId(null);
@@ -3843,6 +3922,8 @@ export default function VideoEditor() {
 		setSelectedAnnotationId(id);
 		if (id) {
 			setSelectedZoomId(null);
+			setSelectedClipId(null);
+			setSelectedSpeedId(null);
 			setSelectedAudioId(null);
 			setSelectedCaptionId(null);
 			setSelectedWebcamLayoutId(null);
@@ -4083,6 +4164,7 @@ export default function VideoEditor() {
 		setSelectedWebcamLayoutId(id);
 		setSelectedZoomId(null);
 		setSelectedClipId(null);
+		setSelectedSpeedId(null);
 		setSelectedAnnotationId(null);
 		setSelectedAudioId(null);
 		setSelectedCaptionId(null);
@@ -4145,7 +4227,10 @@ export default function VideoEditor() {
 		setSelectedClipId(id);
 		if (id) {
 			setActiveEffectSection("clip");
+			setSelectedSpeedId(null);
 			setSelectedZoomId(null);
+			setSelectedClipId(null);
+			setSelectedSpeedId(null);
 			setSelectedAnnotationId(null);
 			setSelectedAudioId(null);
 			setSelectedCaptionId(null);
@@ -4154,6 +4239,57 @@ export default function VideoEditor() {
 			setActiveEffectSection((s) => (s === "clip" ? "scene" : s));
 		}
 	}, []);
+
+	const handleSelectSpeed = useCallback((id: string | null) => {
+		setSelectedSpeedId(id);
+		if (id) {
+			setActiveEffectSection("clip");
+			setSelectedClipId(null);
+			setSelectedZoomId(null);
+			setSelectedAnnotationId(null);
+			setSelectedAudioId(null);
+			setSelectedCaptionId(null);
+			setSelectedWebcamLayoutId(null);
+		} else {
+			setActiveEffectSection((section) => (section === "clip" ? "scene" : section));
+		}
+	}, []);
+
+	const handleSpeedSpanChange = useCallback((id: string, span: Span) => {
+		setSpeedRegions((previous) =>
+			previous
+				.map((region) =>
+					region.id === id
+						? {
+								...region,
+								startMs: Math.round(span.start),
+								endMs: Math.round(span.end),
+							}
+						: region,
+				)
+				.sort((left, right) => left.startMs - right.startMs),
+		);
+	}, []);
+
+	const handleSpeedRegionSpeedChange = useCallback(
+		(speed: PlaybackSpeed) => {
+			if (!selectedSpeedId) return;
+			setSpeedRegions((previous) =>
+				previous.map((region) =>
+					region.id === selectedSpeedId ? { ...region, speed } : region,
+				),
+			);
+		},
+		[selectedSpeedId],
+	);
+
+	const handleSpeedDelete = useCallback(
+		(id: string) => {
+			setSpeedRegions((previous) => previous.filter((region) => region.id !== id));
+			if (selectedSpeedId === id) setSelectedSpeedId(null);
+		},
+		[selectedSpeedId],
+	);
 
 	const handleClipSplit = useCallback(
 		(splitMs: number) => {
@@ -6514,6 +6650,19 @@ export default function VideoEditor() {
 								onClipSpeedChange={handleClipSpeedChange}
 								onClipMutedChange={handleClipMutedChange}
 								onClipShowSourceAudioChange={handleClipShowSourceAudioChange}
+								selectedSpeedRegionSpeed={
+									selectedSpeedId
+										? (speedRegions.find(
+												(region) => region.id === selectedSpeedId,
+											)?.speed ?? null)
+										: null
+								}
+								onSpeedRegionSpeedChange={handleSpeedRegionSpeedChange}
+								onSpeedRegionDelete={() => {
+									if (selectedSpeedId) handleSpeedDelete(selectedSpeedId);
+								}}
+								onSuggestSmartTyping={handleSuggestSmartTyping}
+								typingTelemetryAvailable={typingTelemetryAvailable}
 								onClipDelete={handleClipDelete}
 								hasClipSourceAudio={hasClipSourceAudio}
 								sourceAudioTrackMeta={audio.sourceAudioTrackMeta}
@@ -6990,6 +7139,11 @@ export default function VideoEditor() {
 						onClipSpanChange={handleClipSpanChange}
 						selectedClipId={selectedClipId}
 						onSelectClip={handleSelectClip}
+						speedRegions={speedRegions}
+						onSpeedSpanChange={handleSpeedSpanChange}
+						onSpeedDelete={handleSpeedDelete}
+						selectedSpeedId={selectedSpeedId}
+						onSelectSpeed={handleSelectSpeed}
 						audioRegions={audioRegions}
 						onAudioAdded={handleAudioAdded}
 						onAudioSpanChange={handleAudioSpanChange}

@@ -93,6 +93,7 @@ export type CursorVisualType =
 
 export type CursorInteractionType =
 	| "move"
+	| "key"
 	| "click"
 	| "double-click"
 	| "right-click"
@@ -121,7 +122,7 @@ export type NativeMacWindowSource = {
 	height?: number;
 };
 
-export type HookEventName = "mousedown" | "mouseup" | "mousemove";
+export type HookEventName = "mousedown" | "mouseup" | "mousemove" | "keydown";
 
 export type HookMouseEvent = {
 	button?: number;

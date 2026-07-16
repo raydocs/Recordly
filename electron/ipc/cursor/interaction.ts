@@ -1,21 +1,26 @@
 import fs from "node:fs";
 import { createRequire } from "node:module";
 import path from "node:path";
-import type { HookMouseEvent, UiohookLike, UiohookModuleNamespace, CursorInteractionType } from "../types";
 import {
-	isCursorCaptureActive,
-	interactionCaptureCleanup,
-	setInteractionCaptureCleanup,
 	hasLoggedInteractionHookFailure,
-	setHasLoggedInteractionHookFailure,
+	interactionCaptureCleanup,
+	isCursorCaptureActive,
 	lastLeftClick,
+	setHasLoggedInteractionHookFailure,
+	setInteractionCaptureCleanup,
 	setLastLeftClick,
 	setLinuxCursorScreenPoint,
 } from "../state";
+import type {
+	CursorInteractionType,
+	HookMouseEvent,
+	UiohookLike,
+	UiohookModuleNamespace,
+} from "../types";
 import {
-	getNormalizedCursorPoint,
 	getCursorCaptureElapsedMs,
 	getHookCursorScreenPoint,
+	getNormalizedCursorPoint,
 	isCursorCapturePaused,
 	pushCursorSample,
 } from "./telemetry";
@@ -255,11 +260,7 @@ export async function startInteractionCapture() {
 		};
 
 		const onMouseMove = (event: HookMouseEvent) => {
-			if (
-				process.platform !== "linux" ||
-				!isCursorCaptureActive ||
-				isCursorCapturePaused()
-			) {
+			if (process.platform !== "linux" || !isCursorCaptureActive || isCursorCapturePaused()) {
 				return;
 			}
 
@@ -271,8 +272,20 @@ export async function startInteractionCapture() {
 			setLinuxCursorScreenPoint({ x: point.x, y: point.y, updatedAt: Date.now() });
 		};
 
+		const onKeyDown = (_event: HookMouseEvent) => {
+			if (!isCursorCaptureActive || isCursorCapturePaused()) {
+				return;
+			}
+
+			// Privacy by design: store only the timestamp and current pointer
+			// position. Never persist the key code, modifiers, or typed text.
+			const point = getNormalizedCursorPoint();
+			pushCursorSample(point.cx, point.cy, getCursorCaptureElapsedMs(), "key");
+		};
+
 		hook.on("mousedown", onMouseDown);
 		hook.on("mouseup", onMouseUp);
+		hook.on("keydown", onKeyDown);
 		if (process.platform === "linux") {
 			hook.on("mousemove", onMouseMove);
 		}
@@ -282,12 +295,14 @@ export async function startInteractionCapture() {
 				if (typeof hook.off === "function") {
 					hook.off("mousedown", onMouseDown);
 					hook.off("mouseup", onMouseUp);
+					hook.off("keydown", onKeyDown);
 					if (process.platform === "linux") {
 						hook.off("mousemove", onMouseMove);
 					}
 				} else if (typeof hook.removeListener === "function") {
 					hook.removeListener("mousedown", onMouseDown);
 					hook.removeListener("mouseup", onMouseUp);
+					hook.removeListener("keydown", onKeyDown);
 					if (process.platform === "linux") {
 						hook.removeListener("mousemove", onMouseMove);
 					}

@@ -14,7 +14,6 @@
 		"arrow": "Pijl",
 		"blur": "Vervagen",
 		"textContent": "Tekstinhoud",
-
 		"textPlaceholder": "Voer je tekst in...",
 		"fontStyle": "Lettertype",
 		"selectStyle": "Selecteer stijl",
@@ -45,7 +44,6 @@
 		"solidColor": "Effen Kleur (Censuur)",
 		"borderRadius": "Hoekradius"
 	},
-
 	"fontStyles": {
 		"classic": "Klassiek",
 		"editor": "Editor",
@@ -137,7 +135,10 @@
 	},
 	"timeline": {
 		"expand": "Tijdlijn uitvouwen",
-		"collapse": "Tijdlijn samenvouwen"
+		"collapse": "Tijdlijn samenvouwen",
+		"noTypingTelemetry": "No keyboard timing data was found. Record a new video with the updated recorder first.",
+		"noTypingSegments": "No sustained typing segments were found in this range.",
+		"typingSegmentsAdded": "Added {{count}} Smart Typing speed region(s)."
 	},
 	"openRecordingsFolder": "Opnamemap openen"
 }
