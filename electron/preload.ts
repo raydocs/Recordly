@@ -1,5 +1,5 @@
 import { contextBridge, ipcRenderer } from "electron";
-import type { RecordingSessionData } from "./ipc/types";
+import type { RecordingSessionData, RecordingWebcamAppearance } from "./ipc/types";
 
 type NativeVideoExportWriteResult = { success: boolean; error?: string };
 type NativeVideoAudioMuxMetrics = {
@@ -747,6 +747,7 @@ contextBridge.exposeInMainWorld("electronAPI", {
 			webcamPath?: string | null;
 			timeOffsetMs?: number;
 			hideOverlayCursorByDefault?: boolean;
+			webcamAppearance?: RecordingWebcamAppearance | null;
 		},
 		options?: { preserveProjectPath?: boolean },
 	) => {

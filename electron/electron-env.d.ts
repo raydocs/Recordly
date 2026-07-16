@@ -72,6 +72,7 @@ type RendererMarketplaceReviewStatus =
 type RendererMarketplaceSearchResult =
 	import("./extensions/extensionTypes").MarketplaceSearchResult;
 type RendererRecordingSessionData = import("./ipc/types").RecordingSessionData;
+type RendererRecordingWebcamAppearance = import("./ipc/types").RecordingWebcamAppearance;
 
 interface RendererFfmpegAudioMuxMetrics {
 	tempVideoWriteMs?: number;
@@ -721,6 +722,7 @@ interface Window {
 				webcamPath?: string | null;
 				timeOffsetMs?: number;
 				hideOverlayCursorByDefault?: boolean;
+				webcamAppearance?: RendererRecordingWebcamAppearance | null;
 			},
 			options?: { preserveProjectPath?: boolean },
 		) => Promise<{ success: boolean }>;
@@ -731,6 +733,7 @@ interface Window {
 				webcamPath?: string | null;
 				timeOffsetMs?: number;
 				hideOverlayCursorByDefault?: boolean;
+				webcamAppearance?: RendererRecordingWebcamAppearance | null;
 			};
 		}>;
 		getCurrentVideoPath: () => Promise<{ success: boolean; path?: string }>;

@@ -44,11 +44,17 @@ export type NativeCaptureDiagnostics = {
 	error?: string;
 };
 
+export interface RecordingWebcamAppearance {
+	cropRegion?: { x: number; y: number; width: number; height: number }; // normalized 0-1, unmirrored source coords
+	mirror?: boolean;
+}
+
 export type RecordingSessionData = {
 	videoPath: string;
 	webcamPath?: string | null;
 	timeOffsetMs?: number;
 	hideOverlayCursorByDefault?: boolean;
+	webcamAppearance?: RecordingWebcamAppearance | null;
 };
 
 export type PauseSegment = {
@@ -61,6 +67,7 @@ export type RecordingSessionManifest = {
 	videoFileName: string;
 	webcamFileName?: string | null;
 	timeOffsetMs?: number;
+	webcamAppearance?: RecordingWebcamAppearance | null;
 };
 
 export type ProjectLibraryEntry = {

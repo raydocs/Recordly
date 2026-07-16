@@ -26,7 +26,12 @@ import {
 	saveProjectThumbnail,
   saveRecentProjectPaths,
 } from "../project/manager";
-import { persistRecordingSessionManifest, resolveRecordingSession } from "../project/session";
+import {
+	persistRecordingSessionManifest,
+	resolveRecordingSession,
+	resolveRecordingSessionManifest,
+	resolveSessionWebcamAppearanceForUpdate,
+} from "../project/session";
 import {
 	currentProjectPath,
 	currentRecordingSession,
@@ -35,6 +40,7 @@ import {
 	setCurrentRecordingSession,
 	setCurrentVideoPath,
 } from "../state";
+import type { RecordingSessionData } from "../types";
 import {
 	approveUserPath,
 	getRecordingsDir,
@@ -608,14 +614,25 @@ export function registerProjectHandlers() {
     return { success: true, webcamPath: nextSession.webcamPath ?? null }
   })
 
-  ipcMain.handle('set-current-recording-session', async (_, session: { videoPath: string; webcamPath?: string | null; timeOffsetMs?: number; hideOverlayCursorByDefault?: boolean }, options?: { preserveProjectPath?: boolean }) => {
+  ipcMain.handle('set-current-recording-session', async (_, session: RecordingSessionData, options?: { preserveProjectPath?: boolean }) => {
     const normalizedVideoPath = normalizeVideoSourcePath(session.videoPath) ?? session.videoPath
+    // When webcamAppearance is omitted, carry the stored framing so editor time-offset
+    // tweaks do not clobber crop/mirror. Explicit null clears it.
+    const existingAppearance =
+      session.webcamAppearance === undefined
+        ? (await resolveRecordingSessionManifest(normalizedVideoPath))?.webcamAppearance
+        : undefined
+    const webcamAppearance = resolveSessionWebcamAppearanceForUpdate(
+      session.webcamAppearance,
+      existingAppearance,
+    )
     setCurrentVideoPath(normalizedVideoPath)
     setCurrentRecordingSession({
       videoPath: normalizedVideoPath,
       webcamPath: normalizeVideoSourcePath(session.webcamPath ?? null),
       timeOffsetMs: normalizeRecordingTimeOffsetMs(session.timeOffsetMs),
       hideOverlayCursorByDefault: normalizeBoolean(session.hideOverlayCursorByDefault),
+      webcamAppearance,
     });
     await rememberApprovedLocalReadPath(currentRecordingSession!.videoPath)
     await rememberApprovedLocalReadPath(currentRecordingSession!.webcamPath)
