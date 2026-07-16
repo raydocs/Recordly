@@ -143,6 +143,8 @@ function LaunchWindowContent() {
 	const {
 		showFloatingWebcamPreview,
 		setShowFloatingWebcamPreview,
+		webcamPreviewAppearance,
+		updateWebcamPreviewAppearance,
 		showRecordingWebcamPreview,
 		webcamPreviewOffset,
 		recordingWebcamPreviewContainerRef,
@@ -310,6 +312,8 @@ function LaunchWindowContent() {
 				onToggleFloatingPreview={() => setShowFloatingWebcamPreview((current) => !current)}
 				showWebcamControls={showWebcamControls}
 				setWebcamPreviewNode={setWebcamPreviewNode}
+				previewAppearance={webcamPreviewAppearance}
+				onPreviewAppearanceChange={updateWebcamPreviewAppearance}
 				videoDevices={videoDevices}
 				webcamDeviceId={webcamDeviceId}
 				selectedVideoDeviceId={selectedVideoDeviceId}
@@ -538,6 +542,9 @@ function LaunchWindowContent() {
 								title={t("recording.webcam")}
 								style={{
 									transform: `translate(${webcamPreviewOffset.x}px, ${webcamPreviewOffset.y}px)`,
+									width: webcamPreviewAppearance.size,
+									height: webcamPreviewAppearance.size,
+									borderRadius: `${webcamPreviewAppearance.roundness / 2}%`,
 								}}
 								onMouseEnter={handleHudMouseEnter}
 								onMouseLeave={handleHudMouseLeave}
@@ -551,7 +558,9 @@ function LaunchWindowContent() {
 									className={styles.recordingWebcamPreviewVideo}
 									muted
 									playsInline
-									style={{ transform: "scaleX(-1)" }}
+									style={{
+										transform: `scaleX(-1) scale(${webcamPreviewAppearance.zoom})`,
+									}}
 								/>
 							</div>
 						)}
