@@ -1,19 +1,33 @@
 import { loadAppSetting, saveAppSetting } from "@/lib/appSettings";
 
+export type WebcamPreviewFitMode = "fill" | "fit";
+
 export interface WebcamPreviewAppearance {
 	size: number;
 	roundness: number;
+	// Zoom multiplies the fitMode baseline: fill@1 ≈ CSS cover, fit@1 ≈ CSS contain.
+	// Switching fitMode keeps the zoom number (visual jump accepted).
 	zoom: number;
+	fitMode: WebcamPreviewFitMode;
+	/** Framing center in UNMIRRORED source coords, 0–1. */
+	centerX: number;
+	/** Framing center in source coords, 0–1. */
+	centerY: number;
+	mirror: boolean;
 }
 
 export const WEBCAM_PREVIEW_APPEARANCE_STORAGE_KEY = "recordly.hud.webcamPreviewAppearance";
 export const WEBCAM_PREVIEW_SIZE_RANGE = { min: 144, max: 320 } as const;
-export const WEBCAM_PREVIEW_ZOOM_RANGE = { min: 1, max: 1.5 } as const;
+export const WEBCAM_PREVIEW_ZOOM_RANGE = { min: 0.8, max: 1.5 } as const;
 
 export const DEFAULT_WEBCAM_PREVIEW_APPEARANCE: WebcamPreviewAppearance = {
 	size: 208,
 	roundness: 100,
 	zoom: 1,
+	fitMode: "fill",
+	centerX: 0.5,
+	centerY: 0.5,
+	mirror: true,
 };
 
 function clamp(value: number, min: number, max: number): number {
@@ -22,6 +36,14 @@ function clamp(value: number, min: number, max: number): number {
 
 function finiteOr(value: unknown, fallback: number): number {
 	return typeof value === "number" && Number.isFinite(value) ? value : fallback;
+}
+
+function normalizeFitMode(value: unknown): WebcamPreviewFitMode {
+	return value === "fill" || value === "fit" ? value : "fill";
+}
+
+function normalizeCenter(value: unknown, fallback: number): number {
+	return Math.round(clamp(finiteOr(value, fallback), 0, 1) * 1000) / 1000;
 }
 
 export function normalizeWebcamPreviewAppearance(value: unknown): WebcamPreviewAppearance {
@@ -45,13 +67,30 @@ export function normalizeWebcamPreviewAppearance(value: unknown): WebcamPreviewA
 					WEBCAM_PREVIEW_ZOOM_RANGE.max,
 				) * 100,
 			) / 100,
+		fitMode: normalizeFitMode(raw.fitMode),
+		centerX: normalizeCenter(raw.centerX, DEFAULT_WEBCAM_PREVIEW_APPEARANCE.centerX),
+		centerY: normalizeCenter(raw.centerY, DEFAULT_WEBCAM_PREVIEW_APPEARANCE.centerY),
+		mirror: typeof raw.mirror === "boolean" ? raw.mirror : true,
 	};
 }
 
+/** Live in-memory appearance so record-start can avoid debounce-stale disk loads. */
+let currentWebcamPreviewAppearance: WebcamPreviewAppearance | null = null;
+
+export function cacheWebcamPreviewAppearance(value: WebcamPreviewAppearance): void {
+	currentWebcamPreviewAppearance = value;
+}
+
+export function getCurrentWebcamPreviewAppearance(): WebcamPreviewAppearance {
+	return currentWebcamPreviewAppearance ?? loadWebcamPreviewAppearance();
+}
+
 export function loadWebcamPreviewAppearance(): WebcamPreviewAppearance {
-	return normalizeWebcamPreviewAppearance(
+	const appearance = normalizeWebcamPreviewAppearance(
 		loadAppSetting<unknown>(WEBCAM_PREVIEW_APPEARANCE_STORAGE_KEY),
 	);
+	currentWebcamPreviewAppearance = appearance;
+	return appearance;
 }
 
 export function saveWebcamPreviewAppearance(value: WebcamPreviewAppearance): boolean {

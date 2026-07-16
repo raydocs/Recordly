@@ -8,7 +8,7 @@ export interface VideoDevice {
 
 let hasRequestedVideoLabels = false;
 
-export function useVideoDevices(enabled: boolean = true) {
+export function useVideoDevices(enabled: boolean = true, preferredDeviceId?: string) {
 	const [devices, setDevices] = useState<VideoDevice[]>([]);
 	const [selectedDeviceId, setSelectedDeviceId] = useState<string>("default");
 	const [isLoading, setIsLoading] = useState(false);
@@ -63,8 +63,13 @@ export function useVideoDevices(enabled: boolean = true) {
 				if (mounted && loadId === activeLoadId) {
 					setDevices(videoInputs);
 					setSelectedDeviceId((currentDeviceId) => {
-						if (currentDeviceId === "default" && videoInputs.length > 0) {
-							return videoInputs[0].deviceId;
+						const normalizedPreferredDeviceId = preferredDeviceId ?? "default";
+						if (
+							videoInputs.some(
+								(device) => device.deviceId === normalizedPreferredDeviceId,
+							)
+						) {
+							return normalizedPreferredDeviceId;
 						}
 
 						if (
@@ -106,7 +111,7 @@ export function useVideoDevices(enabled: boolean = true) {
 			mounted = false;
 			navigator.mediaDevices.removeEventListener("devicechange", handleDeviceChange);
 		};
-	}, [enabled]);
+	}, [enabled, preferredDeviceId]);
 
 	return {
 		devices,

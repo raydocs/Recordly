@@ -12,7 +12,7 @@ import {
 	XIcon,
 } from "@phosphor-icons/react";
 import { AnimatePresence, motion } from "motion/react";
-import { useEffect, useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { RxDragHandleDots2 } from "react-icons/rx";
 import { Separator } from "@/components/ui/separator";
 import { useScopedT } from "../../contexts/I18nContext";
@@ -41,6 +41,8 @@ import { SourcePopover } from "./popovers/SourcePopover";
 import { WebcamPopover } from "./popovers/WebcamPopover";
 import { RecordingControls } from "./RecordingControls";
 import { MarqueeText } from "./SourceSelector";
+import { computeWebcamFramingLayout } from "./webcamPreviewFraming";
+import { WEBCAM_PREVIEW_ANCHOR } from "./webcamPreviewPlacement";
 
 const SHOW_DEV_UPDATE_PREVIEW = import.meta.env.DEV;
 
@@ -113,7 +115,7 @@ function LaunchWindowContent() {
 		devices: videoDevices,
 		selectedDeviceId: selectedVideoDeviceId,
 		setSelectedDeviceId: setSelectedVideoDeviceId,
-	} = useVideoDevices(webcamEnabled || openId === "webcam");
+	} = useVideoDevices(webcamEnabled || openId === "webcam", webcamDeviceId);
 
 	const {
 		hudOverlayMousePassthroughSupported,
@@ -135,10 +137,14 @@ function LaunchWindowContent() {
 	}, [selectedDeviceId, setMicrophoneDeviceId]);
 
 	useEffect(() => {
-		if (selectedVideoDeviceId && selectedVideoDeviceId !== "default") {
+		if (
+			selectedVideoDeviceId &&
+			selectedVideoDeviceId !== "default" &&
+			selectedVideoDeviceId !== webcamDeviceId
+		) {
 			setWebcamDeviceId(selectedVideoDeviceId);
 		}
-	}, [selectedVideoDeviceId, setWebcamDeviceId]);
+	}, [selectedVideoDeviceId, setWebcamDeviceId, webcamDeviceId]);
 
 	const {
 		showFloatingWebcamPreview,
@@ -147,6 +153,7 @@ function LaunchWindowContent() {
 		updateWebcamPreviewAppearance,
 		showRecordingWebcamPreview,
 		webcamPreviewOffset,
+		videoAspect,
 		recordingWebcamPreviewContainerRef,
 		isWebcamPreviewDraggingRef,
 		webcamPreviewDragStartRef,
@@ -154,14 +161,44 @@ function LaunchWindowContent() {
 		handleWebcamPreviewPointerMove,
 		handleWebcamPreviewPointerUp,
 		setWebcamPreviewNode,
+		setWebcamPreviewBackdropNode,
 		setRecordingWebcamPreviewNode,
+		setRecordingWebcamPreviewBackdropNode,
 	} = useWebcamPreviewOverlay({
 		webcamEnabled,
 		webcamDeviceId,
 		showWebcamControls,
 		webcamPopoverOpen: openId === "webcam",
 		hudOverlayMousePassthroughSupported,
+		onWebcamPreviewUnavailable: () => setWebcamEnabled(false),
 	});
+
+	const floatingWebcamFramingLayout = useMemo(
+		() =>
+			computeWebcamFramingLayout(
+				{
+					zoom: webcamPreviewAppearance.zoom,
+					fitMode: webcamPreviewAppearance.fitMode,
+					centerX: webcamPreviewAppearance.centerX,
+					centerY: webcamPreviewAppearance.centerY,
+					mirror: webcamPreviewAppearance.mirror,
+				},
+				{
+					width: webcamPreviewAppearance.size,
+					height: webcamPreviewAppearance.size,
+				},
+				videoAspect,
+			),
+		[
+			webcamPreviewAppearance.zoom,
+			webcamPreviewAppearance.fitMode,
+			webcamPreviewAppearance.centerX,
+			webcamPreviewAppearance.centerY,
+			webcamPreviewAppearance.mirror,
+			webcamPreviewAppearance.size,
+			videoAspect,
+		],
+	);
 
 	useEffect(() => {
 		window.electronAPI?.hudOverlaySetWebcamPreviewVisible?.(showRecordingWebcamPreview);
@@ -312,8 +349,10 @@ function LaunchWindowContent() {
 				onToggleFloatingPreview={() => setShowFloatingWebcamPreview((current) => !current)}
 				showWebcamControls={showWebcamControls}
 				setWebcamPreviewNode={setWebcamPreviewNode}
+				setWebcamPreviewBackdropNode={setWebcamPreviewBackdropNode}
 				previewAppearance={webcamPreviewAppearance}
 				onPreviewAppearanceChange={updateWebcamPreviewAppearance}
+				videoAspect={videoAspect}
 				videoDevices={videoDevices}
 				webcamDeviceId={webcamDeviceId}
 				selectedVideoDeviceId={selectedVideoDeviceId}
@@ -541,6 +580,8 @@ function LaunchWindowContent() {
 								data-hud-interactive
 								title={t("recording.webcam")}
 								style={{
+									right: WEBCAM_PREVIEW_ANCHOR.right,
+									bottom: WEBCAM_PREVIEW_ANCHOR.bottom,
 									transform: `translate(${webcamPreviewOffset.x}px, ${webcamPreviewOffset.y}px)`,
 									width: webcamPreviewAppearance.size,
 									height: webcamPreviewAppearance.size,
@@ -553,13 +594,32 @@ function LaunchWindowContent() {
 								onPointerUp={handleWebcamPreviewPointerUp}
 								onPointerCancel={handleWebcamPreviewPointerUp}
 							>
+								{floatingWebcamFramingLayout.showBackdrop && (
+									<video
+										ref={setRecordingWebcamPreviewBackdropNode}
+										className={styles.webcamPreviewBackdrop}
+										muted
+										playsInline
+										style={{
+											transform: webcamPreviewAppearance.mirror
+												? "scale(1.2) scaleX(-1)"
+												: "scale(1.2)",
+										}}
+									/>
+								)}
 								<video
 									ref={setRecordingWebcamPreviewNode}
-									className={styles.recordingWebcamPreviewVideo}
+									className={styles.webcamPreviewFrame}
 									muted
 									playsInline
 									style={{
-										transform: `scaleX(-1) scale(${webcamPreviewAppearance.zoom})`,
+										left: floatingWebcamFramingLayout.video.left,
+										top: floatingWebcamFramingLayout.video.top,
+										width: floatingWebcamFramingLayout.video.width,
+										height: floatingWebcamFramingLayout.video.height,
+										transform: webcamPreviewAppearance.mirror
+											? "scaleX(-1)"
+											: undefined,
 									}}
 								/>
 							</div>

@@ -1,17 +1,34 @@
 import {
 	Eye,
 	EyeSlash as EyeOff,
+	FlipHorizontal,
 	VideoCamera as Video,
 	VideoCameraSlash as VideoOff,
 } from "@phosphor-icons/react";
+import {
+	type ReactElement,
+	type PointerEvent as ReactPointerEvent,
+	useCallback,
+	useMemo,
+	useRef,
+	useState,
+} from "react";
 import { useScopedT } from "@/contexts/I18nContext";
-import { DropdownItem, HudPopover } from "./PopoverScaffold";
+import type { WebcamPreviewAppearance } from "../webcamPreviewAppearance";
+import { WEBCAM_PREVIEW_ZOOM_RANGE } from "../webcamPreviewAppearance";
+import {
+	applyWebcamFramingDrag,
+	computeWebcamFramingLayout,
+	type WebcamFramingLayout,
+} from "../webcamPreviewFraming";
 import { useLaunchPopoverCoordinator } from "./LaunchPopoverCoordinator";
 import type { DeviceOption } from "./launchPopoverTypes";
-import type { ReactElement } from "react";
-import type { WebcamPreviewAppearance } from "../webcamPreviewAppearance";
+import { DropdownItem, HudPopover } from "./PopoverScaffold";
 
 const POPOVER_ID = "webcam";
+const THUMBNAIL_SIZE = 96;
+const FRAME_TRANSITION =
+	"left 180ms cubic-bezier(0.22, 1, 0.36, 1), top 180ms cubic-bezier(0.22, 1, 0.36, 1), width 180ms cubic-bezier(0.22, 1, 0.36, 1), height 180ms cubic-bezier(0.22, 1, 0.36, 1)";
 
 export function WebcamPopover({
 	trigger,
@@ -23,8 +40,10 @@ export function WebcamPopover({
 	onToggleFloatingPreview,
 	showWebcamControls,
 	setWebcamPreviewNode,
+	setWebcamPreviewBackdropNode,
 	previewAppearance,
 	onPreviewAppearanceChange,
+	videoAspect,
 	videoDevices,
 	webcamDeviceId,
 	selectedVideoDeviceId,
@@ -39,8 +58,10 @@ export function WebcamPopover({
 	onToggleFloatingPreview: () => void;
 	showWebcamControls: boolean;
 	setWebcamPreviewNode: (node: HTMLVideoElement | null) => void;
+	setWebcamPreviewBackdropNode: (node: HTMLVideoElement | null) => void;
 	previewAppearance: WebcamPreviewAppearance;
 	onPreviewAppearanceChange: (patch: Partial<WebcamPreviewAppearance>) => void;
+	videoAspect: number;
 	videoDevices: DeviceOption[];
 	webcamDeviceId?: string;
 	selectedVideoDeviceId?: string;
@@ -49,6 +70,159 @@ export function WebcamPopover({
 	const t = useScopedT("launch");
 	const { isOpen, requestOpen, requestClose } = useLaunchPopoverCoordinator();
 	const open = isOpen(POPOVER_ID);
+
+	const [draftCenter, setDraftCenter] = useState<{
+		centerX: number;
+		centerY: number;
+	} | null>(null);
+	const framingDragRef = useRef<{
+		pointerId: number;
+		startX: number;
+		startY: number;
+		startCenterX: number;
+		startCenterY: number;
+		layoutAtStart: WebcamFramingLayout;
+	} | null>(null);
+	const draftCenterRef = useRef(draftCenter);
+	draftCenterRef.current = draftCenter;
+
+	const effectiveCenterX = draftCenter?.centerX ?? previewAppearance.centerX;
+	const effectiveCenterY = draftCenter?.centerY ?? previewAppearance.centerY;
+	const isFramingDragging = draftCenter !== null;
+
+	const thumbnailFramingLayout = useMemo(
+		() =>
+			computeWebcamFramingLayout(
+				{
+					zoom: previewAppearance.zoom,
+					fitMode: previewAppearance.fitMode,
+					centerX: effectiveCenterX,
+					centerY: effectiveCenterY,
+					mirror: previewAppearance.mirror,
+				},
+				{ width: THUMBNAIL_SIZE, height: THUMBNAIL_SIZE },
+				videoAspect,
+			),
+		[
+			previewAppearance.zoom,
+			previewAppearance.fitMode,
+			effectiveCenterX,
+			effectiveCenterY,
+			previewAppearance.mirror,
+			videoAspect,
+		],
+	);
+
+	const isPannable = thumbnailFramingLayout.pannableX || thumbnailFramingLayout.pannableY;
+
+	const handleFramingPointerDown = useCallback(
+		(event: ReactPointerEvent<HTMLDivElement>) => {
+			if (event.button !== 0) {
+				return;
+			}
+
+			const layout = computeWebcamFramingLayout(
+				{
+					zoom: previewAppearance.zoom,
+					fitMode: previewAppearance.fitMode,
+					centerX: previewAppearance.centerX,
+					centerY: previewAppearance.centerY,
+					mirror: previewAppearance.mirror,
+				},
+				{ width: THUMBNAIL_SIZE, height: THUMBNAIL_SIZE },
+				videoAspect,
+			);
+			if (!layout.pannableX && !layout.pannableY) {
+				return;
+			}
+
+			event.preventDefault();
+			event.stopPropagation();
+			event.currentTarget.setPointerCapture(event.pointerId);
+			framingDragRef.current = {
+				pointerId: event.pointerId,
+				startX: event.clientX,
+				startY: event.clientY,
+				startCenterX: previewAppearance.centerX,
+				startCenterY: previewAppearance.centerY,
+				layoutAtStart: layout,
+			};
+			setDraftCenter({
+				centerX: previewAppearance.centerX,
+				centerY: previewAppearance.centerY,
+			});
+		},
+		[
+			previewAppearance.zoom,
+			previewAppearance.fitMode,
+			previewAppearance.centerX,
+			previewAppearance.centerY,
+			previewAppearance.mirror,
+			videoAspect,
+		],
+	);
+
+	const handleFramingPointerMove = useCallback(
+		(event: ReactPointerEvent<HTMLDivElement>) => {
+			const drag = framingDragRef.current;
+			if (!drag || drag.pointerId !== event.pointerId) {
+				return;
+			}
+
+			const next = applyWebcamFramingDrag(
+				drag.layoutAtStart,
+				{
+					x: event.clientX - drag.startX,
+					y: event.clientY - drag.startY,
+				},
+				{
+					zoom: previewAppearance.zoom,
+					fitMode: previewAppearance.fitMode,
+					centerX: drag.startCenterX,
+					centerY: drag.startCenterY,
+					mirror: previewAppearance.mirror,
+				},
+			);
+			setDraftCenter(next);
+		},
+		[previewAppearance.zoom, previewAppearance.fitMode, previewAppearance.mirror],
+	);
+
+	const endFramingDrag = useCallback(
+		(event: ReactPointerEvent<HTMLDivElement>) => {
+			const drag = framingDragRef.current;
+			if (!drag || drag.pointerId !== event.pointerId) {
+				return;
+			}
+
+			framingDragRef.current = null;
+			if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+				event.currentTarget.releasePointerCapture(event.pointerId);
+			}
+
+			const draft = draftCenterRef.current;
+			setDraftCenter(null);
+			if (draft) {
+				onPreviewAppearanceChange({
+					centerX: draft.centerX,
+					centerY: draft.centerY,
+				});
+			}
+		},
+		[onPreviewAppearanceChange],
+	);
+
+	const handleFramingDoubleClick = useCallback(() => {
+		if (framingDragRef.current) {
+			return;
+		}
+		onPreviewAppearanceChange({ centerX: 0.5, centerY: 0.5 });
+	}, [onPreviewAppearanceChange]);
+
+	const showResetFraming =
+		previewAppearance.centerX !== 0.5 ||
+		previewAppearance.centerY !== 0.5 ||
+		previewAppearance.zoom !== 1;
 
 	return (
 		<HudPopover
@@ -93,6 +267,15 @@ export function WebcamPopover({
 								: t("recording.showFloatingWebcamPreview")}
 						</DropdownItem>
 					) : null}
+					<DropdownItem
+						icon={<FlipHorizontal size={16} />}
+						selected={previewAppearance.mirror}
+						onClick={() =>
+							onPreviewAppearanceChange({ mirror: !previewAppearance.mirror })
+						}
+					>
+						{t("recording.webcamPreviewMirror", "Mirror camera")}
+					</DropdownItem>
 				</>
 			)}
 			{!webcamEnabled && (
@@ -101,21 +284,78 @@ export function WebcamPopover({
 				</div>
 			)}
 			{showWebcamControls && (
-				<div className="flex justify-center px-3 py-2">
+				<div className="flex flex-col items-center px-3 py-2">
 					<div
-						className="h-24 w-24 overflow-hidden bg-[var(--launch-hover)] ring-1 ring-[var(--launch-border-strong)]"
-						style={{ borderRadius: `${previewAppearance.roundness / 2}%` }}
+						className="relative h-24 w-24 overflow-hidden bg-[var(--launch-hover)] ring-1 ring-[var(--launch-border-strong)]"
+						style={{
+							borderRadius: `${previewAppearance.roundness / 2}%`,
+							cursor: isPannable
+								? isFramingDragging
+									? "grabbing"
+									: "grab"
+								: "default",
+							touchAction: "none",
+						}}
+						onPointerDown={handleFramingPointerDown}
+						onPointerMove={handleFramingPointerMove}
+						onPointerUp={endFramingDrag}
+						onPointerCancel={endFramingDrag}
+						onDoubleClick={handleFramingDoubleClick}
 					>
+						{thumbnailFramingLayout.showBackdrop && (
+							<video
+								ref={setWebcamPreviewBackdropNode}
+								muted
+								playsInline
+								style={{
+									position: "absolute",
+									inset: 0,
+									width: "100%",
+									height: "100%",
+									objectFit: "cover",
+									filter: "blur(18px) saturate(1.1) brightness(0.85)",
+									borderRadius: "inherit",
+									contain: "paint",
+									pointerEvents: "none",
+									transform: previewAppearance.mirror
+										? "scale(1.2) scaleX(-1)"
+										: "scale(1.2)",
+								}}
+							/>
+						)}
 						<video
 							ref={setWebcamPreviewNode}
-							className="h-full w-full object-cover"
 							muted
 							playsInline
 							style={{
-								transform: `scaleX(-1) scale(${previewAppearance.zoom})`,
+								position: "absolute",
+								objectFit: "fill",
+								transformOrigin: "center",
+								left: thumbnailFramingLayout.video.left,
+								top: thumbnailFramingLayout.video.top,
+								width: thumbnailFramingLayout.video.width,
+								height: thumbnailFramingLayout.video.height,
+								transform: previewAppearance.mirror ? "scaleX(-1)" : undefined,
+								transition: isFramingDragging ? undefined : FRAME_TRANSITION,
+								pointerEvents: "none",
 							}}
 						/>
 					</div>
+					{showResetFraming ? (
+						<button
+							type="button"
+							className="mt-1.5 text-[10px] text-[var(--launch-text-muted)] hover:text-[var(--launch-text)] transition-colors"
+							onClick={() =>
+								onPreviewAppearanceChange({
+									centerX: 0.5,
+									centerY: 0.5,
+									zoom: 1,
+								})
+							}
+						>
+							{t("recording.webcamPreviewResetFraming", "Reset framing")}
+						</button>
+					) : null}
 				</div>
 			)}
 			{webcamEnabled && (
@@ -141,12 +381,48 @@ export function WebcamPopover({
 					<WebcamPreviewSlider
 						label={t("recording.webcamPreviewZoom", "Framing zoom")}
 						valueLabel={`${Math.round(previewAppearance.zoom * 100)}%`}
-						min={100}
-						max={150}
+						min={Math.round(WEBCAM_PREVIEW_ZOOM_RANGE.min * 100)}
+						max={Math.round(WEBCAM_PREVIEW_ZOOM_RANGE.max * 100)}
 						step={5}
 						value={Math.round(previewAppearance.zoom * 100)}
 						onChange={(zoom) => onPreviewAppearanceChange({ zoom: zoom / 100 })}
 					/>
+					<div className="mt-1">
+						<span className="mb-1 block text-[11px] text-[var(--launch-text-muted)]">
+							{t("recording.webcamPreviewFitMode", "Fit mode")}
+						</span>
+						<div className="flex gap-1 rounded-lg bg-[var(--launch-hover)] p-0.5">
+							{(
+								[
+									{
+										mode: "fill" as const,
+										label: t("recording.webcamPreviewFill", "Fill"),
+									},
+									{
+										mode: "fit" as const,
+										label: t("recording.webcamPreviewFit", "Fit"),
+									},
+								] as const
+							).map(({ mode, label }) => {
+								const selected = previewAppearance.fitMode === mode;
+								return (
+									<button
+										key={mode}
+										type="button"
+										className={`flex-1 rounded-md px-2 py-1 text-[11px] transition-colors ${
+											selected
+												? "bg-[var(--launch-selected)] text-[var(--launch-accent)] font-medium"
+												: "text-[var(--launch-text-muted)] hover:text-[var(--launch-text)]"
+										}`}
+										aria-pressed={selected}
+										onClick={() => onPreviewAppearanceChange({ fitMode: mode })}
+									>
+										{label}
+									</button>
+								);
+							})}
+						</div>
+					</div>
 				</div>
 			)}
 			{videoDevices.map((device) => (

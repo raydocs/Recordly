@@ -1,6 +1,7 @@
 import { fixWebmDuration } from "@fix-webm-duration/fix";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
+import { getCurrentWebcamPreviewAppearance } from "@/components/launch/webcamPreviewAppearance";
 import { getEffectiveRecordingDurationMs } from "@/lib/mediaTiming";
 import {
 	getVideoExtensionForMimeType,
@@ -8,6 +9,11 @@ import {
 	selectRecordingMimeType,
 	selectWebcamRecordingMimeType,
 } from "./recordingMimeType";
+import {
+	buildRecordingWebcamAppearance,
+	type RecordingWebcamAppearanceSnapshot,
+} from "./recordingWebcamAppearance";
+import { loadWebcamDeviceSettings, saveWebcamDeviceSettings } from "./webcamDeviceSettings";
 
 const TARGET_FRAME_RATE = 60;
 const TARGET_WIDTH = 3840;
@@ -332,8 +338,17 @@ export function useScreenRecorder(): UseScreenRecorderReturn {
 	const [systemAudioEnabled, setSystemAudioEnabled] = useState(false);
 	const [voiceEnhancementMode, setVoiceEnhancementMode] =
 		useState<VoiceEnhancementMode>("standard");
-	const [webcamEnabled, setWebcamEnabled] = useState(false);
-	const [webcamDeviceId, setWebcamDeviceId] = useState<string | undefined>(undefined);
+	const [webcamEnabled, setWebcamEnabled] = useState(() => loadWebcamDeviceSettings().enabled);
+	const [webcamDeviceId, setWebcamDeviceId] = useState<string | undefined>(
+		() => loadWebcamDeviceSettings().deviceId ?? undefined,
+	);
+
+	useEffect(() => {
+		saveWebcamDeviceSettings({
+			deviceId: webcamDeviceId ?? null,
+			enabled: webcamEnabled,
+		});
+	}, [webcamDeviceId, webcamEnabled]);
 	const [countdownDelay, setCountdownDelayState] = useState(3);
 	const mediaRecorder = useRef<MediaRecorder | null>(null);
 	const webcamRecorder = useRef<MediaRecorder | null>(null);
@@ -359,6 +374,7 @@ export function useScreenRecorder(): UseScreenRecorderReturn {
 	const webcamStopPromise = useRef<Promise<string | null> | null>(null);
 	const webcamStopResolver = useRef<((path: string | null) => void) | null>(null);
 	const resolvedWebcamPath = useRef<string | null>(null);
+	const recordingWebcamAppearanceRef = useRef<RecordingWebcamAppearanceSnapshot | null>(null);
 	const accumulatedPausedDurationMs = useRef(0);
 	const pauseStartedAtMs = useRef<number | null>(null);
 	const micFallbackRecorder = useRef<MediaRecorder | null>(null);
@@ -693,7 +709,9 @@ export function useScreenRecorder(): UseScreenRecorderReturn {
 						webcamPath,
 						timeOffsetMs: webcamTimeOffsetMs.current,
 						hideOverlayCursorByDefault: shouldHideOverlayCursor,
+						webcamAppearance: recordingWebcamAppearanceRef.current ?? undefined,
 					});
+					recordingWebcamAppearanceRef.current = null;
 				} else {
 					await window.electronAPI.setCurrentVideoPath(videoPath, {
 						hideOverlayCursorByDefault: shouldHideOverlayCursor,
@@ -957,6 +975,7 @@ export function useScreenRecorder(): UseScreenRecorderReturn {
 			pendingWebcamPathPromise.current = Promise.resolve(null);
 			webcamStartTime.current = null;
 			webcamTimeOffsetMs.current = 0;
+			recordingWebcamAppearanceRef.current = null;
 			return;
 		}
 
@@ -967,15 +986,23 @@ export function useScreenRecorder(): UseScreenRecorderReturn {
 							deviceId: { exact: webcamDeviceId },
 							width: { ideal: WEBCAM_WIDTH },
 							height: { ideal: WEBCAM_HEIGHT },
+							aspectRatio: { ideal: 16 / 9 },
 							frameRate: { ideal: WEBCAM_FRAME_RATE, max: WEBCAM_FRAME_RATE },
 						}
 					: {
 							width: { ideal: WEBCAM_WIDTH },
 							height: { ideal: WEBCAM_HEIGHT },
+							aspectRatio: { ideal: 16 / 9 },
 							frameRate: { ideal: WEBCAM_FRAME_RATE, max: WEBCAM_FRAME_RATE },
 						},
 				audio: false,
 			});
+
+			const videoTrack = webcamStream.current.getVideoTracks()[0];
+			recordingWebcamAppearanceRef.current = buildRecordingWebcamAppearance(
+				getCurrentWebcamPreviewAppearance(),
+				videoTrack?.getSettings(),
+			);
 
 			const mimeType = selectWebcamMimeType();
 			webcamChunks.current = [];
@@ -1053,6 +1080,7 @@ export function useScreenRecorder(): UseScreenRecorderReturn {
 			webcamRecorder.current = null;
 			webcamStartTime.current = null;
 			webcamTimeOffsetMs.current = 0;
+			recordingWebcamAppearanceRef.current = null;
 			if (webcamStream.current) {
 				webcamStream.current.getTracks().forEach((track) => track.stop());
 				webcamStream.current = null;
@@ -1172,7 +1200,13 @@ export function useScreenRecorder(): UseScreenRecorderReturn {
 							webcamPath,
 							timeOffsetMs: webcamTimeOffsetMs.current,
 							hideOverlayCursorByDefault: hideEditorOverlayCursorByDefault.current,
+							webcamAppearance: webcamPath
+								? (recordingWebcamAppearanceRef.current ?? undefined)
+								: undefined,
 						});
+						if (webcamPath) {
+							recordingWebcamAppearanceRef.current = null;
+						}
 
 						console.log(
 							`[PERF:RENDERER] Background Stop Sequence: COMPLETED in ${(performance.now() - stopStart).toFixed(2)}ms`,
@@ -1496,6 +1530,7 @@ export function useScreenRecorder(): UseScreenRecorderReturn {
 						setRecording(false);
 						cleanupCapturedMedia();
 						await stopWebcamRecorder();
+						recordingWebcamAppearanceRef.current = null;
 						return;
 					}
 				}
@@ -1884,7 +1919,10 @@ export function useScreenRecorder(): UseScreenRecorderReturn {
 										timeOffsetMs: webcamTimeOffsetMs.current,
 										hideOverlayCursorByDefault:
 											hideEditorOverlayCursorByDefault.current,
+										webcamAppearance:
+											recordingWebcamAppearanceRef.current ?? undefined,
 									});
+									recordingWebcamAppearanceRef.current = null;
 								}
 							} finally {
 								// After all background tasks are done (webcam),
@@ -1938,6 +1976,7 @@ export function useScreenRecorder(): UseScreenRecorderReturn {
 			} finally {
 				cleanupCapturedMedia();
 				await stopWebcamRecorder();
+				recordingWebcamAppearanceRef.current = null;
 			}
 		} finally {
 			setHudSourceSelectionActive(false);
@@ -2055,6 +2094,7 @@ export function useScreenRecorder(): UseScreenRecorderReturn {
 		webcamStream.current = null;
 		pendingWebcamPathPromise.current = null;
 		resolvedWebcamPath.current = null;
+		recordingWebcamAppearanceRef.current = null;
 
 		if (nativeScreenRecording.current) {
 			nativeScreenRecording.current = false;
