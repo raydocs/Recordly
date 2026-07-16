@@ -9,7 +9,7 @@ copying.
 | Area | Recordly status | Next fidelity work |
 | --- | --- | --- |
 | Click auto zoom, manual zoom, zoom depth and animation | Available | Per-region instant animation and disable toggle |
-| Smooth cursor, cursor themes, click effects | Available | Hide-on-idle and per-section cursor visibility |
+| Smooth cursor, cursor themes, click effects | Available | Per-clip cursor hiding and raw-pointer mode are available; next is hide-on-idle |
 | Background, padding, crop, aspect ratio, device frames | Available | More bundled glass/wallpaper presets |
 | Trim, clips, speed regions, audio gain/normalization | Available | Smart Typing now detects private key timestamps and suggests 2× regions |
 | Webcam crop, mirror, 9 positions, custom placement | Available | Dynamic fullscreen/default/hidden camera layouts are available |
@@ -20,7 +20,7 @@ copying.
 
 ## Major remaining feature groups
 
-1. Smart editing: masks/highlights, per-region cursor visibility and command menu.
+1. Smart editing: masks/highlights, hide-on-idle cursor behavior and command menu.
 2. Audio workflow: bundled background music library and per-track AI cleanup controls.
 3. Capture workflow: speaker notes/teleprompter, iPhone mirroring and recovery diagnostics.
 4. Sharing workflow: quick export, batch export, shareable links and comments.

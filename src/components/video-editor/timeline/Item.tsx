@@ -37,6 +37,8 @@ interface ItemProps {
 	waveformGain?: number;
 	waveformNormalize?: boolean;
 	muted?: boolean;
+	hideCursor?: boolean;
+	disableCursorSmoothing?: boolean;
 	variant?:
 		| "zoom"
 		| "trim"
@@ -87,6 +89,8 @@ export default function Item({
 	waveformGain = 1,
 	waveformNormalize = false,
 	muted = false,
+	hideCursor = false,
+	disableCursorSmoothing = false,
 	variant = "zoom",
 	webcamLayoutMode = "fullscreen",
 	isLoading = false,
@@ -257,6 +261,22 @@ export default function Item({
 									{clipSpeedLabel && (
 										<span className="rounded-[4px] bg-black/10 px-1 text-[9px] font-bold tabular-nums text-black/65 dark:bg-white/15 dark:text-white/80">
 											{clipSpeedLabel}
+										</span>
+									)}
+									{hideCursor && (
+										<span
+											className="inline-flex h-4 items-center rounded-[4px] bg-black/10 px-1 text-black/65 dark:bg-white/15 dark:text-white/80"
+											title="Mouse cursor hidden in this clip"
+										>
+											<EyeSlash className="h-2.5 w-2.5" />
+										</span>
+									)}
+									{disableCursorSmoothing && (
+										<span
+											className="rounded-[4px] bg-black/10 px-1 text-[8px] font-bold uppercase text-black/65 dark:bg-white/15 dark:text-white/80"
+											title="Smooth mouse movement disabled in this clip"
+										>
+											Raw
 										</span>
 									)}
 								</>

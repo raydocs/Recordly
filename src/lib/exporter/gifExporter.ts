@@ -3,6 +3,7 @@ import type {
 	AnnotationRegion,
 	AutoCaptionSettings,
 	CaptionCue,
+	ClipRegion,
 	CursorClickEffectStyle,
 	CropRegion,
 	CursorStyle,
@@ -40,6 +41,7 @@ interface GifExporterConfig {
 	zoomRegions: ZoomRegion[];
 	trimRegions?: TrimRegion[];
 	speedRegions?: SpeedRegion[];
+	clipRegions?: ClipRegion[];
 	showShadow: boolean;
 	shadowIntensity: number;
 	backgroundBlur: number;
@@ -171,6 +173,7 @@ export function buildGifFrameRendererConfig(
 		autoCaptions: config.autoCaptions,
 		autoCaptionSettings: config.autoCaptionSettings,
 		speedRegions: config.speedRegions,
+		clipRegions: config.clipRegions,
 		previewWidth: config.previewWidth,
 		previewHeight: config.previewHeight,
 		cursorTelemetry: config.cursorTelemetry,

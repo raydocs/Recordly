@@ -274,6 +274,15 @@ describe("GIF renderer config", () => {
 				cursorClickEffectScale: 1.4,
 				cursorClickEffectOpacity: 0.65,
 				cursorClickEffectDurationMs: 720,
+				clipRegions: [
+					{
+						id: "clip-1",
+						startMs: 0,
+						endMs: 1_000,
+						speed: 1,
+						hideCursor: true,
+					},
+				],
 			} as never,
 			{ width: 1920, height: 1080 },
 		);
@@ -284,6 +293,7 @@ describe("GIF renderer config", () => {
 			cursorClickEffectScale: 1.4,
 			cursorClickEffectOpacity: 0.65,
 			cursorClickEffectDurationMs: 720,
+			clipRegions: [expect.objectContaining({ id: "clip-1", hideCursor: true })],
 		});
 	});
 });

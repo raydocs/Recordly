@@ -27,7 +27,12 @@
 		"mutedState": "오디오가 음소거됨",
 		"unmutedState": "오디오가 재생 중",
 		"separateClipFromAudio": "클립에서 오디오 분리",
-		"delete": "클립 삭제"
+		"delete": "클립 삭제",
+		"cursor": "Cursor",
+		"hideCursor": "Hide mouse cursor",
+		"hideCursorDescription": "Hide the cursor only in this clip",
+		"disableCursorSmoothing": "Disable smooth mouse movement",
+		"disableCursorSmoothingDescription": "Use the original captured pointer movement"
 	},
 	"effects": {
 		"title": "비디오 효과",

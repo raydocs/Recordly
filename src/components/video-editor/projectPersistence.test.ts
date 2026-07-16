@@ -59,4 +59,24 @@ describe("normalizeProjectEditor", () => {
 			{ id: "hide", startMs: 5000, endMs: 5001, mode: "hidden" },
 		]);
 	});
+
+	it("preserves per-clip cursor presentation overrides", () => {
+		const editor = normalizeProjectEditor({
+			clipRegions: [
+				{
+					id: "clip-private",
+					startMs: 0,
+					endMs: 2_000,
+					speed: 1,
+					hideCursor: true,
+					disableCursorSmoothing: true,
+				},
+			],
+		});
+
+		expect(editor.clipRegions[0]).toMatchObject({
+			hideCursor: true,
+			disableCursorSmoothing: true,
+		});
+	});
 });

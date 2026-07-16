@@ -639,6 +639,8 @@ const TimelineCanvasRows = memo(function TimelineCanvasRows({
 						onSelectId={onSelectClip}
 						variant="clip"
 						speedValue={item.speedValue}
+						hideCursor={item.hideCursor}
+						disableCursorSmoothing={item.disableCursorSmoothing}
 					>
 						{item.label}
 					</Item>

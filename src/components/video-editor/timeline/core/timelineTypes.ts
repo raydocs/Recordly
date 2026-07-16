@@ -42,6 +42,8 @@ export interface TimelineRenderItem {
 	speedValue?: number;
 	showSourceAudio?: boolean;
 	muted?: boolean;
+	hideCursor?: boolean;
+	disableCursorSmoothing?: boolean;
 	variant:
 		| "zoom"
 		| "trim"

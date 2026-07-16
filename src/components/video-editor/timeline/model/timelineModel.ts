@@ -93,6 +93,8 @@ export function buildTimelineItems(params: {
 			speedValue: speedLabel ? speed : undefined,
 			showSourceAudio: region.showSourceAudio,
 			muted: Boolean(region.muted),
+			hideCursor: Boolean(region.hideCursor),
+			disableCursorSmoothing: Boolean(region.disableCursorSmoothing),
 			variant: "clip",
 		};
 	});

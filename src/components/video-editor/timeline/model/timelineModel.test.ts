@@ -74,7 +74,16 @@ describe("timeline model", () => {
 	it("exposes clip speed for non-default speed labels", () => {
 		const items = buildTimelineItems({
 			zoomRegions: [],
-			clipRegions: [{ id: "c1", startMs: 0, endMs: 8000, speed: 0.5 }],
+			clipRegions: [
+				{
+					id: "c1",
+					startMs: 0,
+					endMs: 8000,
+					speed: 0.5,
+					hideCursor: true,
+					disableCursorSmoothing: true,
+				},
+			],
 			annotationRegions: [],
 			audioRegions: [],
 		});
@@ -83,6 +92,8 @@ describe("timeline model", () => {
 			id: "c1",
 			label: "Clip 1 0.5x",
 			speedValue: 0.5,
+			hideCursor: true,
+			disableCursorSmoothing: true,
 		});
 	});
 

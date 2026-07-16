@@ -87,6 +87,7 @@ import {
 	getAspectRatioValue,
 } from "@/utils/aspectRatioUtils";
 import { planClipSpeedChange } from "./clipSpeedChange";
+import { getClipCursorPresentationAtSourceTime } from "./clipCursorPresentation";
 import { ExtensionIcon } from "./ExtensionIcon";
 import {
 	calculateMp4ExportDimensions,
@@ -1189,6 +1190,7 @@ export default function VideoEditor() {
 					videoWidth: previewVideo.videoWidth,
 					videoHeight: previewVideo.videoHeight,
 					annotationRegions,
+					clipRegions,
 					autoCaptions,
 					autoCaptionSettings,
 					speedRegions: (() => {
@@ -3551,12 +3553,6 @@ export default function VideoEditor() {
 				}
 
 				setClipRegions(nextClipRegions);
-				if (speedRegions.length > 0) {
-					// Legacy speed regions no longer have dedicated editing surfaces.
-					// Clear them during clip bootstrap so old projects do not keep
-					// hidden playback changes that users cannot inspect or edit.
-					setSpeedRegions([]);
-				}
 			}
 			clipInitializedRef.current = true;
 			return;
@@ -3572,7 +3568,7 @@ export default function VideoEditor() {
 
 		autoFullTrackClipEndMsRef.current = totalMs;
 		setClipRegions(extendedClipRegions);
-	}, [duration, clipRegions, trimRegions, speedRegions]);
+	}, [duration, clipRegions, trimRegions]);
 
 	// Derive trimRegions from clipRegions so export/playback pipelines stay unchanged
 	useEffect(() => {
@@ -3615,6 +3611,14 @@ export default function VideoEditor() {
 		() => mapSourceTimeToTimelineTime(currentTime * 1000) / 1000,
 		[currentTime, mapSourceTimeToTimelineTime],
 	);
+	const activeClipCursorPresentation = useMemo(
+		() => getClipCursorPresentationAtSourceTime(clipRegions, currentTime * 1000),
+		[clipRegions, currentTime],
+	);
+	const previewShowCursor = effectiveShowCursor && activeClipCursorPresentation.visible;
+	const previewCursorSmoothing = activeClipCursorPresentation.smoothingEnabled
+		? cursorSmoothing
+		: 0;
 	const timelineDuration = useMemo(
 		() => getTimelineDurationMs(clipRegions, duration * 1000) / 1000,
 		[clipRegions, duration],
@@ -4299,18 +4303,16 @@ export default function VideoEditor() {
 				const leftId = `clip-${nextClipIdRef.current++}`;
 				const rightId = `clip-${nextClipIdRef.current++}`;
 				const left: ClipRegion = {
+					...target,
 					id: leftId,
 					startMs: target.startMs,
 					endMs: Math.round(splitMs),
-					speed: target.speed,
-					muted: target.muted,
 				};
 				const right: ClipRegion = {
+					...target,
 					id: rightId,
 					startMs: Math.round(splitMs),
 					endMs: target.endMs,
-					speed: target.speed,
-					muted: target.muted,
 				};
 				if (selectedClipId === target.id) {
 					setSelectedClipId(leftId);
@@ -4439,6 +4441,30 @@ export default function VideoEditor() {
 			setClipRegions((prev) =>
 				prev.map((clip) =>
 					clip.id === selectedClipId ? { ...clip, showSourceAudio } : clip,
+				),
+			);
+		},
+		[selectedClipId],
+	);
+
+	const handleClipHideCursorChange = useCallback(
+		(hideCursor: boolean) => {
+			if (!selectedClipId) return;
+			setClipRegions((previous) =>
+				previous.map((clip) =>
+					clip.id === selectedClipId ? { ...clip, hideCursor } : clip,
+				),
+			);
+		},
+		[selectedClipId],
+	);
+
+	const handleClipDisableCursorSmoothingChange = useCallback(
+		(disableCursorSmoothing: boolean) => {
+			if (!selectedClipId) return;
+			setClipRegions((previous) =>
+				previous.map((clip) =>
+					clip.id === selectedClipId ? { ...clip, disableCursorSmoothing } : clip,
 				),
 			);
 		},
@@ -4911,6 +4937,7 @@ export default function VideoEditor() {
 							resolvedWebcamVideoUrl ??
 							(webcam.sourcePath ? toFileUrl(webcam.sourcePath) : null),
 						annotationRegions,
+						clipRegions,
 						autoCaptions,
 						autoCaptionSettings,
 						zoomRegions: effectiveZoomRegions,
@@ -5841,10 +5868,10 @@ export default function VideoEditor() {
 			onAnnotationPositionChange={handleAnnotationPositionChange}
 			onAnnotationSizeChange={handleAnnotationSizeChange}
 			cursorTelemetry={effectiveCursorTelemetry}
-			showCursor={effectiveShowCursor}
+			showCursor={previewShowCursor}
 			cursorStyle={cursorStyle}
 			cursorSize={cursorSize}
-			cursorSmoothing={cursorSmoothing}
+			cursorSmoothing={previewCursorSmoothing}
 			cursorSpringStiffnessMultiplier={cursorSpringStiffnessMultiplier}
 			cursorSpringDampingMultiplier={cursorSpringDampingMultiplier}
 			cursorSpringMassMultiplier={cursorSpringMassMultiplier}
@@ -6647,9 +6674,25 @@ export default function VideoEditor() {
 												?.showSourceAudio ?? false)
 										: null
 								}
+								selectedClipHideCursor={
+									selectedClipId
+										? (clipRegions.find((clip) => clip.id === selectedClipId)
+												?.hideCursor ?? false)
+										: null
+								}
+								selectedClipDisableCursorSmoothing={
+									selectedClipId
+										? (clipRegions.find((clip) => clip.id === selectedClipId)
+												?.disableCursorSmoothing ?? false)
+										: null
+								}
 								onClipSpeedChange={handleClipSpeedChange}
 								onClipMutedChange={handleClipMutedChange}
 								onClipShowSourceAudioChange={handleClipShowSourceAudioChange}
+								onClipHideCursorChange={handleClipHideCursorChange}
+								onClipDisableCursorSmoothingChange={
+									handleClipDisableCursorSmoothingChange
+								}
 								selectedSpeedRegionSpeed={
 									selectedSpeedId
 										? (speedRegions.find(

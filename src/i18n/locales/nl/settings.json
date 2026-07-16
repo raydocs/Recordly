@@ -27,7 +27,12 @@
 		"mutedState": "Audio is gedempt",
 		"unmutedState": "Audio wordt afgespeeld",
 		"separateClipFromAudio": "Clip van audio scheiden",
-		"delete": "Clip verwijderen"
+		"delete": "Clip verwijderen",
+		"cursor": "Cursor",
+		"hideCursor": "Hide mouse cursor",
+		"hideCursorDescription": "Hide the cursor only in this clip",
+		"disableCursorSmoothing": "Disable smooth mouse movement",
+		"disableCursorSmoothingDescription": "Use the original captured pointer movement"
 	},
 	"effects": {
 		"title": "Video-effecten",

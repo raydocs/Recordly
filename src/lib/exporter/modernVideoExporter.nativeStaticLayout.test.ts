@@ -266,6 +266,31 @@ describe("ModernVideoExporter native static-layout eligibility", () => {
 		).toBe("unsupported-cursor-click-effect");
 	});
 
+	it("uses the canvas renderer for per-clip cursor presentation", () => {
+		const exporter = createExporter({
+			clipRegions: [
+				{
+					id: "clip-1",
+					startMs: 0,
+					endMs: 2_000,
+					speed: 1,
+					hideCursor: true,
+				},
+			],
+		});
+
+		expect(
+			exporter.getNativeStaticLayoutSkipReason(
+				{
+					audioMode: "copy-source",
+					audioSourcePath: "recording.mp4",
+				},
+				videoInfo,
+				60,
+			),
+		).toBe("unsupported-dynamic-clip-cursor");
+	});
+
 	it("skips native static-layout when click effects are enabled and cursor is hidden", () => {
 		const exporter = createExporter({
 			showCursor: false,

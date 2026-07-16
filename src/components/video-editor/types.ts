@@ -243,6 +243,10 @@ export interface ClipRegion {
 	speed: number;
 	muted?: boolean;
 	showSourceAudio?: boolean;
+	/** Hide the reconstructed cursor only while this clip is active. */
+	hideCursor?: boolean;
+	/** Use raw captured cursor positions instead of the smoothing spring. */
+	disableCursorSmoothing?: boolean;
 }
 
 export function getClipSourceEndMs(clip: ClipRegion): number {

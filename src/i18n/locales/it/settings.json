@@ -27,7 +27,12 @@
 		"mutedState": "Audio disattivato",
 		"unmutedState": "Audio in riproduzione",
 		"separateClipFromAudio": "Separa clip dall'audio",
-		"delete": "Elimina clip"
+		"delete": "Elimina clip",
+		"cursor": "Cursor",
+		"hideCursor": "Hide mouse cursor",
+		"hideCursorDescription": "Hide the cursor only in this clip",
+		"disableCursorSmoothing": "Disable smooth mouse movement",
+		"disableCursorSmoothingDescription": "Use the original captured pointer movement"
 	},
 	"effects": {
 		"title": "Effetti video",

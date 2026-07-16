@@ -714,11 +714,15 @@ interface SettingsPanelProps {
 	selectedClipSpeed?: number | null;
 	selectedClipMuted?: boolean | null;
 	selectedClipShowSourceAudio?: boolean | null;
+	selectedClipHideCursor?: boolean | null;
+	selectedClipDisableCursorSmoothing?: boolean | null;
 	selectedSpeedRegionSpeed?: PlaybackSpeed | null;
 	hasClipSourceAudio?: boolean;
 	onClipSpeedChange?: (speed: number) => void;
 	onClipMutedChange?: (muted: boolean) => void;
 	onClipShowSourceAudioChange?: (show: boolean) => void;
+	onClipHideCursorChange?: (hide: boolean) => void;
+	onClipDisableCursorSmoothingChange?: (disable: boolean) => void;
 	onSpeedRegionSpeedChange?: (speed: PlaybackSpeed) => void;
 	onSpeedRegionDelete?: () => void;
 	onSuggestSmartTyping?: () => void;
@@ -1184,11 +1188,15 @@ export function SettingsPanel({
 	selectedClipSpeed,
 	selectedClipMuted,
 	selectedClipShowSourceAudio = false,
+	selectedClipHideCursor = false,
+	selectedClipDisableCursorSmoothing = false,
 	selectedSpeedRegionSpeed = null,
 	hasClipSourceAudio = false,
 	onClipSpeedChange,
 	onClipMutedChange,
 	onClipShowSourceAudioChange,
+	onClipHideCursorChange,
+	onClipDisableCursorSmoothingChange,
 	onSpeedRegionSpeedChange,
 	onSpeedRegionDelete,
 	onSuggestSmartTyping,
@@ -3580,6 +3588,53 @@ export function SettingsPanel({
 							);
 						})}
 				</div>
+
+				{selectedSpeedRegionSpeed == null && selectedClipId && (
+					<div className="mt-2 flex flex-col gap-2 border-t border-foreground/5 pt-3">
+						<SectionLabel>{tSettings("clip.cursor", "Cursor")}</SectionLabel>
+						<div className="flex items-center justify-between rounded-lg bg-foreground/[0.03] px-2.5 py-1.5">
+							<div className="pr-3">
+								<span className="text-[10px] text-muted-foreground">
+									{tSettings("clip.hideCursor", "Hide mouse cursor")}
+								</span>
+								<p className="mt-0.5 text-[9px] text-muted-foreground/50">
+									{tSettings(
+										"clip.hideCursorDescription",
+										"Only hides the cursor in this clip",
+									)}
+								</p>
+							</div>
+							<Switch
+								checked={Boolean(selectedClipHideCursor)}
+								onCheckedChange={(value) => onClipHideCursorChange?.(value)}
+								className="data-[state=checked]:bg-[#2563EB] scale-75"
+							/>
+						</div>
+						<div className="flex items-center justify-between rounded-lg bg-foreground/[0.03] px-2.5 py-1.5">
+							<div className="pr-3">
+								<span className="text-[10px] text-muted-foreground">
+									{tSettings(
+										"clip.disableCursorSmoothing",
+										"Disable smooth mouse movement",
+									)}
+								</span>
+								<p className="mt-0.5 text-[9px] text-muted-foreground/50">
+									{tSettings(
+										"clip.disableCursorSmoothingDescription",
+										"Uses the original captured pointer motion",
+									)}
+								</p>
+							</div>
+							<Switch
+								checked={Boolean(selectedClipDisableCursorSmoothing)}
+								onCheckedChange={(value) =>
+									onClipDisableCursorSmoothingChange?.(value)
+								}
+								className="data-[state=checked]:bg-[#2563EB] scale-75"
+							/>
+						</div>
+					</div>
+				)}
 
 				{selectedSpeedRegionSpeed == null && (
 					<div className="mt-2 flex flex-col gap-2 border-t border-foreground/5 pt-3">

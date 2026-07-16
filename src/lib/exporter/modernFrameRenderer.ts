@@ -15,6 +15,7 @@ import type {
 	AnnotationRegion,
 	AutoCaptionSettings,
 	CaptionCue,
+	ClipRegion,
 	CropRegion,
 	CursorClickEffectStyle,
 	CursorStyle,
@@ -26,6 +27,7 @@ import type {
 	ZoomRegion,
 	ZoomTransitionEasing,
 } from "@/components/video-editor/types";
+import { getClipCursorPresentationAtSourceTime } from "@/components/video-editor/clipCursorPresentation";
 import { getDefaultCaptionFontFamily, ZOOM_DEPTH_SCALES } from "@/components/video-editor/types";
 import { DEFAULT_FOCUS } from "@/components/video-editor/videoPlayback/constants";
 import {
@@ -142,6 +144,7 @@ interface FrameRenderConfig {
 	autoCaptions?: CaptionCue[];
 	autoCaptionSettings?: AutoCaptionSettings;
 	speedRegions?: SpeedRegion[];
+	clipRegions?: ClipRegion[];
 	previewWidth?: number;
 	previewHeight?: number;
 	cursorTelemetry?: CursorTelemetryPoint[];
@@ -3012,11 +3015,20 @@ export class FrameRenderer {
 		const cursorTimeMs = cursorTimestamp / 1000;
 
 		if (this.cursorOverlay) {
+			const cursorPresentation = getClipCursorPresentationAtSourceTime(
+				this.config.clipRegions,
+				cursorTimeMs,
+			);
+			this.cursorOverlay.setSmoothingFactor(
+				cursorPresentation.smoothingEnabled
+					? (this.config.cursorSmoothing ?? DEFAULT_CURSOR_CONFIG.smoothingFactor)
+					: 0,
+			);
 			this.cursorOverlay.update(
 				this.config.cursorTelemetry ?? [],
 				cursorTimeMs,
 				layoutCache.maskRect,
-				this.config.showCursor ?? true,
+				(this.config.showCursor ?? true) && cursorPresentation.visible,
 				false,
 			);
 		}
@@ -3266,11 +3278,20 @@ export class FrameRenderer {
 		const cursorTimeMs = cursorTimestamp / 1000;
 
 		if (this.cursorOverlay) {
+			const cursorPresentation = getClipCursorPresentationAtSourceTime(
+				this.config.clipRegions,
+				cursorTimeMs,
+			);
+			this.cursorOverlay.setSmoothingFactor(
+				cursorPresentation.smoothingEnabled
+					? (this.config.cursorSmoothing ?? DEFAULT_CURSOR_CONFIG.smoothingFactor)
+					: 0,
+			);
 			this.cursorOverlay.update(
 				this.config.cursorTelemetry ?? [],
 				cursorTimeMs,
 				layoutCache.maskRect,
-				this.config.showCursor ?? true,
+				(this.config.showCursor ?? true) && cursorPresentation.visible,
 				false,
 			);
 		}

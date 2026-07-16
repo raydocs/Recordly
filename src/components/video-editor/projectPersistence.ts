@@ -530,6 +530,12 @@ export function normalizeProjectEditor(editor: Partial<ProjectEditorState>): Pro
 							typeof region.showSourceAudio === "boolean"
 								? region.showSourceAudio
 								: false,
+						hideCursor:
+							typeof region.hideCursor === "boolean" ? region.hideCursor : false,
+						disableCursorSmoothing:
+							typeof region.disableCursorSmoothing === "boolean"
+								? region.disableCursorSmoothing
+								: false,
 					};
 				})
 		: [];

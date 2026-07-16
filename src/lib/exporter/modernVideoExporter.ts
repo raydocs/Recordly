@@ -627,6 +627,7 @@ export class ModernVideoExporter {
 					autoCaptions: this.config.autoCaptions,
 					autoCaptionSettings: this.config.autoCaptionSettings,
 					speedRegions: this.config.speedRegions,
+					clipRegions: this.config.clipRegions,
 					previewWidth: this.config.previewWidth,
 					previewHeight: this.config.previewHeight,
 					cursorTelemetry: this.config.cursorTelemetry,
@@ -1575,6 +1576,13 @@ export class ModernVideoExporter {
 		}
 		if ((this.config.autoCaptions ?? []).length > 0) {
 			reasons.push("unsupported-caption-overlay");
+		}
+		if (
+			(this.config.clipRegions ?? []).some(
+				(clip) => clip.hideCursor || clip.disableCursorSmoothing,
+			)
+		) {
+			reasons.push("unsupported-dynamic-clip-cursor");
 		}
 
 		if (this.config.webcam?.enabled && !this.getNativeWebcamSourcePath()) {
