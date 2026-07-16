@@ -93,6 +93,8 @@ describe("editorPreferences", () => {
 		expect(DEFAULT_EDITOR_PREFERENCES.cursorSway).toBe(0.4);
 		expect(DEFAULT_EDITOR_PREFERENCES.hideCursorWhenIdle).toBe(false);
 		expect(DEFAULT_EDITOR_PREFERENCES.removeCursorShakes).toBe(false);
+		expect(DEFAULT_EDITOR_PREFERENCES.alwaysUseDefaultCursor).toBe(false);
+		expect(DEFAULT_EDITOR_PREFERENCES.optimizeCursorTypes).toBe(false);
 	});
 
 	it("defaults MP4 exports to the Lightning pipeline", () => {
@@ -271,6 +273,8 @@ describe("editorPreferences", () => {
 			showCursor: false,
 			hideCursorWhenIdle: true,
 			removeCursorShakes: true,
+			alwaysUseDefaultCursor: true,
+			optimizeCursorTypes: true,
 			loopCursor: true,
 			cursorStyle: "figma",
 			cursorSize: 3,
@@ -308,6 +312,8 @@ describe("editorPreferences", () => {
 			showCursor: false,
 			hideCursorWhenIdle: true,
 			removeCursorShakes: true,
+			alwaysUseDefaultCursor: true,
+			optimizeCursorTypes: true,
 			loopCursor: true,
 			cursorStyle: "figma",
 			cursorSize: DEFAULT_EDITOR_PREFERENCES.cursorSize,

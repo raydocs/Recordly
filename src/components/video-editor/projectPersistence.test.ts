@@ -14,6 +14,16 @@ describe("normalizeProjectEditor", () => {
 		expect(normalizeProjectEditor({ removeCursorShakes: true }).removeCursorShakes).toBe(true);
 	});
 
+	it("persists advanced cursor-type controls while keeping them opt-in", () => {
+		expect(normalizeProjectEditor({})).toMatchObject({
+			alwaysUseDefaultCursor: false,
+			optimizeCursorTypes: false,
+		});
+		expect(
+			normalizeProjectEditor({ alwaysUseDefaultCursor: true, optimizeCursorTypes: true }),
+		).toMatchObject({ alwaysUseDefaultCursor: true, optimizeCursorTypes: true });
+	});
+
 	it("preserves the extended advanced vertical padding range", () => {
 		const editor = normalizeProjectEditor({
 			padding: {

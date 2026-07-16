@@ -42,6 +42,10 @@
 		"hideCursorWhenIdleDescription": "Автоматически скрывать, когда указатель перестаёт двигаться",
 		"removeCursorShakes": "Убирать дрожание курсора",
 		"removeCursorShakesDescription": "Убирает короткие скачки указателя, вызванные средствами доступности",
+		"alwaysUseDefaultCursor": "Всегда использовать стандартный курсор",
+		"alwaysUseDefaultCursorDescription": "Сохраняет единый курсор вместо смены вместе с интерфейсом",
+		"optimizeCursorTypes": "Оптимизировать исходные типы курсора",
+		"optimizeCursorTypesDescription": "Уменьшает быстрое мерцание типов, сохраняя намеренные изменения",
 		"loopCursor": "Зациклить курсор",
 		"cursorStyle": "Стиль курсора",
 		"cursorStyleOptions": {

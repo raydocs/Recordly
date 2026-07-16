@@ -42,6 +42,10 @@
 		"hideCursorWhenIdleDescription": "指针停止移动后自动隐藏，移动或点击时重新出现",
 		"removeCursorShakes": "移除光标抖动",
 		"removeCursorShakesDescription": "移除辅助功能工具引起的短暂指针跳动",
+		"alwaysUseDefaultCursor": "始终使用默认光标",
+		"alwaysUseDefaultCursorDescription": "保持统一的光标，不随界面控件变化",
+		"optimizeCursorTypes": "优化原始光标类型",
+		"optimizeCursorTypesDescription": "减少快速的光标类型闪烁，同时保留有意的变化",
 		"loopCursor": "循环光标",
 		"cursorStyle": "光标样式",
 		"cursorStyleOptions": {

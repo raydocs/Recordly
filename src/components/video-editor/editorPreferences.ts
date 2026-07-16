@@ -30,6 +30,8 @@ type PersistedEditorControls = Pick<
 	| "showCursor"
 	| "hideCursorWhenIdle"
 	| "removeCursorShakes"
+	| "alwaysUseDefaultCursor"
+	| "optimizeCursorTypes"
 	| "loopCursor"
 	| "cursorStyle"
 	| "cursorSize"
@@ -120,6 +122,8 @@ export const DEFAULT_EDITOR_PREFERENCES: EditorPreferences = {
 	showCursor: DEFAULT_EDITOR_CONTROLS.showCursor,
 	hideCursorWhenIdle: DEFAULT_EDITOR_CONTROLS.hideCursorWhenIdle,
 	removeCursorShakes: DEFAULT_EDITOR_CONTROLS.removeCursorShakes,
+	alwaysUseDefaultCursor: DEFAULT_EDITOR_CONTROLS.alwaysUseDefaultCursor,
+	optimizeCursorTypes: DEFAULT_EDITOR_CONTROLS.optimizeCursorTypes,
 	loopCursor: DEFAULT_EDITOR_CONTROLS.loopCursor,
 	cursorStyle: DEFAULT_EDITOR_CONTROLS.cursorStyle,
 	cursorSize: DEFAULT_EDITOR_CONTROLS.cursorSize,
@@ -308,6 +312,9 @@ function normalizeEditorControls(
 		showCursor: sanitizedRaw.showCursor ?? fallback.showCursor,
 		hideCursorWhenIdle: sanitizedRaw.hideCursorWhenIdle ?? fallback.hideCursorWhenIdle,
 		removeCursorShakes: sanitizedRaw.removeCursorShakes ?? fallback.removeCursorShakes,
+		alwaysUseDefaultCursor:
+			sanitizedRaw.alwaysUseDefaultCursor ?? fallback.alwaysUseDefaultCursor,
+		optimizeCursorTypes: sanitizedRaw.optimizeCursorTypes ?? fallback.optimizeCursorTypes,
 		loopCursor: sanitizedRaw.loopCursor ?? fallback.loopCursor,
 		cursorStyle: sanitizedRaw.cursorStyle ?? fallback.cursorStyle,
 		cursorSize: sanitizedRaw.cursorSize ?? fallback.cursorSize,
@@ -392,6 +399,8 @@ function normalizeEditorControls(
 		showCursor: normalized.showCursor,
 		hideCursorWhenIdle: normalized.hideCursorWhenIdle,
 		removeCursorShakes: normalized.removeCursorShakes,
+		alwaysUseDefaultCursor: normalized.alwaysUseDefaultCursor,
+		optimizeCursorTypes: normalized.optimizeCursorTypes,
 		loopCursor: normalized.loopCursor,
 		cursorStyle: normalized.cursorStyle,
 		cursorSize: normalized.cursorSize,

@@ -107,6 +107,8 @@ export interface ProjectEditorState {
 	showCursor: boolean;
 	hideCursorWhenIdle: boolean;
 	removeCursorShakes: boolean;
+	alwaysUseDefaultCursor: boolean;
+	optimizeCursorTypes: boolean;
 	loopCursor: boolean;
 	cursorStyle: CursorStyle;
 	cursorClickEffect: CursorClickEffectStyle;
@@ -961,6 +963,12 @@ export function normalizeProjectEditor(editor: Partial<ProjectEditorState>): Pro
 			typeof editor.hideCursorWhenIdle === "boolean" ? editor.hideCursorWhenIdle : false,
 		removeCursorShakes:
 			typeof editor.removeCursorShakes === "boolean" ? editor.removeCursorShakes : false,
+		alwaysUseDefaultCursor:
+			typeof editor.alwaysUseDefaultCursor === "boolean"
+				? editor.alwaysUseDefaultCursor
+				: false,
+		optimizeCursorTypes:
+			typeof editor.optimizeCursorTypes === "boolean" ? editor.optimizeCursorTypes : false,
 		loopCursor: typeof editor.loopCursor === "boolean" ? editor.loopCursor : false,
 		cursorStyle: normalizedCursorStyle,
 		cursorClickEffect: normalizeCursorClickEffectStyle(

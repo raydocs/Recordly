@@ -42,6 +42,10 @@
 		"hideCursorWhenIdleDescription": "Automatisch verbergen wanneer de aanwijzer niet meer beweegt",
 		"removeCursorShakes": "Cursorschokken verwijderen",
 		"removeCursorShakesDescription": "Verwijdert korte aanwijzersprongen veroorzaakt door toegankelijkheidstools",
+		"alwaysUseDefaultCursor": "Altijd de standaardcursor gebruiken",
+		"alwaysUseDefaultCursorDescription": "Behoudt één consistente cursor in plaats van mee te veranderen met de interface",
+		"optimizeCursorTypes": "Oorspronkelijke cursortypen optimaliseren",
+		"optimizeCursorTypesDescription": "Vermindert snel geflikker tussen cursortypen en behoudt bewuste wijzigingen",
 		"loopCursor": "Cursor herhalen",
 		"cursorStyle": "Cursorstijl",
 		"cursorStyleOptions": {

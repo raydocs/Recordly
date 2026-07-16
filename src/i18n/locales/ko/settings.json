@@ -42,6 +42,10 @@
 		"hideCursorWhenIdleDescription": "포인터가 움직이지 않으면 자동으로 숨깁니다",
 		"removeCursorShakes": "커서 흔들림 제거",
 		"removeCursorShakesDescription": "손쉬운 사용 도구로 인한 짧은 포인터 튐을 제거합니다",
+		"alwaysUseDefaultCursor": "항상 기본 커서 사용",
+		"alwaysUseDefaultCursorDescription": "인터페이스에 따라 바뀌지 않고 일관된 커서를 유지합니다",
+		"optimizeCursorTypes": "원본 커서 유형 최적화",
+		"optimizeCursorTypesDescription": "의도적인 변경은 유지하면서 빠른 커서 유형 깜박임을 줄입니다",
 		"loopCursor": "커서 반복",
 		"cursorStyle": "커서 스타일",
 		"cursorStyleOptions": {

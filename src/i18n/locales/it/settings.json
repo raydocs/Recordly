@@ -42,6 +42,10 @@
 		"hideCursorWhenIdleDescription": "Nascondilo automaticamente quando il puntatore smette di muoversi",
 		"removeCursorShakes": "Rimuovi tremolii del cursore",
 		"removeCursorShakesDescription": "Rimuove i brevi salti del puntatore causati dagli strumenti di accessibilità",
+		"alwaysUseDefaultCursor": "Usa sempre il cursore predefinito",
+		"alwaysUseDefaultCursorDescription": "Mantiene un cursore uniforme invece di cambiarlo con l’interfaccia",
+		"optimizeCursorTypes": "Ottimizza i tipi di cursore originali",
+		"optimizeCursorTypesDescription": "Riduce i rapidi cambi di cursore mantenendo quelli intenzionali",
 		"loopCursor": "Cursore in loop",
 		"cursorStyle": "Stile cursore",
 		"cursorStyleOptions": {

@@ -42,6 +42,10 @@
 		"hideCursorWhenIdleDescription": "Ocultar automaticamente quando o ponteiro parar de se mover",
 		"removeCursorShakes": "Remover tremores do cursor",
 		"removeCursorShakesDescription": "Remove saltos breves do ponteiro causados por ferramentas de acessibilidade",
+		"alwaysUseDefaultCursor": "Sempre usar o cursor padrão",
+		"alwaysUseDefaultCursorDescription": "Mantém um cursor consistente em vez de mudar com a interface",
+		"optimizeCursorTypes": "Otimizar tipos de cursor originais",
+		"optimizeCursorTypesDescription": "Reduz oscilações rápidas de tipo mantendo alterações intencionais",
 		"loopCursor": "Loop do cursor",
 		"cursorStyle": "Estilo do cursor",
 		"cursorStyleOptions": {

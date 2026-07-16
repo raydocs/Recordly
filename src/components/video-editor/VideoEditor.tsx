@@ -253,6 +253,10 @@ import {
 	getDisplayedTimelineWindowMs,
 } from "./videoPlayback/cursorLoopTelemetry";
 import { removeCursorShakes as cleanCursorShakes } from "./videoPlayback/cursorShakeRemoval";
+import {
+	forceDefaultCursorType,
+	optimizeOriginalCursorTypes,
+} from "./videoPlayback/cursorTypeOptimization";
 
 type PendingExportSave = {
 	fileName: string;
@@ -490,6 +494,12 @@ export default function VideoEditor() {
 	);
 	const [removeCursorShakesEnabled, setRemoveCursorShakesEnabled] = useState(
 		initialEditorPreferences.removeCursorShakes,
+	);
+	const [alwaysUseDefaultCursor, setAlwaysUseDefaultCursor] = useState(
+		initialEditorPreferences.alwaysUseDefaultCursor,
+	);
+	const [optimizeCursorTypes, setOptimizeCursorTypes] = useState(
+		initialEditorPreferences.optimizeCursorTypes,
 	);
 	const [loopCursor, setLoopCursor] = useState(initialEditorPreferences.loopCursor);
 	const [cursorStyle, setCursorStyle] = useState<CursorStyle>(
@@ -801,6 +811,8 @@ export default function VideoEditor() {
 			showCursor,
 			hideCursorWhenIdle,
 			removeCursorShakes: removeCursorShakesEnabled,
+			alwaysUseDefaultCursor,
+			optimizeCursorTypes,
 			loopCursor,
 			cursorStyle,
 			cursorSize,
@@ -860,6 +872,8 @@ export default function VideoEditor() {
 			showCursor,
 			hideCursorWhenIdle,
 			removeCursorShakesEnabled,
+			alwaysUseDefaultCursor,
+			optimizeCursorTypes,
 			loopCursor,
 			cursorStyle,
 			cursorSize,
@@ -960,6 +974,8 @@ export default function VideoEditor() {
 		setShowCursor(snapshot.showCursor);
 		setHideCursorWhenIdle(snapshot.hideCursorWhenIdle);
 		setRemoveCursorShakesEnabled(snapshot.removeCursorShakes);
+		setAlwaysUseDefaultCursor(snapshot.alwaysUseDefaultCursor);
+		setOptimizeCursorTypes(snapshot.optimizeCursorTypes);
 		setLoopCursor(snapshot.loopCursor);
 		setCursorStyle(snapshot.cursorStyle);
 		setCursorSize(snapshot.cursorSize);
@@ -1745,6 +1761,8 @@ export default function VideoEditor() {
 				showCursor: boolean;
 				hideCursorWhenIdle: boolean;
 				removeCursorShakes: boolean;
+				alwaysUseDefaultCursor: boolean;
+				optimizeCursorTypes: boolean;
 				loopCursor: boolean;
 				cursorStyle: CursorStyle;
 				cursorSize: number;
@@ -1870,6 +1888,8 @@ export default function VideoEditor() {
 				showCursor,
 				hideCursorWhenIdle,
 				removeCursorShakes: removeCursorShakesEnabled,
+				alwaysUseDefaultCursor,
+				optimizeCursorTypes,
 				loopCursor,
 				cursorStyle,
 				cursorSize,
@@ -1939,6 +1959,8 @@ export default function VideoEditor() {
 			showCursor,
 			hideCursorWhenIdle,
 			removeCursorShakesEnabled,
+			alwaysUseDefaultCursor,
+			optimizeCursorTypes,
 			loopCursor,
 			cursorStyle,
 			cursorSize,
@@ -2143,6 +2165,8 @@ export default function VideoEditor() {
 			setShowCursor(normalizedEditor.showCursor);
 			setHideCursorWhenIdle(normalizedEditor.hideCursorWhenIdle);
 			setRemoveCursorShakesEnabled(normalizedEditor.removeCursorShakes);
+			setAlwaysUseDefaultCursor(normalizedEditor.alwaysUseDefaultCursor);
+			setOptimizeCursorTypes(normalizedEditor.optimizeCursorTypes);
 			setLoopCursor(normalizedEditor.loopCursor);
 			setCursorStyle(normalizedEditor.cursorStyle);
 			setCursorSize(normalizedEditor.cursorSize);
@@ -2710,6 +2734,8 @@ export default function VideoEditor() {
 			showCursor,
 			hideCursorWhenIdle,
 			removeCursorShakes: removeCursorShakesEnabled,
+			alwaysUseDefaultCursor,
+			optimizeCursorTypes,
 			loopCursor,
 			cursorStyle,
 			cursorSize,
@@ -2768,6 +2794,8 @@ export default function VideoEditor() {
 		showCursor,
 		hideCursorWhenIdle,
 		removeCursorShakesEnabled,
+		alwaysUseDefaultCursor,
+		optimizeCursorTypes,
 		loopCursor,
 		cursorStyle,
 		cursorSize,
@@ -3546,24 +3574,32 @@ export default function VideoEditor() {
 		return cleanCursorShakes(normalizedCursorTelemetry).points;
 	}, [normalizedCursorTelemetry, removeCursorShakesEnabled]);
 
+	const preparedCursorTelemetry = useMemo(() => {
+		if (alwaysUseDefaultCursor) return forceDefaultCursorType(cleanedCursorTelemetry);
+		if (optimizeCursorTypes) {
+			return optimizeOriginalCursorTypes(cleanedCursorTelemetry).points;
+		}
+		return cleanedCursorTelemetry;
+	}, [alwaysUseDefaultCursor, cleanedCursorTelemetry, optimizeCursorTypes]);
+
 	const effectiveCursorTelemetry = useMemo(() => {
 		if (!loopCursor) {
-			return cleanedCursorTelemetry;
+			return preparedCursorTelemetry;
 		}
 
 		if (
-			cleanedCursorTelemetry.length < 2 ||
+			preparedCursorTelemetry.length < 2 ||
 			displayedTimelineWindow.endMs <= displayedTimelineWindow.startMs
 		) {
-			return cleanedCursorTelemetry;
+			return preparedCursorTelemetry;
 		}
 
 		return buildLoopedCursorTelemetry(
-			cleanedCursorTelemetry,
+			preparedCursorTelemetry,
 			displayedTimelineWindow.endMs,
 			displayedTimelineWindow.startMs,
 		);
-	}, [cleanedCursorTelemetry, loopCursor, displayedTimelineWindow]);
+	}, [displayedTimelineWindow, loopCursor, preparedCursorTelemetry]);
 
 	// Initialize a full-track clip when duration is first known
 	const clipInitializedRef = useRef(false);
@@ -6031,6 +6067,24 @@ export default function VideoEditor() {
 				run: () => setRemoveCursorShakesEnabled((enabled) => !enabled),
 			},
 			{
+				id: "toggle-default-cursor-type",
+				group: "view",
+				label: t("settings.effects.alwaysUseDefaultCursor", "Always use default cursor"),
+				keywords: ["mouse", "pointer", "arrow", "consistent", "type"],
+				checked: alwaysUseDefaultCursor,
+				disabled: !effectiveShowCursor,
+				run: () => setAlwaysUseDefaultCursor((enabled) => !enabled),
+			},
+			{
+				id: "toggle-optimize-cursor-types",
+				group: "view",
+				label: t("settings.effects.optimizeCursorTypes", "Optimize original cursor types"),
+				keywords: ["mouse", "pointer", "flicker", "stable", "type"],
+				checked: optimizeCursorTypes,
+				disabled: !effectiveShowCursor || alwaysUseDefaultCursor,
+				run: () => setOptimizeCursorTypes((enabled) => !enabled),
+			},
+			{
 				id: "toggle-loop-cursor",
 				group: "view",
 				label: t("settings.effects.loopCursor", "Loop cursor"),
@@ -6074,6 +6128,7 @@ export default function VideoEditor() {
 		];
 	}, [
 		activeEffectSection,
+		alwaysUseDefaultCursor,
 		annotationRegions,
 		audioRegions,
 		canRedo,
@@ -6092,6 +6147,7 @@ export default function VideoEditor() {
 		isMac,
 		isPlaying,
 		loopCursor,
+		optimizeCursorTypes,
 		removeCursorShakesEnabled,
 		shortcuts,
 		startPlayback,
@@ -7139,6 +7195,10 @@ export default function VideoEditor() {
 								onHideCursorWhenIdleChange={setHideCursorWhenIdle}
 								removeCursorShakes={removeCursorShakesEnabled}
 								onRemoveCursorShakesChange={setRemoveCursorShakesEnabled}
+								alwaysUseDefaultCursor={alwaysUseDefaultCursor}
+								onAlwaysUseDefaultCursorChange={setAlwaysUseDefaultCursor}
+								optimizeCursorTypes={optimizeCursorTypes}
+								onOptimizeCursorTypesChange={setOptimizeCursorTypes}
 								loopCursor={loopCursor}
 								onLoopCursorChange={setLoopCursor}
 								cursorStyle={cursorStyle}

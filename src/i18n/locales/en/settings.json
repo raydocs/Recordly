@@ -42,6 +42,10 @@
 		"hideCursorWhenIdleDescription": "Automatically hide after the pointer stops moving",
 		"removeCursorShakes": "Remove cursor shakes",
 		"removeCursorShakesDescription": "Remove brief pointer jumps caused by accessibility tools",
+		"alwaysUseDefaultCursor": "Always use default cursor",
+		"alwaysUseDefaultCursorDescription": "Keep one consistent cursor instead of changing with the interface",
+		"optimizeCursorTypes": "Optimize original cursor types",
+		"optimizeCursorTypesDescription": "Reduce rapid cursor-type flicker while keeping deliberate changes",
 		"loopCursor": "Loop cursor",
 		"cursorStyle": "Cursor Style",
 		"cursorStyleOptions": {

@@ -776,6 +776,10 @@ interface SettingsPanelProps {
 	onHideCursorWhenIdleChange?: (enabled: boolean) => void;
 	removeCursorShakes?: boolean;
 	onRemoveCursorShakesChange?: (enabled: boolean) => void;
+	alwaysUseDefaultCursor?: boolean;
+	onAlwaysUseDefaultCursorChange?: (enabled: boolean) => void;
+	optimizeCursorTypes?: boolean;
+	onOptimizeCursorTypesChange?: (enabled: boolean) => void;
 	loopCursor?: boolean;
 	onLoopCursorChange?: (enabled: boolean) => void;
 	cursorStyle?: CursorStyle;
@@ -1238,6 +1242,10 @@ export function SettingsPanel({
 	onHideCursorWhenIdleChange,
 	removeCursorShakes = false,
 	onRemoveCursorShakesChange,
+	alwaysUseDefaultCursor = false,
+	onAlwaysUseDefaultCursorChange,
+	optimizeCursorTypes = false,
+	onOptimizeCursorTypesChange,
 	loopCursor = false,
 	onLoopCursorChange,
 	cursorStyle = DEFAULT_CURSOR_STYLE,
@@ -1892,6 +1900,8 @@ export function SettingsPanel({
 		onShowCursorChange?.(initialEditorPreferences.showCursor);
 		onHideCursorWhenIdleChange?.(initialEditorPreferences.hideCursorWhenIdle);
 		onRemoveCursorShakesChange?.(initialEditorPreferences.removeCursorShakes);
+		onAlwaysUseDefaultCursorChange?.(initialEditorPreferences.alwaysUseDefaultCursor);
+		onOptimizeCursorTypesChange?.(initialEditorPreferences.optimizeCursorTypes);
 		onLoopCursorChange?.(initialEditorPreferences.loopCursor);
 		onCursorStyleChange?.(initialEditorPreferences.cursorStyle);
 		onCursorSizeChange?.(initialEditorPreferences.cursorSize);
@@ -3888,6 +3898,50 @@ export function SettingsPanel({
 								checked={removeCursorShakes}
 								onCheckedChange={onRemoveCursorShakesChange}
 								disabled={!showCursor}
+								className="data-[state=checked]:bg-[#2563EB] scale-75"
+							/>
+						</label>
+						<label className="flex items-center justify-between gap-3 rounded-lg border border-foreground/10 bg-foreground/[0.025] px-3 py-2">
+							<div className="min-w-0">
+								<div className="text-[11px] font-medium text-foreground">
+									{tSettings(
+										"effects.alwaysUseDefaultCursor",
+										"Always use default cursor",
+									)}
+								</div>
+								<div className="text-[10px] leading-4 text-muted-foreground">
+									{tSettings(
+										"effects.alwaysUseDefaultCursorDescription",
+										"Keep one consistent cursor instead of changing with the interface",
+									)}
+								</div>
+							</div>
+							<Switch
+								checked={alwaysUseDefaultCursor}
+								onCheckedChange={onAlwaysUseDefaultCursorChange}
+								disabled={!showCursor}
+								className="data-[state=checked]:bg-[#2563EB] scale-75"
+							/>
+						</label>
+						<label className="flex items-center justify-between gap-3 rounded-lg border border-foreground/10 bg-foreground/[0.025] px-3 py-2">
+							<div className="min-w-0">
+								<div className="text-[11px] font-medium text-foreground">
+									{tSettings(
+										"effects.optimizeCursorTypes",
+										"Optimize original cursor types",
+									)}
+								</div>
+								<div className="text-[10px] leading-4 text-muted-foreground">
+									{tSettings(
+										"effects.optimizeCursorTypesDescription",
+										"Reduce rapid cursor-type flicker while keeping deliberate changes",
+									)}
+								</div>
+							</div>
+							<Switch
+								checked={optimizeCursorTypes}
+								onCheckedChange={onOptimizeCursorTypesChange}
+								disabled={!showCursor || alwaysUseDefaultCursor}
 								className="data-[state=checked]:bg-[#2563EB] scale-75"
 							/>
 						</label>
