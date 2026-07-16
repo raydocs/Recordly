@@ -9,6 +9,11 @@ describe("normalizeProjectEditor", () => {
 		expect(normalizeProjectEditor({ hideCursorWhenIdle: true }).hideCursorWhenIdle).toBe(true);
 	});
 
+	it("persists cursor shake removal while keeping it opt-in by default", () => {
+		expect(normalizeProjectEditor({}).removeCursorShakes).toBe(false);
+		expect(normalizeProjectEditor({ removeCursorShakes: true }).removeCursorShakes).toBe(true);
+	});
+
 	it("preserves the extended advanced vertical padding range", () => {
 		const editor = normalizeProjectEditor({
 			padding: {

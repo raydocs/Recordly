@@ -9,7 +9,7 @@ copying.
 | Area | Recordly status | Next fidelity work |
 | --- | --- | --- |
 | Click auto zoom, manual zoom, zoom depth and animation | Available | Per-region instant animation and disable toggle |
-| Smooth cursor, cursor themes, click effects | Available | Per-clip hiding, raw-pointer mode and hide-on-idle are available; next is shake removal |
+| Smooth cursor, cursor themes, click effects | Available | Per-clip hiding, raw-pointer mode, idle hiding and accessibility-shake removal are available; next is cursor-type optimization |
 | Background, padding, crop, aspect ratio, device frames | Available | More bundled glass/wallpaper presets |
 | Trim, clips, speed regions, audio gain/normalization | Available | Smart Typing now detects private key timestamps and suggests 2× regions |
 | Sensitive-data masks and focus highlights | Available | Dedicated mask lane, shortcut 4, opacity and disable controls |
@@ -21,13 +21,14 @@ copying.
 
 ## Major remaining feature groups
 
-1. Smart editing: cursor shake removal and command menu access outside the editor.
+1. Smart editing: command menu access outside the editor and cursor-type optimization.
 2. Audio workflow: bundled background music library and per-track AI cleanup controls.
 3. Capture workflow: speaker notes/teleprompter, iPhone mirroring and recovery diagnostics.
 4. Sharing workflow: quick export, batch export, shareable links and comments.
 5. Project portability: shareable presets, raw-track extraction and stronger autosave recovery.
 
 Sources: <https://screen.studio/guide>,
+<https://screen.studio/guide/cursor>,
 <https://preview.screen.studio/guide/command-menu>,
 <https://screen.studio/guide/dynamic-camera-layouts->,
 <https://screen.studio/changelog>.

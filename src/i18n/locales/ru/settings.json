@@ -40,6 +40,8 @@
 		"showCursor": "Показать курсор",
 		"hideCursorWhenIdle": "Скрывать курсор при бездействии",
 		"hideCursorWhenIdleDescription": "Автоматически скрывать, когда указатель перестаёт двигаться",
+		"removeCursorShakes": "Убирать дрожание курсора",
+		"removeCursorShakesDescription": "Убирает короткие скачки указателя, вызванные средствами доступности",
 		"loopCursor": "Зациклить курсор",
 		"cursorStyle": "Стиль курсора",
 		"cursorStyleOptions": {

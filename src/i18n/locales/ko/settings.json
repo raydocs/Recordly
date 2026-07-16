@@ -40,6 +40,8 @@
 		"showCursor": "커서 표시",
 		"hideCursorWhenIdle": "커서가 멈추면 자동 숨기기",
 		"hideCursorWhenIdleDescription": "포인터가 움직이지 않으면 자동으로 숨깁니다",
+		"removeCursorShakes": "커서 흔들림 제거",
+		"removeCursorShakesDescription": "손쉬운 사용 도구로 인한 짧은 포인터 튐을 제거합니다",
 		"loopCursor": "커서 반복",
 		"cursorStyle": "커서 스타일",
 		"cursorStyleOptions": {

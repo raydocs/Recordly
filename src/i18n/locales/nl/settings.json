@@ -40,6 +40,8 @@
 		"showCursor": "Cursor tonen",
 		"hideCursorWhenIdle": "Cursor verbergen bij inactiviteit",
 		"hideCursorWhenIdleDescription": "Automatisch verbergen wanneer de aanwijzer niet meer beweegt",
+		"removeCursorShakes": "Cursorschokken verwijderen",
+		"removeCursorShakesDescription": "Verwijdert korte aanwijzersprongen veroorzaakt door toegankelijkheidstools",
 		"loopCursor": "Cursor herhalen",
 		"cursorStyle": "Cursorstijl",
 		"cursorStyleOptions": {

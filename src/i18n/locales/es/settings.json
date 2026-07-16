@@ -40,6 +40,8 @@
 		"showCursor": "Mostrar cursor",
 		"hideCursorWhenIdle": "Ocultar cursor cuando esté inactivo",
 		"hideCursorWhenIdleDescription": "Ocultarlo automáticamente cuando el puntero deje de moverse",
+		"removeCursorShakes": "Eliminar temblores del cursor",
+		"removeCursorShakesDescription": "Elimina saltos breves del puntero causados por herramientas de accesibilidad",
 		"loopCursor": "Cursor en bucle",
 		"cursorStyle": "Estilo del cursor",
 		"cursorStyleOptions": {

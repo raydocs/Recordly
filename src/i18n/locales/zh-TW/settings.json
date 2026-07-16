@@ -40,6 +40,8 @@
 		"showCursor": "顯示游標",
 		"hideCursorWhenIdle": "游標閒置時自動隱藏",
 		"hideCursorWhenIdleDescription": "指標停止移動後自動隱藏，移動或點擊時重新出現",
+		"removeCursorShakes": "移除游標抖動",
+		"removeCursorShakesDescription": "移除輔助使用工具造成的短暫指標跳動",
 		"loopCursor": "游標循環",
 		"cursorStyle": "游標樣式",
 		"cursorStyleOptions": {
