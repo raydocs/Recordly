@@ -141,6 +141,26 @@
 		"typingSegmentsAdded": "Added {{count}} Smart Typing speed region(s)."
 	},
 	"openRecordingsFolder": "Открыть папку с записями",
+	"commandMenu": {
+		"title": "Меню команд",
+		"placeholder": "Поиск инструментов, настроек и действий…",
+		"empty": "Подходящих команд нет",
+		"pause": "Приостановить воспроизведение",
+		"play": "Воспроизвести видео",
+		"jumpStart": "Перейти к началу",
+		"jumpEnd": "Перейти к концу",
+		"smartTyping": "Предложить ускорение Smart Typing",
+		"openPanel": "Открыть панель «{{panel}}»",
+		"showCursor": "Показать курсор",
+		"saveProject": "Сохранить проект",
+		"saveProjectAs": "Сохранить проект как…",
+		"groups": {
+			"edit": "Редактирование",
+			"add": "Добавить на таймлайн",
+			"view": "Вид и настройки",
+			"project": "Проект"
+		}
+	},
 	"masks": {
 		"title": "Mask",
 		"timelineHint": "Applied only across this timeline block",

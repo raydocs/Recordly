@@ -141,6 +141,26 @@
 		"typingSegmentsAdded": "Added {{count}} Smart Typing speed region(s)."
 	},
 	"openRecordingsFolder": "Apri cartella registrazioni",
+	"commandMenu": {
+		"title": "Menu comandi",
+		"placeholder": "Cerca strumenti, impostazioni e azioni…",
+		"empty": "Nessun comando corrispondente",
+		"pause": "Metti in pausa",
+		"play": "Riproduci video",
+		"jumpStart": "Vai all’inizio",
+		"jumpEnd": "Vai alla fine",
+		"smartTyping": "Suggerisci accelerazioni Smart Typing",
+		"openPanel": "Apri pannello {{panel}}",
+		"showCursor": "Mostra cursore",
+		"saveProject": "Salva progetto",
+		"saveProjectAs": "Salva progetto con nome…",
+		"groups": {
+			"edit": "Modifica",
+			"add": "Aggiungi alla timeline",
+			"view": "Vista e impostazioni",
+			"project": "Progetto"
+		}
+	},
 	"masks": {
 		"title": "Mask",
 		"timelineHint": "Applied only across this timeline block",

@@ -17,16 +17,17 @@ copying.
 | Captions and transcript editing | Available | Local model picker/prompt UX parity |
 | RNNoise voice cleanup | Available | Editor-side per-track cleanup preview/toggle |
 | H.264, HEVC and GIF export | Available | Batch export and quick-share widget |
-| Presets and keyboard shortcuts | Available | Portable shared preset package |
+| Presets, keyboard shortcuts and Command Menu | Available | ⌘K/Ctrl+K exposes editing, timeline, view and project actions; next is portable presets |
 
 ## Major remaining feature groups
 
-1. Smart editing: command menu and cursor shake removal.
+1. Smart editing: cursor shake removal and command menu access outside the editor.
 2. Audio workflow: bundled background music library and per-track AI cleanup controls.
 3. Capture workflow: speaker notes/teleprompter, iPhone mirroring and recovery diagnostics.
 4. Sharing workflow: quick export, batch export, shareable links and comments.
 5. Project portability: shareable presets, raw-track extraction and stronger autosave recovery.
 
 Sources: <https://screen.studio/guide>,
+<https://preview.screen.studio/guide/command-menu>,
 <https://screen.studio/guide/dynamic-camera-layouts->,
 <https://screen.studio/changelog>.

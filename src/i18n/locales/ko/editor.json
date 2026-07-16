@@ -141,6 +141,26 @@
 		"typingSegmentsAdded": "Added {{count}} Smart Typing speed region(s)."
 	},
 	"openRecordingsFolder": "녹화 폴더 열기",
+	"commandMenu": {
+		"title": "명령 메뉴",
+		"placeholder": "도구, 설정 및 작업 검색…",
+		"empty": "일치하는 명령이 없습니다",
+		"pause": "재생 일시 정지",
+		"play": "비디오 재생",
+		"jumpStart": "처음으로 이동",
+		"jumpEnd": "끝으로 이동",
+		"smartTyping": "스마트 타이핑 속도 향상 제안",
+		"openPanel": "{{panel}} 패널 열기",
+		"showCursor": "커서 표시",
+		"saveProject": "프로젝트 저장",
+		"saveProjectAs": "다른 이름으로 프로젝트 저장…",
+		"groups": {
+			"edit": "편집",
+			"add": "타임라인에 추가",
+			"view": "보기 및 설정",
+			"project": "프로젝트"
+		}
+	},
 	"masks": {
 		"title": "Mask",
 		"timelineHint": "Applied only across this timeline block",

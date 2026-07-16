@@ -141,6 +141,26 @@
 		"typingSegmentsAdded": "已添加 {{count}} 个智能打字变速区域。"
 	},
 	"openRecordingsFolder": "打开录制文件夹",
+	"commandMenu": {
+		"title": "命令菜单",
+		"placeholder": "搜索工具、设置和操作…",
+		"empty": "没有匹配的命令",
+		"pause": "暂停播放",
+		"play": "播放视频",
+		"jumpStart": "跳到开头",
+		"jumpEnd": "跳到结尾",
+		"smartTyping": "建议智能输入加速",
+		"openPanel": "打开{{panel}}面板",
+		"showCursor": "显示光标",
+		"saveProject": "保存项目",
+		"saveProjectAs": "项目另存为…",
+		"groups": {
+			"edit": "编辑",
+			"add": "添加到时间线",
+			"view": "视图与设置",
+			"project": "项目"
+		}
+	},
 	"masks": {
 		"title": "遮罩",
 		"timelineHint": "仅在此时间线片段内生效",

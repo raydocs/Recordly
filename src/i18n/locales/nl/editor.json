@@ -141,6 +141,26 @@
 		"typingSegmentsAdded": "Added {{count}} Smart Typing speed region(s)."
 	},
 	"openRecordingsFolder": "Opnamemap openen",
+	"commandMenu": {
+		"title": "Opdrachtmenu",
+		"placeholder": "Zoek tools, instellingen en acties…",
+		"empty": "Geen overeenkomende opdrachten",
+		"pause": "Afspelen pauzeren",
+		"play": "Video afspelen",
+		"jumpStart": "Naar het begin",
+		"jumpEnd": "Naar het einde",
+		"smartTyping": "Smart Typing-versnellingen voorstellen",
+		"openPanel": "Paneel {{panel}} openen",
+		"showCursor": "Cursor tonen",
+		"saveProject": "Project opslaan",
+		"saveProjectAs": "Project opslaan als…",
+		"groups": {
+			"edit": "Bewerken",
+			"add": "Aan tijdlijn toevoegen",
+			"view": "Weergave en instellingen",
+			"project": "Project"
+		}
+	},
 	"masks": {
 		"title": "Mask",
 		"timelineHint": "Applied only across this timeline block",

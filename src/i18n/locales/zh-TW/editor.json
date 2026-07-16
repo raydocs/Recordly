@@ -141,6 +141,26 @@
 		"typingSegmentsAdded": "已加入 {{count}} 個智慧打字變速區域。"
 	},
 	"openRecordingsFolder": "打開錄製資料夾",
+	"commandMenu": {
+		"title": "命令選單",
+		"placeholder": "搜尋工具、設定和操作…",
+		"empty": "沒有符合的命令",
+		"pause": "暫停播放",
+		"play": "播放影片",
+		"jumpStart": "跳到開頭",
+		"jumpEnd": "跳到結尾",
+		"smartTyping": "建議智慧輸入加速",
+		"openPanel": "開啟{{panel}}面板",
+		"showCursor": "顯示游標",
+		"saveProject": "儲存專案",
+		"saveProjectAs": "專案另存為…",
+		"groups": {
+			"edit": "編輯",
+			"add": "加入時間軸",
+			"view": "檢視與設定",
+			"project": "專案"
+		}
+	},
 	"masks": {
 		"title": "遮罩",
 		"timelineHint": "僅在此時間軸片段內生效",

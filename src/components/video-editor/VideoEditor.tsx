@@ -8,6 +8,8 @@ import {
 	DownloadSimple as Download,
 	FolderOpen,
 	Gear,
+	MagnifyingGlass,
+	Selection as MaskIcon,
 	Pause,
 	Camera as PhCameraRegular,
 	Play,
@@ -15,7 +17,6 @@ import {
 	PuzzlePiece,
 	ArrowClockwise as Redo2,
 	Scissors,
-	Selection as MaskIcon,
 	SkipBack,
 	SkipForward,
 	Sparkle,
@@ -79,7 +80,7 @@ import {
 	canUseInMemoryExportSaveFallback,
 	describeBlockedInMemoryExportSave,
 } from "@/lib/exporter/exportSavePolicy";
-import { matchesShortcut } from "@/lib/shortcuts";
+import { formatBinding, matchesShortcut } from "@/lib/shortcuts";
 import { cn } from "@/lib/utils";
 import {
 	ASPECT_RATIOS,
@@ -87,9 +88,8 @@ import {
 	getAspectRatioLabel,
 	getAspectRatioValue,
 } from "@/utils/aspectRatioUtils";
-import { planClipSpeedChange } from "./clipSpeedChange";
 import { getClipCursorPresentationAtSourceTime } from "./clipCursorPresentation";
-import type { MaskAnnotationType } from "./maskTimeline";
+import { planClipSpeedChange } from "./clipSpeedChange";
 import { ExtensionIcon } from "./ExtensionIcon";
 import {
 	calculateMp4ExportDimensions,
@@ -100,6 +100,7 @@ import {
 import { resolveSavingExportProgress } from "./exportProgressState";
 import { resolveExportStartSettings } from "./exportStartSettings";
 import { resolveExportStatusModel } from "./exportStatusModel";
+import type { MaskAnnotationType } from "./maskTimeline";
 import { resolveMp4ExportRouting } from "./mp4ExportRouting";
 import { resolveMp4ExportSettings } from "./mp4ExportSettings";
 import { useNvidiaCudaExportOptIn } from "./useNvidiaCudaExportOptIn";
@@ -127,6 +128,7 @@ import type { SourceAudioTrackSettings } from "@/components/video-editor/audio/a
 import { extensionHost } from "@/lib/extensions";
 import { useVideoEditorAudio } from "./audio/useVideoEditorAudio";
 import { resolveAutoCaptionSourcePath } from "./autoCaptionSource";
+import { CommandMenu } from "./CommandMenu";
 import { CropControl } from "./CropControl";
 import {
 	type CaptionEditTarget,
@@ -143,6 +145,7 @@ import {
 	retimeCue,
 	splitCue,
 } from "./captionOps";
+import type { EditorCommandDefinition } from "./commandMenuModel";
 import { ExportSettingsMenu } from "./ExportSettingsMenu";
 import ExtensionManager from "./ExtensionManager";
 import {
@@ -601,6 +604,7 @@ export default function VideoEditor() {
 	const [exportProgress, setExportProgress] = useState<ExportProgress | null>(null);
 	const [exportError, setExportError] = useState<string | null>(null);
 	const [showExportDropdown, setShowExportDropdown] = useState(false);
+	const [commandMenuOpen, setCommandMenuOpen] = useState(false);
 	const [previewVolume, setPreviewVolume] = useState(1);
 	const applySessionPresentation = useCallback(
 		(
@@ -4820,6 +4824,13 @@ export default function VideoEditor() {
 			const usesPrimaryModifier = isMac ? e.metaKey : e.ctrlKey;
 			const key = e.key.toLowerCase();
 
+			if (usesPrimaryModifier && !e.shiftKey && !e.altKey && key === "k") {
+				e.preventDefault();
+				e.stopPropagation();
+				setCommandMenuOpen((open) => !open);
+				return;
+			}
+
 			if (usesPrimaryModifier && !e.altKey && key === "z") {
 				if (!isEditableTarget) {
 					e.preventDefault();
@@ -5821,6 +5832,247 @@ export default function VideoEditor() {
 		);
 	}, [t]);
 
+	const commandMenuCommands = useMemo<EditorCommandDefinition[]>(() => {
+		const unavailable = !videoPath;
+		const addAnnotation = () => {
+			const nextTrackIndex =
+				annotationRegions.length > 0
+					? Math.max(...annotationRegions.map((region) => region.trackIndex ?? 0)) + 1
+					: 0;
+			timelineRef.current?.addAnnotation(nextTrackIndex);
+		};
+		const addAudio = () => {
+			const nextTrackIndex =
+				audioRegions.length > 0
+					? Math.max(...audioRegions.map((region) => region.trackIndex ?? 0)) + 1
+					: 0;
+			return timelineRef.current?.addAudio(nextTrackIndex);
+		};
+		const togglePlayback = () => {
+			const playback = videoPlaybackRef.current;
+			if (!playback?.video) return;
+			if (playback.video.paused) void startPlayback();
+			else playback.pause();
+		};
+
+		return [
+			{
+				id: "undo",
+				group: "edit",
+				label: t("common.actions.undo", "Undo"),
+				shortcut: isMac ? "⌘ Z" : "Ctrl Z",
+				disabled: !canUndo,
+				run: handleUndo,
+			},
+			{
+				id: "redo",
+				group: "edit",
+				label: t("common.actions.redo", "Redo"),
+				shortcut: isMac ? "⌘ ⇧ Z" : "Ctrl Shift Z",
+				disabled: !canRedo,
+				run: handleRedo,
+			},
+			{
+				id: "play-pause",
+				group: "edit",
+				label: isPlaying
+					? t("editor.commandMenu.pause", "Pause playback")
+					: t("editor.commandMenu.play", "Play video"),
+				keywords: ["preview", "space", "playback"],
+				shortcut: formatBinding(shortcuts.playPause, isMac),
+				disabled: unavailable,
+				run: togglePlayback,
+			},
+			{
+				id: "jump-start",
+				group: "edit",
+				label: t("editor.commandMenu.jumpStart", "Jump to beginning"),
+				keywords: ["seek", "start", "timeline"],
+				disabled: unavailable,
+				run: () => handleTimelineSeek(0),
+			},
+			{
+				id: "jump-end",
+				group: "edit",
+				label: t("editor.commandMenu.jumpEnd", "Jump to end"),
+				keywords: ["seek", "finish", "timeline"],
+				disabled: unavailable,
+				run: () => handleTimelineSeek(timelineDuration),
+			},
+			{
+				id: "split-clip",
+				group: "edit",
+				label: t("editor.toolbar.splitClip", "Split clip"),
+				keywords: ["cut", "slice", "timeline"],
+				shortcut: formatBinding(shortcuts.splitClip, isMac),
+				disabled: unavailable,
+				run: () => timelineRef.current?.splitClip(),
+			},
+			{
+				id: "smart-typing",
+				group: "edit",
+				label: t("editor.commandMenu.smartTyping", "Suggest Smart Typing speed-ups"),
+				keywords: ["typing", "speed", "ai", "automatic"],
+				disabled: unavailable || !typingTelemetryAvailable,
+				run: handleSuggestSmartTyping,
+			},
+			{
+				id: "add-zoom",
+				group: "add",
+				label: t("timeline.zoom.addZoom", "Add zoom"),
+				keywords: ["focus", "magnify", "timeline"],
+				shortcut: formatBinding(shortcuts.addZoom, isMac),
+				disabled: unavailable,
+				run: () => timelineRef.current?.addZoom(),
+			},
+			{
+				id: "suggest-zooms",
+				group: "add",
+				label: t("timeline.zoom.suggestZooms", "Suggest automatic zooms"),
+				keywords: ["ai", "auto", "click", "focus"],
+				disabled: unavailable,
+				run: () => timelineRef.current?.suggestZooms(),
+			},
+			{
+				id: "add-annotation",
+				group: "add",
+				label: t("timeline.annotation.label", "Annotation"),
+				keywords: ["text", "arrow", "rectangle", "overlay"],
+				shortcut: formatBinding(shortcuts.addAnnotation, isMac),
+				disabled: unavailable,
+				run: addAnnotation,
+			},
+			{
+				id: "add-sensitive-mask",
+				group: "add",
+				label: t("editor.masks.sensitiveData", "Sensitive Data Mask"),
+				keywords: ["blur", "privacy", "conceal", "hide"],
+				shortcut: "4",
+				disabled: unavailable,
+				run: () => timelineRef.current?.addMask("blur"),
+			},
+			{
+				id: "add-highlight",
+				group: "add",
+				label: t("editor.masks.highlight", "Highlight"),
+				keywords: ["focus", "dim", "spotlight"],
+				disabled: unavailable,
+				run: () => timelineRef.current?.addMask("highlight"),
+			},
+			{
+				id: "add-audio",
+				group: "add",
+				label: t("timeline.audio.label", "Audio"),
+				keywords: ["music", "sound", "background", "track"],
+				disabled: unavailable,
+				run: addAudio,
+			},
+			...(
+				[
+					["scene", t("settings.sections.scene", "Scene")],
+					["cursor", t("settings.sections.cursor", "Cursor")],
+					["audio", t("settings.sections.audio", "Audio")],
+					["webcam", t("settings.sections.webcam", "Camera")],
+					["captions", t("settings.sections.captions", "Captions")],
+					["settings", t("settings.sections.settings", "Settings")],
+				] as const
+			).map(([section, label]) => ({
+				id: `view-${section}`,
+				group: "view" as const,
+				label: t("editor.commandMenu.openPanel", "Open {{panel}} panel", {
+					panel: label,
+				}),
+				keywords: ["sidebar", "tool", section],
+				checked: activeEffectSection === section,
+				run: () => setActiveEffectSection(section),
+			})),
+			{
+				id: "toggle-cursor",
+				group: "view",
+				label: t("editor.commandMenu.showCursor", "Show cursor"),
+				keywords: ["mouse", "pointer", "hide"],
+				checked: effectiveShowCursor,
+				run: () => handleShowCursorChange(!effectiveShowCursor),
+			},
+			{
+				id: "toggle-idle-cursor",
+				group: "view",
+				label: t("settings.effects.hideCursorWhenIdle", "Hide cursor when idle"),
+				keywords: ["mouse", "pointer", "automatic"],
+				checked: hideCursorWhenIdle,
+				disabled: !effectiveShowCursor,
+				run: () => setHideCursorWhenIdle((enabled) => !enabled),
+			},
+			{
+				id: "toggle-loop-cursor",
+				group: "view",
+				label: t("settings.effects.loopCursor", "Loop cursor"),
+				keywords: ["mouse", "pointer", "ending"],
+				checked: loopCursor,
+				run: () => setLoopCursor((enabled) => !enabled),
+			},
+			{
+				id: "open-projects",
+				group: "project",
+				label: t("editor.project.projects", "Open projects"),
+				keywords: ["library", "browse", "recent"],
+				run: handleOpenProjectBrowser,
+			},
+			{
+				id: "save-project",
+				group: "project",
+				label: t("editor.commandMenu.saveProject", "Save project"),
+				keywords: ["project", "write"],
+				shortcut: isMac ? "⌘ S" : "Ctrl S",
+				disabled: unavailable,
+				run: handleSaveProject,
+			},
+			{
+				id: "save-project-as",
+				group: "project",
+				label: t("editor.commandMenu.saveProjectAs", "Save project as…"),
+				keywords: ["project", "duplicate", "copy"],
+				shortcut: isMac ? "⌘ ⇧ S" : "Ctrl Shift S",
+				disabled: unavailable,
+				run: handleSaveProjectAs,
+			},
+			{
+				id: "export",
+				group: "project",
+				label: t("common.actions.export", "Export"),
+				keywords: ["render", "video", "mp4", "hevc", "gif", "share"],
+				disabled: unavailable,
+				run: handleOpenExportDropdown,
+			},
+		];
+	}, [
+		activeEffectSection,
+		annotationRegions,
+		audioRegions,
+		canRedo,
+		canUndo,
+		effectiveShowCursor,
+		handleOpenExportDropdown,
+		handleOpenProjectBrowser,
+		handleRedo,
+		handleSaveProject,
+		handleSaveProjectAs,
+		handleShowCursorChange,
+		handleSuggestSmartTyping,
+		handleTimelineSeek,
+		handleUndo,
+		hideCursorWhenIdle,
+		isMac,
+		isPlaying,
+		loopCursor,
+		shortcuts,
+		startPlayback,
+		t,
+		timelineDuration,
+		typingTelemetryAvailable,
+		videoPath,
+	]);
+
 	const {
 		isExportSaving,
 		isExportPreparing,
@@ -6395,10 +6647,18 @@ export default function VideoEditor() {
 							</div>
 						</PopoverContent>
 					</Popover>
-					<div
-						aria-hidden="true"
-						className="mx-2 h-4 w-px shrink-0 bg-foreground/10 opacity-0"
-					/>
+					<Button
+						type="button"
+						variant="ghost"
+						onClick={() => setCommandMenuOpen(true)}
+						className="ml-3 inline-flex h-8 items-center gap-2 rounded-[6px] border border-foreground/10 bg-foreground/[0.035] px-2.5 text-muted-foreground shadow-none hover:bg-foreground/[0.075] hover:text-foreground"
+						title={t("editor.commandMenu.title", "Command Menu")}
+						aria-label={t("editor.commandMenu.title", "Command Menu")}
+					>
+						<MagnifyingGlass className="h-3.5 w-3.5" />
+						<kbd className="text-[10px] font-medium">{isMac ? "⌘ K" : "Ctrl K"}</kbd>
+					</Button>
+					<div aria-hidden="true" className="mx-2 h-4 w-px shrink-0 bg-foreground/10" />
 					<DropdownMenu
 						open={showExportDropdown}
 						onOpenChange={setShowExportDropdown}
@@ -7084,7 +7344,7 @@ export default function VideoEditor() {
 											onClick={() => timelineRef.current?.addMask("blur")}
 											className="text-muted-foreground hover:text-foreground hover:bg-foreground/10 cursor-pointer"
 										>
-									{t("editor.masks.sensitiveData", "Sensitive Data Mask")}
+											{t("editor.masks.sensitiveData", "Sensitive Data Mask")}
 										</DropdownMenuItem>
 										<DropdownMenuItem
 											onClick={() =>
@@ -7092,7 +7352,7 @@ export default function VideoEditor() {
 											}
 											className="text-muted-foreground hover:text-foreground hover:bg-foreground/10 cursor-pointer"
 										>
-									{t("editor.masks.highlight", "Highlight")}
+											{t("editor.masks.highlight", "Highlight")}
 										</DropdownMenuItem>
 										<DropdownMenuItem
 											onClick={() => {
@@ -7381,6 +7641,24 @@ export default function VideoEditor() {
 			{projectSaveDialog}
 			{unsavedChangesDialog}
 			{nativeCaptureUnavailableDialog}
+			<CommandMenu
+				open={commandMenuOpen}
+				onOpenChange={setCommandMenuOpen}
+				commands={commandMenuCommands}
+				title={t("editor.commandMenu.title", "Command Menu")}
+				placeholder={t(
+					"editor.commandMenu.placeholder",
+					"Search tools, settings, and actions…",
+				)}
+				emptyLabel={t("editor.commandMenu.empty", "No matching commands")}
+				groupLabels={{
+					edit: t("editor.commandMenu.groups.edit", "Editing"),
+					add: t("editor.commandMenu.groups.add", "Add to timeline"),
+					view: t("editor.commandMenu.groups.view", "View and settings"),
+					project: t("editor.commandMenu.groups.project", "Project"),
+				}}
+				isMac={isMac}
+			/>
 
 			<Toaster className="pointer-events-auto" />
 		</div>
