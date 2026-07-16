@@ -252,6 +252,7 @@ import {
 	buildLoopedCursorTelemetry,
 	getDisplayedTimelineWindowMs,
 } from "./videoPlayback/cursorLoopTelemetry";
+import { stopCursorMovementAtEnd } from "./videoPlayback/cursorEndFreeze";
 import { removeCursorShakes as cleanCursorShakes } from "./videoPlayback/cursorShakeRemoval";
 import {
 	forceDefaultCursorType,
@@ -491,6 +492,9 @@ export default function VideoEditor() {
 	const [showCursor, setShowCursor] = useState(initialEditorPreferences.showCursor);
 	const [hideCursorWhenIdle, setHideCursorWhenIdle] = useState(
 		initialEditorPreferences.hideCursorWhenIdle,
+	);
+	const [stopCursorAtEnd, setStopCursorAtEnd] = useState(
+		initialEditorPreferences.stopCursorAtEnd,
 	);
 	const [removeCursorShakesEnabled, setRemoveCursorShakesEnabled] = useState(
 		initialEditorPreferences.removeCursorShakes,
@@ -810,6 +814,7 @@ export default function VideoEditor() {
 			connectedZoomEasing,
 			showCursor,
 			hideCursorWhenIdle,
+			stopCursorAtEnd,
 			removeCursorShakes: removeCursorShakesEnabled,
 			alwaysUseDefaultCursor,
 			optimizeCursorTypes,
@@ -871,6 +876,7 @@ export default function VideoEditor() {
 			connectedZoomEasing,
 			showCursor,
 			hideCursorWhenIdle,
+			stopCursorAtEnd,
 			removeCursorShakesEnabled,
 			alwaysUseDefaultCursor,
 			optimizeCursorTypes,
@@ -973,6 +979,7 @@ export default function VideoEditor() {
 		setConnectedZoomEasing(snapshot.connectedZoomEasing);
 		setShowCursor(snapshot.showCursor);
 		setHideCursorWhenIdle(snapshot.hideCursorWhenIdle);
+		setStopCursorAtEnd(snapshot.stopCursorAtEnd);
 		setRemoveCursorShakesEnabled(snapshot.removeCursorShakes);
 		setAlwaysUseDefaultCursor(snapshot.alwaysUseDefaultCursor);
 		setOptimizeCursorTypes(snapshot.optimizeCursorTypes);
@@ -1760,6 +1767,7 @@ export default function VideoEditor() {
 				connectedZoomEasing: ZoomTransitionEasing;
 				showCursor: boolean;
 				hideCursorWhenIdle: boolean;
+				stopCursorAtEnd: boolean;
 				removeCursorShakes: boolean;
 				alwaysUseDefaultCursor: boolean;
 				optimizeCursorTypes: boolean;
@@ -1887,6 +1895,7 @@ export default function VideoEditor() {
 				connectedZoomEasing,
 				showCursor,
 				hideCursorWhenIdle,
+				stopCursorAtEnd,
 				removeCursorShakes: removeCursorShakesEnabled,
 				alwaysUseDefaultCursor,
 				optimizeCursorTypes,
@@ -1958,6 +1967,7 @@ export default function VideoEditor() {
 			connectedZoomEasing,
 			showCursor,
 			hideCursorWhenIdle,
+			stopCursorAtEnd,
 			removeCursorShakesEnabled,
 			alwaysUseDefaultCursor,
 			optimizeCursorTypes,
@@ -2164,6 +2174,7 @@ export default function VideoEditor() {
 			setConnectedZoomEasing(normalizedEditor.connectedZoomEasing);
 			setShowCursor(normalizedEditor.showCursor);
 			setHideCursorWhenIdle(normalizedEditor.hideCursorWhenIdle);
+			setStopCursorAtEnd(normalizedEditor.stopCursorAtEnd);
 			setRemoveCursorShakesEnabled(normalizedEditor.removeCursorShakes);
 			setAlwaysUseDefaultCursor(normalizedEditor.alwaysUseDefaultCursor);
 			setOptimizeCursorTypes(normalizedEditor.optimizeCursorTypes);
@@ -2733,6 +2744,7 @@ export default function VideoEditor() {
 			connectedZoomEasing,
 			showCursor,
 			hideCursorWhenIdle,
+			stopCursorAtEnd,
 			removeCursorShakes: removeCursorShakesEnabled,
 			alwaysUseDefaultCursor,
 			optimizeCursorTypes,
@@ -2793,6 +2805,7 @@ export default function VideoEditor() {
 		connectedZoomEasing,
 		showCursor,
 		hideCursorWhenIdle,
+		stopCursorAtEnd,
 		removeCursorShakesEnabled,
 		alwaysUseDefaultCursor,
 		optimizeCursorTypes,
@@ -3583,23 +3596,31 @@ export default function VideoEditor() {
 	}, [alwaysUseDefaultCursor, cleanedCursorTelemetry, optimizeCursorTypes]);
 
 	const effectiveCursorTelemetry = useMemo(() => {
+		const endPreparedCursorTelemetry = stopCursorAtEnd
+			? stopCursorMovementAtEnd(
+					preparedCursorTelemetry,
+					displayedTimelineWindow.endMs,
+					displayedTimelineWindow.startMs,
+				).points
+			: preparedCursorTelemetry;
+
 		if (!loopCursor) {
-			return preparedCursorTelemetry;
+			return endPreparedCursorTelemetry;
 		}
 
 		if (
-			preparedCursorTelemetry.length < 2 ||
+			endPreparedCursorTelemetry.length < 2 ||
 			displayedTimelineWindow.endMs <= displayedTimelineWindow.startMs
 		) {
-			return preparedCursorTelemetry;
+			return endPreparedCursorTelemetry;
 		}
 
 		return buildLoopedCursorTelemetry(
-			preparedCursorTelemetry,
+			endPreparedCursorTelemetry,
 			displayedTimelineWindow.endMs,
 			displayedTimelineWindow.startMs,
 		);
-	}, [displayedTimelineWindow, loopCursor, preparedCursorTelemetry]);
+	}, [displayedTimelineWindow, loopCursor, preparedCursorTelemetry, stopCursorAtEnd]);
 
 	// Initialize a full-track clip when duration is first known
 	const clipInitializedRef = useRef(false);
@@ -6067,6 +6088,15 @@ export default function VideoEditor() {
 				run: () => setRemoveCursorShakesEnabled((enabled) => !enabled),
 			},
 			{
+				id: "toggle-stop-cursor-at-end",
+				group: "view",
+				label: t("settings.effects.stopCursorAtEnd", "Stop cursor movement at the end"),
+				keywords: ["mouse", "pointer", "ending", "recording", "freeze"],
+				checked: stopCursorAtEnd,
+				disabled: !effectiveShowCursor,
+				run: () => setStopCursorAtEnd((enabled) => !enabled),
+			},
+			{
 				id: "toggle-default-cursor-type",
 				group: "view",
 				label: t("settings.effects.alwaysUseDefaultCursor", "Always use default cursor"),
@@ -6149,6 +6179,7 @@ export default function VideoEditor() {
 		loopCursor,
 		optimizeCursorTypes,
 		removeCursorShakesEnabled,
+		stopCursorAtEnd,
 		shortcuts,
 		startPlayback,
 		t,
@@ -7193,6 +7224,8 @@ export default function VideoEditor() {
 								onShowCursorChange={handleShowCursorChange}
 								hideCursorWhenIdle={hideCursorWhenIdle}
 								onHideCursorWhenIdleChange={setHideCursorWhenIdle}
+								stopCursorAtEnd={stopCursorAtEnd}
+								onStopCursorAtEndChange={setStopCursorAtEnd}
 								removeCursorShakes={removeCursorShakesEnabled}
 								onRemoveCursorShakesChange={setRemoveCursorShakesEnabled}
 								alwaysUseDefaultCursor={alwaysUseDefaultCursor}

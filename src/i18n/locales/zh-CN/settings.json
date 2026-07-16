@@ -40,6 +40,8 @@
 		"showCursor": "显示光标",
 		"hideCursorWhenIdle": "光标空闲时自动隐藏",
 		"hideCursorWhenIdleDescription": "指针停止移动后自动隐藏，移动或点击时重新出现",
+		"stopCursorAtEnd": "在视频末尾停止光标移动",
+		"stopCursorAtEndDescription": "冻结最后一段指针移动，避免录入停止录制时的操作",
 		"removeCursorShakes": "移除光标抖动",
 		"removeCursorShakesDescription": "移除辅助功能工具引起的短暂指针跳动",
 		"alwaysUseDefaultCursor": "始终使用默认光标",

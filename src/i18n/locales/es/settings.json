@@ -40,6 +40,8 @@
 		"showCursor": "Mostrar cursor",
 		"hideCursorWhenIdle": "Ocultar cursor cuando esté inactivo",
 		"hideCursorWhenIdleDescription": "Ocultarlo automáticamente cuando el puntero deje de moverse",
+		"stopCursorAtEnd": "Detener el cursor al final",
+		"stopCursorAtEndDescription": "Congela el movimiento final para no capturar la acción de detener la grabación",
 		"removeCursorShakes": "Eliminar temblores del cursor",
 		"removeCursorShakesDescription": "Elimina saltos breves del puntero causados por herramientas de accesibilidad",
 		"alwaysUseDefaultCursor": "Usar siempre el cursor predeterminado",

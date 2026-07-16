@@ -40,6 +40,8 @@
 		"showCursor": "커서 표시",
 		"hideCursorWhenIdle": "커서가 멈추면 자동 숨기기",
 		"hideCursorWhenIdleDescription": "포인터가 움직이지 않으면 자동으로 숨깁니다",
+		"stopCursorAtEnd": "영상 끝에서 커서 이동 멈추기",
+		"stopCursorAtEndDescription": "녹화 중지 동작이 찍히지 않도록 마지막 포인터 이동을 고정합니다",
 		"removeCursorShakes": "커서 흔들림 제거",
 		"removeCursorShakesDescription": "손쉬운 사용 도구로 인한 짧은 포인터 튐을 제거합니다",
 		"alwaysUseDefaultCursor": "항상 기본 커서 사용",

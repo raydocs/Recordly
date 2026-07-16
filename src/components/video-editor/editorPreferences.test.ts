@@ -92,6 +92,7 @@ describe("editorPreferences", () => {
 		expect(DEFAULT_EDITOR_PREFERENCES.cursorSize).toBe(2.5);
 		expect(DEFAULT_EDITOR_PREFERENCES.cursorSway).toBe(0.4);
 		expect(DEFAULT_EDITOR_PREFERENCES.hideCursorWhenIdle).toBe(false);
+		expect(DEFAULT_EDITOR_PREFERENCES.stopCursorAtEnd).toBe(true);
 		expect(DEFAULT_EDITOR_PREFERENCES.removeCursorShakes).toBe(false);
 		expect(DEFAULT_EDITOR_PREFERENCES.alwaysUseDefaultCursor).toBe(false);
 		expect(DEFAULT_EDITOR_PREFERENCES.optimizeCursorTypes).toBe(false);
@@ -272,6 +273,7 @@ describe("editorPreferences", () => {
 			connectedZoomEasing: DEFAULT_EDITOR_PREFERENCES.connectedZoomEasing,
 			showCursor: false,
 			hideCursorWhenIdle: true,
+			stopCursorAtEnd: false,
 			removeCursorShakes: true,
 			alwaysUseDefaultCursor: true,
 			optimizeCursorTypes: true,
@@ -311,6 +313,7 @@ describe("editorPreferences", () => {
 			zoomInOverlapMs: 200,
 			showCursor: false,
 			hideCursorWhenIdle: true,
+			stopCursorAtEnd: false,
 			removeCursorShakes: true,
 			alwaysUseDefaultCursor: true,
 			optimizeCursorTypes: true,

@@ -774,6 +774,8 @@ interface SettingsPanelProps {
 	onShowCursorChange?: (enabled: boolean) => void;
 	hideCursorWhenIdle?: boolean;
 	onHideCursorWhenIdleChange?: (enabled: boolean) => void;
+	stopCursorAtEnd?: boolean;
+	onStopCursorAtEndChange?: (enabled: boolean) => void;
 	removeCursorShakes?: boolean;
 	onRemoveCursorShakesChange?: (enabled: boolean) => void;
 	alwaysUseDefaultCursor?: boolean;
@@ -1240,6 +1242,8 @@ export function SettingsPanel({
 	onShowCursorChange,
 	hideCursorWhenIdle = false,
 	onHideCursorWhenIdleChange,
+	stopCursorAtEnd = true,
+	onStopCursorAtEndChange,
 	removeCursorShakes = false,
 	onRemoveCursorShakesChange,
 	alwaysUseDefaultCursor = false,
@@ -1899,6 +1903,7 @@ export function SettingsPanel({
 	const resetCursorSection = () => {
 		onShowCursorChange?.(initialEditorPreferences.showCursor);
 		onHideCursorWhenIdleChange?.(initialEditorPreferences.hideCursorWhenIdle);
+		onStopCursorAtEndChange?.(initialEditorPreferences.stopCursorAtEnd);
 		onRemoveCursorShakesChange?.(initialEditorPreferences.removeCursorShakes);
 		onAlwaysUseDefaultCursorChange?.(initialEditorPreferences.alwaysUseDefaultCursor);
 		onOptimizeCursorTypesChange?.(initialEditorPreferences.optimizeCursorTypes);
@@ -3875,6 +3880,28 @@ export function SettingsPanel({
 							<Switch
 								checked={hideCursorWhenIdle}
 								onCheckedChange={onHideCursorWhenIdleChange}
+								disabled={!showCursor}
+								className="data-[state=checked]:bg-[#2563EB] scale-75"
+							/>
+						</label>
+						<label className="flex items-center justify-between gap-3 rounded-lg border border-foreground/10 bg-foreground/[0.025] px-3 py-2">
+							<div className="min-w-0">
+								<div className="text-[11px] font-medium text-foreground">
+									{tSettings(
+										"effects.stopCursorAtEnd",
+										"Stop cursor movement at the end",
+									)}
+								</div>
+								<div className="text-[10px] leading-4 text-muted-foreground">
+									{tSettings(
+										"effects.stopCursorAtEndDescription",
+										"Freeze the final pointer movement so stopping the recording is not captured",
+									)}
+								</div>
+							</div>
+							<Switch
+								checked={stopCursorAtEnd}
+								onCheckedChange={onStopCursorAtEndChange}
 								disabled={!showCursor}
 								className="data-[state=checked]:bg-[#2563EB] scale-75"
 							/>

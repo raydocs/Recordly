@@ -185,6 +185,13 @@ contextBridge.exposeInMainWorld("electronAPI", {
 	hudOverlaySetWebcamPreviewVisible: (visible: boolean) => {
 		ipcRenderer.send("hud-overlay-set-webcam-preview-visible", visible);
 	},
+	onHudOverlayOpenPopover: (callback: (popoverId: "webcam" | "more") => void) => {
+		const listener = (_event: Electron.IpcRendererEvent, popoverId: "webcam" | "more") => {
+			callback(popoverId);
+		};
+		ipcRenderer.on("hud-overlay-open-popover", listener);
+		return () => ipcRenderer.removeListener("hud-overlay-open-popover", listener);
+	},
 	getHudOverlayCaptureProtection: () => {
 		return ipcRenderer.invoke("get-hud-overlay-capture-protection");
 	},

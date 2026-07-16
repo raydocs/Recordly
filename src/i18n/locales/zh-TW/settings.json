@@ -40,6 +40,8 @@
 		"showCursor": "顯示游標",
 		"hideCursorWhenIdle": "游標閒置時自動隱藏",
 		"hideCursorWhenIdleDescription": "指標停止移動後自動隱藏，移動或點擊時重新出現",
+		"stopCursorAtEnd": "在影片結尾停止游標移動",
+		"stopCursorAtEndDescription": "凍結最後一段指標移動，避免錄入停止錄製時的操作",
 		"removeCursorShakes": "移除游標抖動",
 		"removeCursorShakesDescription": "移除輔助使用工具造成的短暫指標跳動",
 		"alwaysUseDefaultCursor": "始終使用預設游標",

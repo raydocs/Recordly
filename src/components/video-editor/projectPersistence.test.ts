@@ -9,6 +9,11 @@ describe("normalizeProjectEditor", () => {
 		expect(normalizeProjectEditor({ hideCursorWhenIdle: true }).hideCursorWhenIdle).toBe(true);
 	});
 
+	it("stops cursor movement at the end by default and persists the override", () => {
+		expect(normalizeProjectEditor({}).stopCursorAtEnd).toBe(true);
+		expect(normalizeProjectEditor({ stopCursorAtEnd: false }).stopCursorAtEnd).toBe(false);
+	});
+
 	it("persists cursor shake removal while keeping it opt-in by default", () => {
 		expect(normalizeProjectEditor({}).removeCursorShakes).toBe(false);
 		expect(normalizeProjectEditor({ removeCursorShakes: true }).removeCursorShakes).toBe(true);

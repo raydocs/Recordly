@@ -40,6 +40,8 @@
 		"showCursor": "Show Cursor",
 		"hideCursorWhenIdle": "Hide cursor when idle",
 		"hideCursorWhenIdleDescription": "Automatically hide after the pointer stops moving",
+		"stopCursorAtEnd": "Stop cursor movement at the end",
+		"stopCursorAtEndDescription": "Freeze the final pointer movement so stopping the recording is not captured",
 		"removeCursorShakes": "Remove cursor shakes",
 		"removeCursorShakesDescription": "Remove brief pointer jumps caused by accessibility tools",
 		"alwaysUseDefaultCursor": "Always use default cursor",

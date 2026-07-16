@@ -40,6 +40,8 @@
 		"showCursor": "Cursor tonen",
 		"hideCursorWhenIdle": "Cursor verbergen bij inactiviteit",
 		"hideCursorWhenIdleDescription": "Automatisch verbergen wanneer de aanwijzer niet meer beweegt",
+		"stopCursorAtEnd": "Cursor aan het einde stoppen",
+		"stopCursorAtEndDescription": "Bevriest de laatste beweging zodat het stoppen van de opname niet wordt vastgelegd",
 		"removeCursorShakes": "Cursorschokken verwijderen",
 		"removeCursorShakesDescription": "Verwijdert korte aanwijzersprongen veroorzaakt door toegankelijkheidstools",
 		"alwaysUseDefaultCursor": "Altijd de standaardcursor gebruiken",

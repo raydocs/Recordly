@@ -473,6 +473,13 @@ export function createHudOverlayWindow(): BrowserWindow {
 		},
 	});
 
+	// Keep the recorder controls and floating webcam preview reachable even when
+	// the user is presenting or watching another app in a macOS fullscreen Space.
+	win.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
+	if (process.platform === "darwin") {
+		win.setAlwaysOnTop(true, "status");
+	}
+
 	const showHudWindow = () => {
 		if (hasShownHudWindow || win.isDestroyed()) {
 			return;

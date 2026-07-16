@@ -30,10 +30,7 @@ import {
 import { ensureMediaServer } from "./mediaServer";
 import { shouldGrantDisplayCapture, shouldGrantMediaPermission } from "./permissionPolicy";
 import { ensurePackagedRendererServer, getPackagedRendererBaseUrl } from "./rendererServer";
-import {
-	hardenWebContentsNavigation,
-	shouldHardenWebContentsType,
-} from "./navigationPolicy";
+import { hardenWebContentsNavigation, shouldHardenWebContentsType } from "./navigationPolicy";
 import type { UpdateToastPayload } from "./updater";
 import {
 	checkForAppUpdates,
@@ -280,6 +277,34 @@ function showHudOverlayFromTray() {
 	return true;
 }
 
+function openHudOverlayPopover(popoverId: "webcam" | "more") {
+	if (!showHudOverlayFromTray()) {
+		focusOrCreateMainWindow();
+	}
+
+	const scheduleOpenRequest = () => {
+		const hud = getHudOverlayWindow();
+		if (!hud || hud.isDestroyed()) {
+			return;
+		}
+		setTimeout(() => {
+			if (!hud.isDestroyed()) {
+				hud.webContents.send("hud-overlay-open-popover", popoverId);
+			}
+		}, 100);
+	};
+
+	const hud = getHudOverlayWindow();
+	if (!hud || hud.isDestroyed()) {
+		return;
+	}
+	if (hud.webContents.isLoading()) {
+		hud.webContents.once("did-finish-load", scheduleOpenRequest);
+	} else {
+		scheduleOpenRequest();
+	}
+}
+
 ipcMain.on("set-has-unsaved-changes", (_event, hasChanges: boolean) => {
 	editorHasUnsavedChanges = hasChanges;
 });
@@ -414,6 +439,22 @@ function setupApplicationMenu() {
 		label: app.name,
 		submenu: [
 			{ role: "about" },
+			{ type: "separator" },
+			{
+				label: "Show Recorder Controls",
+				click: () => {
+					if (!showHudOverlayFromTray()) focusOrCreateMainWindow();
+				},
+			},
+			{
+				label: "Camera Preview…",
+				click: () => openHudOverlayPopover("webcam"),
+			},
+			{
+				label: "Settings…",
+				accelerator: "CmdOrCtrl+,",
+				click: () => openHudOverlayPopover("more"),
+			},
 			{ type: "separator" },
 			{ role: "services" },
 			{ type: "separator" },
@@ -776,6 +817,14 @@ function updateTrayMenu(recording: boolean = false) {
 							focusOrCreateMainWindow();
 						}
 					},
+				},
+				{
+					label: "Camera Preview…",
+					click: () => openHudOverlayPopover("webcam"),
+				},
+				{
+					label: "Settings…",
+					click: () => openHudOverlayPopover("more"),
 				},
 				{
 					label: "Quit",

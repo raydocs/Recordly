@@ -106,6 +106,7 @@ export interface ProjectEditorState {
 	connectedZoomEasing: ZoomTransitionEasing;
 	showCursor: boolean;
 	hideCursorWhenIdle: boolean;
+	stopCursorAtEnd: boolean;
 	removeCursorShakes: boolean;
 	alwaysUseDefaultCursor: boolean;
 	optimizeCursorTypes: boolean;
@@ -961,6 +962,8 @@ export function normalizeProjectEditor(editor: Partial<ProjectEditorState>): Pro
 		showCursor: typeof editor.showCursor === "boolean" ? editor.showCursor : true,
 		hideCursorWhenIdle:
 			typeof editor.hideCursorWhenIdle === "boolean" ? editor.hideCursorWhenIdle : false,
+		stopCursorAtEnd:
+			typeof editor.stopCursorAtEnd === "boolean" ? editor.stopCursorAtEnd : true,
 		removeCursorShakes:
 			typeof editor.removeCursorShakes === "boolean" ? editor.removeCursorShakes : false,
 		alwaysUseDefaultCursor:

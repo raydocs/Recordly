@@ -29,6 +29,7 @@ type PersistedEditorControls = Pick<
 	| "connectedZoomEasing"
 	| "showCursor"
 	| "hideCursorWhenIdle"
+	| "stopCursorAtEnd"
 	| "removeCursorShakes"
 	| "alwaysUseDefaultCursor"
 	| "optimizeCursorTypes"
@@ -121,6 +122,7 @@ export const DEFAULT_EDITOR_PREFERENCES: EditorPreferences = {
 	connectedZoomEasing: DEFAULT_EDITOR_CONTROLS.connectedZoomEasing,
 	showCursor: DEFAULT_EDITOR_CONTROLS.showCursor,
 	hideCursorWhenIdle: DEFAULT_EDITOR_CONTROLS.hideCursorWhenIdle,
+	stopCursorAtEnd: DEFAULT_EDITOR_CONTROLS.stopCursorAtEnd,
 	removeCursorShakes: DEFAULT_EDITOR_CONTROLS.removeCursorShakes,
 	alwaysUseDefaultCursor: DEFAULT_EDITOR_CONTROLS.alwaysUseDefaultCursor,
 	optimizeCursorTypes: DEFAULT_EDITOR_CONTROLS.optimizeCursorTypes,
@@ -311,6 +313,7 @@ function normalizeEditorControls(
 		connectedZoomEasing: sanitizedRaw.connectedZoomEasing ?? fallback.connectedZoomEasing,
 		showCursor: sanitizedRaw.showCursor ?? fallback.showCursor,
 		hideCursorWhenIdle: sanitizedRaw.hideCursorWhenIdle ?? fallback.hideCursorWhenIdle,
+		stopCursorAtEnd: sanitizedRaw.stopCursorAtEnd ?? fallback.stopCursorAtEnd,
 		removeCursorShakes: sanitizedRaw.removeCursorShakes ?? fallback.removeCursorShakes,
 		alwaysUseDefaultCursor:
 			sanitizedRaw.alwaysUseDefaultCursor ?? fallback.alwaysUseDefaultCursor,
@@ -398,6 +401,7 @@ function normalizeEditorControls(
 		connectedZoomEasing: normalized.connectedZoomEasing,
 		showCursor: normalized.showCursor,
 		hideCursorWhenIdle: normalized.hideCursorWhenIdle,
+		stopCursorAtEnd: normalized.stopCursorAtEnd,
 		removeCursorShakes: normalized.removeCursorShakes,
 		alwaysUseDefaultCursor: normalized.alwaysUseDefaultCursor,
 		optimizeCursorTypes: normalized.optimizeCursorTypes,

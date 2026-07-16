@@ -56,6 +56,13 @@ function LaunchWindowContent() {
 	const t = useScopedT("launch");
 	const { openId, requestClose, requestOpen } = useLaunchPopoverCoordinator();
 
+	useEffect(() => {
+		const cleanup = window.electronAPI?.onHudOverlayOpenPopover?.((popoverId) => {
+			requestOpen(popoverId);
+		});
+		return () => cleanup?.();
+	}, [requestOpen]);
+
 	const {
 		recording,
 		paused,

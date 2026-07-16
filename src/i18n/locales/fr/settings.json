@@ -40,6 +40,8 @@
 		"showCursor": "Afficher le curseur",
 		"hideCursorWhenIdle": "Masquer le curseur lorsqu’il est inactif",
 		"hideCursorWhenIdleDescription": "Le masquer automatiquement lorsque le pointeur cesse de bouger",
+		"stopCursorAtEnd": "Arrêter le curseur à la fin",
+		"stopCursorAtEndDescription": "Fige le dernier mouvement afin de ne pas capturer l’arrêt de l’enregistrement",
 		"removeCursorShakes": "Supprimer les tremblements du curseur",
 		"removeCursorShakesDescription": "Supprime les sauts brefs du pointeur causés par les outils d’accessibilité",
 		"alwaysUseDefaultCursor": "Toujours utiliser le curseur par défaut",
