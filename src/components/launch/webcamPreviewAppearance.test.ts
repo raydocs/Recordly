@@ -5,7 +5,6 @@ import {
 } from "./webcamPreviewAppearance";
 
 const NEW_FIELD_DEFAULTS = {
-	fitMode: "fill" as const,
 	centerX: 0.5,
 	centerY: 0.5,
 	mirror: true,
@@ -36,14 +35,13 @@ describe("normalizeWebcamPreviewAppearance", () => {
 			size: 200,
 			roundness: 50,
 			zoom: 1.2,
-			fitMode: "fill",
 			centerX: 0.5,
 			centerY: 0.5,
 			mirror: true,
 		});
 
-		expect(normalizeWebcamPreviewAppearance({ zoom: 0.5 }).zoom).toBe(0.8);
-		expect(normalizeWebcamPreviewAppearance({ fitMode: "weird" }).fitMode).toBe("fill");
+		// Zoom never drops below the cover baseline — the bubble stays fully filled.
+		expect(normalizeWebcamPreviewAppearance({ zoom: 0.5 }).zoom).toBe(1);
 		expect(normalizeWebcamPreviewAppearance({ mirror: "yes" }).mirror).toBe(true);
 		expect(normalizeWebcamPreviewAppearance({ centerX: 1.7 }).centerX).toBe(1);
 		expect(normalizeWebcamPreviewAppearance({ centerX: 0.12345 }).centerX).toBe(0.123);

@@ -40,7 +40,6 @@ export function WebcamPopover({
 	onToggleFloatingPreview,
 	showWebcamControls,
 	setWebcamPreviewNode,
-	setWebcamPreviewBackdropNode,
 	previewAppearance,
 	onPreviewAppearanceChange,
 	videoAspect,
@@ -58,7 +57,6 @@ export function WebcamPopover({
 	onToggleFloatingPreview: () => void;
 	showWebcamControls: boolean;
 	setWebcamPreviewNode: (node: HTMLVideoElement | null) => void;
-	setWebcamPreviewBackdropNode: (node: HTMLVideoElement | null) => void;
 	previewAppearance: WebcamPreviewAppearance;
 	onPreviewAppearanceChange: (patch: Partial<WebcamPreviewAppearance>) => void;
 	videoAspect: number;
@@ -95,7 +93,7 @@ export function WebcamPopover({
 			computeWebcamFramingLayout(
 				{
 					zoom: previewAppearance.zoom,
-					fitMode: previewAppearance.fitMode,
+					fitMode: "fill",
 					centerX: effectiveCenterX,
 					centerY: effectiveCenterY,
 					mirror: previewAppearance.mirror,
@@ -105,7 +103,6 @@ export function WebcamPopover({
 			),
 		[
 			previewAppearance.zoom,
-			previewAppearance.fitMode,
 			effectiveCenterX,
 			effectiveCenterY,
 			previewAppearance.mirror,
@@ -124,7 +121,7 @@ export function WebcamPopover({
 			const layout = computeWebcamFramingLayout(
 				{
 					zoom: previewAppearance.zoom,
-					fitMode: previewAppearance.fitMode,
+					fitMode: "fill",
 					centerX: previewAppearance.centerX,
 					centerY: previewAppearance.centerY,
 					mirror: previewAppearance.mirror,
@@ -154,7 +151,6 @@ export function WebcamPopover({
 		},
 		[
 			previewAppearance.zoom,
-			previewAppearance.fitMode,
 			previewAppearance.centerX,
 			previewAppearance.centerY,
 			previewAppearance.mirror,
@@ -177,7 +173,7 @@ export function WebcamPopover({
 				},
 				{
 					zoom: previewAppearance.zoom,
-					fitMode: previewAppearance.fitMode,
+					fitMode: "fill",
 					centerX: drag.startCenterX,
 					centerY: drag.startCenterY,
 					mirror: previewAppearance.mirror,
@@ -185,7 +181,7 @@ export function WebcamPopover({
 			);
 			setDraftCenter(next);
 		},
-		[previewAppearance.zoom, previewAppearance.fitMode, previewAppearance.mirror],
+		[previewAppearance.zoom, previewAppearance.mirror],
 	);
 
 	const endFramingDrag = useCallback(
@@ -302,34 +298,17 @@ export function WebcamPopover({
 						onPointerCancel={endFramingDrag}
 						onDoubleClick={handleFramingDoubleClick}
 					>
-						{thumbnailFramingLayout.showBackdrop && (
-							<video
-								ref={setWebcamPreviewBackdropNode}
-								muted
-								playsInline
-								style={{
-									position: "absolute",
-									inset: 0,
-									width: "100%",
-									height: "100%",
-									objectFit: "cover",
-									filter: "blur(18px) saturate(1.1) brightness(0.85)",
-									borderRadius: "inherit",
-									contain: "paint",
-									pointerEvents: "none",
-									transform: previewAppearance.mirror
-										? "scale(1.2) scaleX(-1)"
-										: "scale(1.2)",
-								}}
-							/>
-						)}
 						<video
 							ref={setWebcamPreviewNode}
 							muted
 							playsInline
 							style={{
 								position: "absolute",
-								objectFit: "fill",
+								// Tailwind preflight clamps video to max-width:100%; undo it so
+								// the explicit framing box keeps its true aspect.
+								maxWidth: "none",
+								maxHeight: "none",
+								objectFit: "cover",
 								transformOrigin: "center",
 								left: thumbnailFramingLayout.video.left,
 								top: thumbnailFramingLayout.video.top,
@@ -387,42 +366,6 @@ export function WebcamPopover({
 						value={Math.round(previewAppearance.zoom * 100)}
 						onChange={(zoom) => onPreviewAppearanceChange({ zoom: zoom / 100 })}
 					/>
-					<div className="mt-1">
-						<span className="mb-1 block text-[11px] text-[var(--launch-text-muted)]">
-							{t("recording.webcamPreviewFitMode", "Fit mode")}
-						</span>
-						<div className="flex gap-1 rounded-lg bg-[var(--launch-hover)] p-0.5">
-							{(
-								[
-									{
-										mode: "fill" as const,
-										label: t("recording.webcamPreviewFill", "Fill"),
-									},
-									{
-										mode: "fit" as const,
-										label: t("recording.webcamPreviewFit", "Fit"),
-									},
-								] as const
-							).map(({ mode, label }) => {
-								const selected = previewAppearance.fitMode === mode;
-								return (
-									<button
-										key={mode}
-										type="button"
-										className={`flex-1 rounded-md px-2 py-1 text-[11px] transition-colors ${
-											selected
-												? "bg-[var(--launch-selected)] text-[var(--launch-accent)] font-medium"
-												: "text-[var(--launch-text-muted)] hover:text-[var(--launch-text)]"
-										}`}
-										aria-pressed={selected}
-										onClick={() => onPreviewAppearanceChange({ fitMode: mode })}
-									>
-										{label}
-									</button>
-								);
-							})}
-						</div>
-					</div>
 				</div>
 			)}
 			{videoDevices.map((device) => (

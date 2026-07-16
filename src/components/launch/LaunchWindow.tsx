@@ -161,9 +161,7 @@ function LaunchWindowContent() {
 		handleWebcamPreviewPointerMove,
 		handleWebcamPreviewPointerUp,
 		setWebcamPreviewNode,
-		setWebcamPreviewBackdropNode,
 		setRecordingWebcamPreviewNode,
-		setRecordingWebcamPreviewBackdropNode,
 	} = useWebcamPreviewOverlay({
 		webcamEnabled,
 		webcamDeviceId,
@@ -178,7 +176,7 @@ function LaunchWindowContent() {
 			computeWebcamFramingLayout(
 				{
 					zoom: webcamPreviewAppearance.zoom,
-					fitMode: webcamPreviewAppearance.fitMode,
+					fitMode: "fill",
 					centerX: webcamPreviewAppearance.centerX,
 					centerY: webcamPreviewAppearance.centerY,
 					mirror: webcamPreviewAppearance.mirror,
@@ -191,7 +189,6 @@ function LaunchWindowContent() {
 			),
 		[
 			webcamPreviewAppearance.zoom,
-			webcamPreviewAppearance.fitMode,
 			webcamPreviewAppearance.centerX,
 			webcamPreviewAppearance.centerY,
 			webcamPreviewAppearance.mirror,
@@ -349,7 +346,6 @@ function LaunchWindowContent() {
 				onToggleFloatingPreview={() => setShowFloatingWebcamPreview((current) => !current)}
 				showWebcamControls={showWebcamControls}
 				setWebcamPreviewNode={setWebcamPreviewNode}
-				setWebcamPreviewBackdropNode={setWebcamPreviewBackdropNode}
 				previewAppearance={webcamPreviewAppearance}
 				onPreviewAppearanceChange={updateWebcamPreviewAppearance}
 				videoAspect={videoAspect}
@@ -594,19 +590,6 @@ function LaunchWindowContent() {
 								onPointerUp={handleWebcamPreviewPointerUp}
 								onPointerCancel={handleWebcamPreviewPointerUp}
 							>
-								{floatingWebcamFramingLayout.showBackdrop && (
-									<video
-										ref={setRecordingWebcamPreviewBackdropNode}
-										className={styles.webcamPreviewBackdrop}
-										muted
-										playsInline
-										style={{
-											transform: webcamPreviewAppearance.mirror
-												? "scale(1.2) scaleX(-1)"
-												: "scale(1.2)",
-										}}
-									/>
-								)}
 								<video
 									ref={setRecordingWebcamPreviewNode}
 									className={styles.webcamPreviewFrame}

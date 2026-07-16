@@ -50,14 +50,6 @@ describe("buildRecordingWebcamAppearance", () => {
 		expect(withZero).toEqual(withExplicit);
 	});
 
-	it("fit mode yields a full-frame crop", () => {
-		const snap = buildRecordingWebcamAppearance(
-			{ ...DEFAULT_WEBCAM_PREVIEW_APPEARANCE, fitMode: "fit" },
-			TRACK_1280x720,
-		);
-		expect(snap.cropRegion).toEqual({ x: 0, y: 0, width: 1, height: 1 });
-	});
-
 	it("mirror passthrough both ways", () => {
 		expect(
 			buildRecordingWebcamAppearance(

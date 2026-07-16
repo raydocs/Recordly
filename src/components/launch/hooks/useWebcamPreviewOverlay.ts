@@ -619,6 +619,19 @@ export function useWebcamPreviewOverlay({
 				}
 
 				previewStreamRef.current = previewStream;
+				// Track settings are the authoritative aspect for the freshly negotiated
+				// stream; element metadata can lag a device switch and distort the layout.
+				const trackSettings = previewStream.getVideoTracks()[0]?.getSettings();
+				if (
+					trackSettings &&
+					typeof trackSettings.width === "number" &&
+					typeof trackSettings.height === "number" &&
+					trackSettings.width > 0 &&
+					trackSettings.height > 0
+				) {
+					const nextAspect = trackSettings.width / trackSettings.height;
+					setVideoAspect((current) => (current === nextAspect ? current : nextAspect));
+				}
 				for (const node of previewVideoNodesRef.current) {
 					attachPreviewStreamToNode(node);
 				}

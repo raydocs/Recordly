@@ -24,7 +24,7 @@ export function buildRecordingWebcamAppearance(
 	const cropRegion = computeWebcamFramingLayout(
 		{
 			zoom: appearance.zoom,
-			fitMode: appearance.fitMode,
+			fitMode: "fill",
 			centerX: appearance.centerX,
 			centerY: appearance.centerY,
 			mirror: appearance.mirror,

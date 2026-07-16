@@ -5,10 +5,9 @@ export type WebcamPreviewFitMode = "fill" | "fit";
 export interface WebcamPreviewAppearance {
 	size: number;
 	roundness: number;
-	// Zoom multiplies the fitMode baseline: fill@1 ≈ CSS cover, fit@1 ≈ CSS contain.
-	// Switching fitMode keeps the zoom number (visual jump accepted).
+	// Crop-based zoom on top of the cover baseline: 1 ≈ CSS cover; >1 crops tighter.
+	// Never below cover — the bubble must always be fully filled by sharp video.
 	zoom: number;
-	fitMode: WebcamPreviewFitMode;
 	/** Framing center in UNMIRRORED source coords, 0–1. */
 	centerX: number;
 	/** Framing center in source coords, 0–1. */
@@ -18,13 +17,12 @@ export interface WebcamPreviewAppearance {
 
 export const WEBCAM_PREVIEW_APPEARANCE_STORAGE_KEY = "recordly.hud.webcamPreviewAppearance";
 export const WEBCAM_PREVIEW_SIZE_RANGE = { min: 144, max: 320 } as const;
-export const WEBCAM_PREVIEW_ZOOM_RANGE = { min: 0.8, max: 1.5 } as const;
+export const WEBCAM_PREVIEW_ZOOM_RANGE = { min: 1, max: 1.5 } as const;
 
 export const DEFAULT_WEBCAM_PREVIEW_APPEARANCE: WebcamPreviewAppearance = {
 	size: 208,
 	roundness: 100,
 	zoom: 1,
-	fitMode: "fill",
 	centerX: 0.5,
 	centerY: 0.5,
 	mirror: true,
@@ -36,10 +34,6 @@ function clamp(value: number, min: number, max: number): number {
 
 function finiteOr(value: unknown, fallback: number): number {
 	return typeof value === "number" && Number.isFinite(value) ? value : fallback;
-}
-
-function normalizeFitMode(value: unknown): WebcamPreviewFitMode {
-	return value === "fill" || value === "fit" ? value : "fill";
 }
 
 function normalizeCenter(value: unknown, fallback: number): number {
@@ -67,7 +61,6 @@ export function normalizeWebcamPreviewAppearance(value: unknown): WebcamPreviewA
 					WEBCAM_PREVIEW_ZOOM_RANGE.max,
 				) * 100,
 			) / 100,
-		fitMode: normalizeFitMode(raw.fitMode),
 		centerX: normalizeCenter(raw.centerX, DEFAULT_WEBCAM_PREVIEW_APPEARANCE.centerX),
 		centerY: normalizeCenter(raw.centerY, DEFAULT_WEBCAM_PREVIEW_APPEARANCE.centerY),
 		mirror: typeof raw.mirror === "boolean" ? raw.mirror : true,
