@@ -328,6 +328,31 @@ describe("ModernVideoExporter native static-layout eligibility", () => {
 		).toBe("unsupported-frame-overlay");
 	});
 
+	it("allows native static-layout when every mask is disabled", () => {
+		const exporter = createExporter({
+			annotationRegions: [
+				{
+					id: "mask-disabled",
+					startMs: 0,
+					endMs: 1_000,
+					type: "highlight",
+					disabled: true,
+				},
+			],
+		});
+
+		expect(
+			exporter.getNativeStaticLayoutSkipReason(
+				{
+					audioMode: "copy-source",
+					audioSourcePath: "recording.mp4",
+				},
+				videoInfo,
+				60,
+			),
+		).toBeNull();
+	});
+
 	it("allows native static-layout with background blur", () => {
 		const exporter = createExporter({ backgroundBlur: 12 });
 

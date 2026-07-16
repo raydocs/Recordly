@@ -1464,9 +1464,10 @@ export class FrameRenderer {
 	private hasActiveBlurAnnotations(timeMs: number): boolean {
 		return (this.config.annotationRegions ?? []).some(
 			(annotation) =>
-				annotation.type === "blur" &&
+				!annotation.disabled &&
+				(annotation.type === "blur" || annotation.type === "highlight") &&
 				timeMs >= annotation.startMs &&
-				timeMs <= annotation.endMs,
+				timeMs < annotation.endMs,
 		);
 	}
 
@@ -1643,6 +1644,7 @@ export class FrameRenderer {
 	private updateAnnotationLayer(currentTimeMs: number): void {
 		for (const entry of this.annotationSprites) {
 			entry.sprite.visible =
+				!entry.annotation.disabled &&
 				currentTimeMs >= entry.annotation.startMs &&
 				currentTimeMs <= entry.annotation.endMs;
 		}

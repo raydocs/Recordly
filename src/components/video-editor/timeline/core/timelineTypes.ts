@@ -1,6 +1,6 @@
 import type { Span } from "dnd-timeline";
 import type { ShortcutBinding } from "@/lib/shortcuts";
-import type { WebcamLayoutMode, ZoomMode } from "../../types";
+import type { AnnotationType, WebcamLayoutMode, ZoomMode } from "../../types";
 
 export interface TimelineRegionSpan {
 	id: string;
@@ -44,11 +44,15 @@ export interface TimelineRenderItem {
 	muted?: boolean;
 	hideCursor?: boolean;
 	disableCursorSmoothing?: boolean;
+	maskType?: Extract<AnnotationType, "blur" | "highlight">;
+	maskOpacity?: number;
+	maskDisabled?: boolean;
 	variant:
 		| "zoom"
 		| "trim"
 		| "clip"
 		| "annotation"
+		| "mask"
 		| "speed"
 		| "audio"
 		| "caption"

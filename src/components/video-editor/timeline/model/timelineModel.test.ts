@@ -97,6 +97,48 @@ describe("timeline model", () => {
 		});
 	});
 
+	it("places sensitive-data and highlight annotations on the dedicated mask lane", () => {
+		const items = buildTimelineItems({
+			zoomRegions: [],
+			clipRegions: [],
+			annotationRegions: [
+				{
+					...BASE_ANNOTATION,
+					id: "mask-1",
+					type: "blur",
+					content: "",
+				},
+				{
+					...BASE_ANNOTATION,
+					id: "highlight-1",
+					type: "highlight",
+					content: "",
+					highlightOpacity: 0.54,
+					disabled: true,
+				},
+			],
+			audioRegions: [],
+		});
+
+		expect(items).toEqual([
+			expect.objectContaining({
+				id: "mask-1",
+				rowId: "row-mask",
+				variant: "mask",
+				maskType: "blur",
+				label: "Sensitive Data",
+			}),
+			expect.objectContaining({
+				id: "highlight-1",
+				rowId: "row-mask",
+				maskType: "highlight",
+				maskOpacity: 0.54,
+				maskDisabled: true,
+				label: "Highlight 54%",
+			}),
+		]);
+	});
+
 	it("builds all variant labels for annotation and audio", () => {
 		expect(getAnnotationLabel({ ...BASE_ANNOTATION, type: "text", content: "   " })).toBe(
 			"Empty text",

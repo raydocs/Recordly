@@ -8,6 +8,7 @@ import type {
 import { useScopedT } from "@/contexts/I18nContext";
 import { useShortcuts } from "@/contexts/ShortcutsContext";
 import { fromFileUrl } from "../projectPersistence";
+import type { MaskAnnotationType } from "../maskTimeline";
 import type {
 	AnnotationRegion,
 	AudioRegion,
@@ -58,6 +59,7 @@ export interface TimelineEditorProps {
 	onSelectClip?: (id: string | null) => void;
 	annotationRegions?: AnnotationRegion[];
 	onAnnotationAdded?: (span: Span, trackIndex?: number) => void;
+	onMaskAdded?: (span: Span, type: MaskAnnotationType) => void;
 	onAnnotationSpanChange?: (id: string, span: Span, trackIndex?: number) => void;
 	onAnnotationDelete?: (id: string) => void;
 	selectedAnnotationId?: string | null;
@@ -119,6 +121,7 @@ export interface TimelineEditorHandle {
 	suggestZooms: () => void;
 	splitClip: () => void;
 	addAnnotation: (trackIndex?: number) => void;
+	addMask: (type?: MaskAnnotationType) => void;
 	addAudio: (trackIndex?: number) => Promise<void>;
 	keyframes: { id: string; time: number }[];
 }
@@ -151,6 +154,7 @@ const TimelineEditor = forwardRef<TimelineEditorHandle, TimelineEditorProps>(
 			onSelectClip,
 			annotationRegions = [],
 			onAnnotationAdded,
+			onMaskAdded,
 			onAnnotationSpanChange,
 			onAnnotationDelete,
 			selectedAnnotationId,
@@ -378,6 +382,9 @@ const TimelineEditor = forwardRef<TimelineEditorHandle, TimelineEditorProps>(
 			canPlaceWebcamLayoutAtMs,
 			addWebcamLayoutAtMs,
 			resolveWebcamLayoutSpanAtMs,
+			canPlaceMaskAtMs,
+			addMaskAtMs,
+			resolveMaskSpanAtMs,
 		} = useTimelineEditorRuntime({
 			ref,
 			videoDuration,
@@ -405,6 +412,7 @@ const TimelineEditor = forwardRef<TimelineEditorHandle, TimelineEditorProps>(
 			onSelectClip,
 			annotationRegions,
 			onAnnotationAdded,
+			onMaskAdded,
 			onAnnotationSpanChange,
 			onAnnotationDelete,
 			selectedAnnotationId,
@@ -521,6 +529,9 @@ const TimelineEditor = forwardRef<TimelineEditorHandle, TimelineEditorProps>(
 							onSeek={onSeek}
 							onAddZoomAtMs={addZoomAtMs}
 							canPlaceZoomAtMs={canPlaceZoomAtMs}
+							onAddMaskAtMs={addMaskAtMs}
+							canPlaceMaskAtMs={canPlaceMaskAtMs}
+							resolveMaskSpanAtMs={resolveMaskSpanAtMs}
 							onAddCaptionAtMs={addCaptionAtMs}
 							canPlaceCaptionAtMs={canPlaceCaptionAtMs}
 							resolveCaptionSpanAtMs={resolveCaptionSpanAtMs}

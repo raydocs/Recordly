@@ -2,6 +2,7 @@ export const ZOOM_ROW_ID = "row-zoom";
 export const CLIP_ROW_ID = "row-clip";
 export const SPEED_ROW_ID = "row-speed";
 export const ANNOTATION_ROW_ID = "row-annotation";
+export const MASK_ROW_ID = "row-mask";
 export const AUDIO_ROW_ID = "row-audio";
 export const SOURCE_AUDIO_ROW_ID = "row-source-audio";
 export const CAPTION_ROW_ID = "row-captions";

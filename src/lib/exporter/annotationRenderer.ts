@@ -367,11 +367,21 @@ export async function renderAnnotations(
 	coordinateRect?: AnnotationCoordinateRect,
 ): Promise<void> {
 	const activeAnnotations = annotations.filter(
-		(ann) => currentTimeMs >= ann.startMs && currentTimeMs <= ann.endMs,
+		(ann) =>
+			!ann.disabled &&
+			currentTimeMs >= ann.startMs &&
+			(ann.type === "blur" || ann.type === "highlight"
+				? currentTimeMs < ann.endMs
+				: currentTimeMs <= ann.endMs),
 	);
 
 	const sortedAnnotations = [...activeAnnotations].sort((a, b) => a.zIndex - b.zIndex);
-	const annotationRect = coordinateRect ?? { x: 0, y: 0, width: canvasWidth, height: canvasHeight };
+	const annotationRect = coordinateRect ?? {
+		x: 0,
+		y: 0,
+		width: canvasWidth,
+		height: canvasHeight,
+	};
 
 	for (const annotation of sortedAnnotations) {
 		const rect = transformAnnotationRect(
@@ -385,6 +395,7 @@ export async function renderAnnotations(
 		);
 		const { x, y, width, height } = rect;
 		const effectiveScaleFactor = scaleFactor * (sceneTransform?.scale ?? 1);
+		const transformedAnnotationRect = transformAnnotationRect(annotationRect, sceneTransform);
 
 		switch (annotation.type) {
 			case "text":
@@ -452,6 +463,30 @@ export async function renderAnnotations(
 				ctx.restore();
 				break;
 			}
+
+			case "highlight": {
+				const opacity = Math.max(0, Math.min(0.9, annotation.highlightOpacity ?? 0.54));
+				const borderRadius = (annotation.style.borderRadius ?? 0) * effectiveScaleFactor;
+				ctx.save();
+				ctx.beginPath();
+				ctx.rect(
+					transformedAnnotationRect.x,
+					transformedAnnotationRect.y,
+					transformedAnnotationRect.width,
+					transformedAnnotationRect.height,
+				);
+				ctx.roundRect(x, y, width, height, borderRadius);
+				ctx.clip("evenodd");
+				ctx.fillStyle = `rgba(0, 0, 0, ${opacity})`;
+				ctx.fillRect(
+					transformedAnnotationRect.x,
+					transformedAnnotationRect.y,
+					transformedAnnotationRect.width,
+					transformedAnnotationRect.height,
+				);
+				ctx.restore();
+				break;
+			}
 		}
 	}
 }
@@ -463,6 +498,7 @@ export async function renderAnnotationToCanvas(
 	scaleFactor: number = 1.0,
 	assets?: AnnotationRenderAssets,
 ): Promise<HTMLCanvasElement | null> {
+	if (annotation.disabled) return null;
 	const canvasWidth = Math.max(1, Math.ceil(width));
 	const canvasHeight = Math.max(1, Math.ceil(height));
 	const canvas = document.createElement("canvas");
@@ -504,7 +540,8 @@ export async function renderAnnotationToCanvas(
 			);
 			break;
 		case "blur":
-			// Blur annotations must sample already-rendered scene pixels,
+		case "highlight":
+			// Blur and highlight annotations must sample the already-rendered scene,
 			// so they cannot be rasterized as standalone sprites.
 			return null;
 	}

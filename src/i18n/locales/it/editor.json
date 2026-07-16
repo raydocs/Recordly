@@ -140,5 +140,19 @@
 		"noTypingSegments": "No sustained typing segments were found in this range.",
 		"typingSegmentsAdded": "Added {{count}} Smart Typing speed region(s)."
 	},
-	"openRecordingsFolder": "Apri cartella registrazioni"
+	"openRecordingsFolder": "Apri cartella registrazioni",
+	"masks": {
+		"title": "Mask",
+		"timelineHint": "Applied only across this timeline block",
+		"active": "Active",
+		"type": "Mask type",
+		"sensitiveData": "Sensitive Data",
+		"highlight": "Highlight",
+		"highlightOpacity": "Highlight mask opacity",
+		"blurStrength": "Blur strength",
+		"sensitiveHint": "Cover the entire timeline section where sensitive data is visible.",
+		"disable": "Disable",
+		"disableHint": "Keep this block on the timeline without applying it.",
+		"remove": "Remove mask"
+	}
 }

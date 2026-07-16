@@ -5,6 +5,7 @@ import {
 	Gauge,
 	ChatCircle as MessageSquare,
 	MusicNotes as Music,
+	Selection as MaskIcon,
 	MouseLeftClickIcon as PhMouseLeftClick,
 	Scissors,
 	SpeakerX,
@@ -39,11 +40,15 @@ interface ItemProps {
 	muted?: boolean;
 	hideCursor?: boolean;
 	disableCursorSmoothing?: boolean;
+	maskType?: "blur" | "highlight";
+	maskOpacity?: number;
+	maskDisabled?: boolean;
 	variant?:
 		| "zoom"
 		| "trim"
 		| "clip"
 		| "annotation"
+		| "mask"
 		| "speed"
 		| "audio"
 		| "caption"
@@ -91,6 +96,9 @@ export default function Item({
 	muted = false,
 	hideCursor = false,
 	disableCursorSmoothing = false,
+	maskType = "blur",
+	maskOpacity = 0.54,
+	maskDisabled = false,
 	variant = "zoom",
 	webcamLayoutMode = "fullscreen",
 	isLoading = false,
@@ -140,6 +148,7 @@ export default function Item({
 	const isTrim = variant === "trim";
 	const isClip = variant === "clip";
 	const isSpeed = variant === "speed";
+	const isMask = variant === "mask";
 	const isAudio = variant === "audio";
 	const isCaption = variant === "caption";
 	const isWebcamLayout = variant === "webcam-layout";
@@ -154,13 +163,15 @@ export default function Item({
 				? glassStyles.glassCyan
 				: isSpeed
 					? glassStyles.glassAmber
-					: isAudio
-						? glassStyles.glassDarkGreen
-						: isCaption
-							? glassStyles.glassCaption
-							: isWebcamLayout
-								? glassStyles.glassGreen
-								: glassStyles.glassYellow;
+					: isMask
+						? glassStyles.glassMask
+						: isAudio
+							? glassStyles.glassDarkGreen
+							: isCaption
+								? glassStyles.glassCaption
+								: isWebcamLayout
+									? glassStyles.glassGreen
+									: glassStyles.glassYellow;
 
 	const MIN_ITEM_PX = 6;
 	const handleSelect = () => {
@@ -286,6 +297,20 @@ export default function Item({
 									<span className="text-[11px] font-semibold tracking-tight whitespace-nowrap">
 										{speedValue !== undefined ? `${speedValue}×` : "Speed"}
 									</span>
+								</>
+							) : isMask ? (
+								<>
+									<MaskIcon className="w-3.5 h-3.5 shrink-0" />
+									<span className="text-[11px] font-semibold tracking-tight whitespace-nowrap">
+										{maskType === "highlight"
+											? `Highlight ${Math.round(maskOpacity * 100)}%`
+											: "Sensitive Data"}
+									</span>
+									{maskDisabled && (
+										<span className="rounded-[4px] bg-black/15 px-1 text-[8px] font-bold uppercase">
+											Off
+										</span>
+									)}
 								</>
 							) : isAudio ? (
 								<>

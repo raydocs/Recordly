@@ -416,8 +416,9 @@ export function trimsToClips(trims: TrimRegion[], totalDurationMs: number): Clip
 	return clips;
 }
 
-export type AnnotationType = "text" | "image" | "figure" | "blur";
+export type AnnotationType = "text" | "image" | "figure" | "blur" | "highlight";
 export const BLUR_ANNOTATION_STRENGTH = 20;
+export const DEFAULT_HIGHLIGHT_OPACITY = 0.54;
 export const BASE_PREVIEW_WIDTH = 1920;
 export const BASE_PREVIEW_HEIGHT = 1080;
 
@@ -483,6 +484,10 @@ export interface AnnotationRegion {
 	figureData?: FigureData;
 	blurIntensity?: number;
 	blurColor?: string;
+	/** Dim the recording outside this annotation rectangle by this amount. */
+	highlightOpacity?: number;
+	/** Keep the mask on the timeline without applying it to preview/export. */
+	disabled?: boolean;
 }
 
 export const DEFAULT_ANNOTATION_POSITION: AnnotationPosition = {

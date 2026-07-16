@@ -1,4 +1,5 @@
 import { formatClipSpeedLabel } from "../../clipSpeedChange";
+import { isMaskAnnotation } from "../../maskTimeline";
 import type {
 	AnnotationRegion,
 	AudioRegion,
@@ -11,6 +12,7 @@ import type {
 import {
 	CAPTION_ROW_ID,
 	CLIP_ROW_ID,
+	MASK_ROW_ID,
 	SPEED_ROW_ID,
 	WEBCAM_LAYOUT_ROW_ID,
 	ZOOM_ROW_ID,
@@ -32,6 +34,12 @@ export function getAnnotationLabel(region: AnnotationRegion): string {
 	}
 	if (region.type === "image") {
 		return "Image";
+	}
+	if (region.type === "blur") {
+		return "Sensitive Data";
+	}
+	if (region.type === "highlight") {
+		return `Highlight ${Math.round((region.highlightOpacity ?? 0.54) * 100)}%`;
 	}
 	return "Annotation";
 }
@@ -109,10 +117,15 @@ export function buildTimelineItems(params: {
 
 	const annotations: TimelineRenderItem[] = annotationRegions.map((region) => ({
 		id: region.id,
-		rowId: getAnnotationTrackRowId(region.trackIndex ?? 0),
+		rowId: isMaskAnnotation(region)
+			? MASK_ROW_ID
+			: getAnnotationTrackRowId(region.trackIndex ?? 0),
 		span: { start: region.startMs, end: region.endMs },
 		label: getAnnotationLabel(region),
-		variant: "annotation",
+		maskType: isMaskAnnotation(region) ? region.type : undefined,
+		maskOpacity: region.highlightOpacity,
+		maskDisabled: Boolean(region.disabled),
+		variant: isMaskAnnotation(region) ? "mask" : "annotation",
 	}));
 
 	const audios: TimelineRenderItem[] = audioRegions.map((region) => ({
@@ -162,6 +175,7 @@ export function buildAllRegionSpans(params: {
 	zoomRegions: ZoomRegion[];
 	clipRegions: ClipRegion[];
 	speedRegions?: SpeedRegion[];
+	annotationRegions?: AnnotationRegion[];
 	audioRegions: AudioRegion[];
 	webcamLayouts?: WebcamLayoutRegion[];
 }): TimelineRegionSpan[] {
@@ -169,6 +183,7 @@ export function buildAllRegionSpans(params: {
 		zoomRegions,
 		clipRegions,
 		speedRegions = [],
+		annotationRegions = [],
 		audioRegions,
 		webcamLayouts = [],
 	} = params;
@@ -190,6 +205,12 @@ export function buildAllRegionSpans(params: {
 		end: r.endMs,
 		rowId: SPEED_ROW_ID,
 	}));
+	const masks = annotationRegions.filter(isMaskAnnotation).map((r) => ({
+		id: r.id,
+		start: r.startMs,
+		end: r.endMs,
+		rowId: MASK_ROW_ID,
+	}));
 	const audios = audioRegions.map((r) => ({
 		id: r.id,
 		start: r.startMs,
@@ -202,7 +223,7 @@ export function buildAllRegionSpans(params: {
 		end: r.endMs,
 		rowId: WEBCAM_LAYOUT_ROW_ID,
 	}));
-	return [...zooms, ...clips, ...speeds, ...cameraLayouts, ...audios];
+	return [...zooms, ...clips, ...speeds, ...cameraLayouts, ...masks, ...audios];
 }
 
 export function resolveDropRowId(

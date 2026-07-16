@@ -44,7 +44,6 @@
 		"solidColor": "纯色 (审查)",
 		"borderRadius": "边框半径"
 	},
-
 	"fontStyles": {
 		"classic": "经典",
 		"editor": "编辑器",
@@ -141,5 +140,19 @@
 		"noTypingSegments": "在此范围内未发现持续打字片段。",
 		"typingSegmentsAdded": "已添加 {{count}} 个智能打字变速区域。"
 	},
-	"openRecordingsFolder": "打开录制文件夹"
+	"openRecordingsFolder": "打开录制文件夹",
+	"masks": {
+		"title": "遮罩",
+		"timelineHint": "仅在此时间线片段内生效",
+		"active": "已启用",
+		"type": "遮罩类型",
+		"sensitiveData": "敏感信息",
+		"highlight": "高亮",
+		"highlightOpacity": "高亮遮罩透明度",
+		"blurStrength": "模糊强度",
+		"sensitiveHint": "请覆盖敏感信息出现的整个时间线区段。",
+		"disable": "停用",
+		"disableHint": "保留时间线片段，但不应用遮罩效果。",
+		"remove": "移除遮罩"
+	}
 }

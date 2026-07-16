@@ -289,6 +289,16 @@ describe("ModernFrameRenderer blur export path", () => {
 		expect(renderer.capturePixelsForNativeExport()).not.toBeNull();
 	});
 
+	it("routes active highlights through the same composited export path", () => {
+		const renderer = createRenderer() as any;
+		renderer.config.annotationRegions[0].type = "highlight";
+		renderer.config.annotationRegions[0].highlightOpacity = 0.54;
+
+		expect(renderer.hasActiveBlurAnnotations(500)).toBe(true);
+		renderer.config.annotationRegions[0].disabled = true;
+		expect(renderer.hasActiveBlurAnnotations(500)).toBe(false);
+	});
+
 	it("uses the sampled scene transform for blur annotations during temporal blur", async () => {
 		const renderer = createRenderer() as any;
 		renderer.config.zoomTemporalMotionBlur = 1;

@@ -3369,6 +3369,7 @@ const VideoPlayback = forwardRef<VideoPlaybackRef, VideoPlaybackProps>(
 										annotationRecordingRect.height ||
 										overlayRef.current?.clientHeight ||
 										600,
+									overflow: "hidden",
 								}}
 							>
 								{(() => {
@@ -3381,11 +3382,15 @@ const VideoPlayback = forwardRef<VideoPlaybackRef, VideoPlaybackProps>(
 												return false;
 
 											if (annotation.id === selectedAnnotationId) return true;
+											if (annotation.disabled) return false;
 
 											const timeMs = Math.round(currentTime * 1000);
 											return (
 												timeMs >= annotation.startMs &&
-												timeMs <= annotation.endMs
+												(annotation.type === "blur" ||
+												annotation.type === "highlight"
+													? timeMs < annotation.endMs
+													: timeMs <= annotation.endMs)
 											);
 										},
 									);

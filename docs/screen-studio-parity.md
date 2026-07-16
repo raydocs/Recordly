@@ -12,6 +12,7 @@ copying.
 | Smooth cursor, cursor themes, click effects | Available | Per-clip cursor hiding and raw-pointer mode are available; next is hide-on-idle |
 | Background, padding, crop, aspect ratio, device frames | Available | More bundled glass/wallpaper presets |
 | Trim, clips, speed regions, audio gain/normalization | Available | Smart Typing now detects private key timestamps and suggests 2× regions |
+| Sensitive-data masks and focus highlights | Available | Dedicated mask lane, shortcut 4, opacity and disable controls |
 | Webcam crop, mirror, 9 positions, custom placement | Available | Dynamic fullscreen/default/hidden camera layouts are available |
 | Captions and transcript editing | Available | Local model picker/prompt UX parity |
 | RNNoise voice cleanup | Available | Editor-side per-track cleanup preview/toggle |
@@ -20,7 +21,7 @@ copying.
 
 ## Major remaining feature groups
 
-1. Smart editing: masks/highlights, hide-on-idle cursor behavior and command menu.
+1. Smart editing: hide-on-idle cursor behavior and command menu.
 2. Audio workflow: bundled background music library and per-track AI cleanup controls.
 3. Capture workflow: speaker notes/teleprompter, iPhone mirroring and recovery diagnostics.
 4. Sharing workflow: quick export, batch export, shareable links and comments.

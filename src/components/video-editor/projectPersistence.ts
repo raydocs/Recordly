@@ -603,7 +603,8 @@ export function normalizeProjectEditor(editor: Partial<ProjectEditorState>): Pro
 						type:
 							region.type === "image" ||
 							region.type === "figure" ||
-							region.type === "blur"
+							region.type === "blur" ||
+							region.type === "highlight"
 								? region.type
 								: "text",
 						content: typeof region.content === "string" ? region.content : "",
@@ -663,6 +664,10 @@ export function normalizeProjectEditor(editor: Partial<ProjectEditorState>): Pro
 							: 20,
 						blurColor:
 							typeof region.blurColor === "string" ? region.blurColor : undefined,
+						highlightOpacity: isFiniteNumber(region.highlightOpacity)
+							? clamp(region.highlightOpacity, 0, 1)
+							: undefined,
+						disabled: Boolean(region.disabled),
 						trackIndex: isFiniteNumber(region.trackIndex)
 							? Math.max(0, Math.floor(region.trackIndex))
 							: 0,

@@ -10,6 +10,8 @@ import type {
 	WebcamLayoutRegion,
 	ZoomRegion,
 } from "../../types";
+import { hasMaskOverlap, isMaskAnnotation } from "../../maskTimeline";
+import { MASK_ROW_ID } from "../core/constants";
 import {
 	getAnnotationTrackIndex,
 	getAudioTrackIndex,
@@ -111,7 +113,12 @@ export function useTimelineDndBindings({
 			if (!excludeId) return false;
 			const itemKind = resolveItemKind(excludeId);
 
-			if (itemKind === "annotation") return false;
+			if (itemKind === "annotation") {
+				const annotation = annotationRegions.find((region) => region.id === excludeId);
+				return annotation && isMaskAnnotation(annotation)
+					? hasMaskOverlap(annotationRegions, newSpan, excludeId)
+					: false;
+			}
 
 			const checkOverlap = (regions: { id: string; startMs: number; endMs: number }[]) =>
 				regions.some((region) => {
@@ -143,6 +150,7 @@ export function useTimelineDndBindings({
 			zoomRegions,
 			trimRegions,
 			clipRegions,
+			annotationRegions,
 			audioRegions,
 			speedRegions,
 			captionCues,
@@ -178,10 +186,11 @@ export function useTimelineDndBindings({
 				zoomRegions,
 				clipRegions,
 				speedRegions,
+				annotationRegions,
 				audioRegions,
 				webcamLayouts,
 			}),
-		[zoomRegions, clipRegions, speedRegions, audioRegions, webcamLayouts],
+		[zoomRegions, clipRegions, speedRegions, annotationRegions, audioRegions, webcamLayouts],
 	);
 
 	const getResolvedDropRowId = useCallback(
@@ -199,7 +208,10 @@ export function useTimelineDndBindings({
 			} else if (itemKind === "clip") {
 				onClipSpanChange?.(id, span);
 			} else if (itemKind === "annotation") {
-				const nextTrackIndex = resolveTrackIndex("annotation", id, rowId);
+				const nextTrackIndex =
+					rowId === MASK_ROW_ID
+						? annotationRegions.find((region) => region.id === id)?.trackIndex
+						: resolveTrackIndex("annotation", id, rowId);
 				onAnnotationSpanChange?.(id, span, nextTrackIndex);
 			} else if (itemKind === "speed") {
 				onSpeedSpanChange?.(id, span);
@@ -223,6 +235,7 @@ export function useTimelineDndBindings({
 			onAudioSpanChange,
 			onCaptionSpanChange,
 			onWebcamLayoutSpanChange,
+			annotationRegions,
 		],
 	);
 

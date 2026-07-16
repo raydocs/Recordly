@@ -18,6 +18,7 @@ import { cn } from "@/lib/utils";
 import {
 	CAPTION_ROW_ID,
 	CLIP_ROW_ID,
+	MASK_ROW_ID,
 	SOURCE_AUDIO_ROW_ID,
 	SPEED_ROW_ID,
 	WEBCAM_LAYOUT_ROW_ID,
@@ -49,6 +50,7 @@ import PlaybackCursor from "../playhead/PlaybackCursor";
 
 const HINT_CLIP = "Press C to split clip";
 const HINT_ANNOTATION = "Press A to add annotation";
+const HINT_MASK = "Click or press 4 to add a sensitive-data mask";
 const HINT_AUDIO = "Click music icon to add audio";
 
 interface TimelineCanvasProps {
@@ -65,6 +67,9 @@ interface TimelineCanvasProps {
 	onSelectCaption?: (id: string | null) => void;
 	onSelectWebcamLayout?: (id: string | null) => void;
 	onAddZoomAtMs?: (startMs: number) => void;
+	onAddMaskAtMs?: (startMs: number) => void;
+	canPlaceMaskAtMs?: (startMs: number) => boolean;
+	resolveMaskSpanAtMs?: (startMs: number) => { start: number; end: number } | null;
 	onAddCaptionAtMs?: (startMs: number) => void;
 	canPlaceCaptionAtMs?: (startMs: number) => boolean;
 	resolveCaptionSpanAtMs?: (startMs: number) => { start: number; end: number } | null;
@@ -242,6 +247,9 @@ interface TimelineHoverParams {
 	videoDurationMs: number;
 	onAddZoomAtMs?: (startMs: number) => void;
 	canPlaceZoomAtMs?: (startMs: number) => boolean;
+	onAddMaskAtMs?: (startMs: number) => void;
+	canPlaceMaskAtMs?: (startMs: number) => boolean;
+	resolveMaskSpanAtMs?: (startMs: number) => { start: number; end: number } | null;
 	onAddCaptionAtMs?: (startMs: number) => void;
 	canPlaceCaptionAtMs?: (startMs: number) => boolean;
 	resolveCaptionSpanAtMs?: (startMs: number) => { start: number; end: number } | null;
@@ -263,6 +271,9 @@ function useTimelineHover({
 	videoDurationMs,
 	onAddZoomAtMs,
 	canPlaceZoomAtMs,
+	onAddMaskAtMs,
+	canPlaceMaskAtMs,
+	resolveMaskSpanAtMs,
 	onAddCaptionAtMs,
 	canPlaceCaptionAtMs,
 	resolveCaptionSpanAtMs,
@@ -338,6 +349,20 @@ function useTimelineHover({
 		resolveGhostSpanMs: resolveCaptionSpanAtMs,
 	});
 
+	const mask = useTimelineLaneHover({
+		direction,
+		rangeStart,
+		visibleDurationMs,
+		videoDurationMs,
+		valueToPixels,
+		ghostDurationMs: Math.min(3000, videoDurationMs),
+		enabled: true,
+		isDragging,
+		onAddAtMs: onAddMaskAtMs,
+		canPlaceAtMs: canPlaceMaskAtMs,
+		resolveGhostSpanMs: resolveMaskSpanAtMs,
+	});
+
 	const webcamLayout = useTimelineLaneHover({
 		direction,
 		rangeStart,
@@ -356,9 +381,10 @@ function useTimelineHover({
 		setIsTimelineHovered(false);
 		setTimelineHoverMs(null);
 		zoom.reset();
+		mask.reset();
 		caption.reset();
 		webcamLayout.reset();
-	}, [zoom.reset, caption.reset, webcamLayout.reset]);
+	}, [zoom.reset, mask.reset, caption.reset, webcamLayout.reset]);
 
 	const timelineGhostOffsetPx =
 		timelineHoverMs === null ? 0 : valueToPixels(Math.max(0, timelineHoverMs - rangeStart));
@@ -379,6 +405,15 @@ function useTimelineHover({
 		handleZoomRowMouseLeave: zoom.onMouseLeave,
 		handleZoomRowMouseDown: zoom.onMouseDown,
 		handleZoomRowClick: zoom.onClick,
+		canShowGhostMask: mask.canShowGhost,
+		maskGhostStartMs: mask.ghostStartMs,
+		maskGhostStartOffsetPx: mask.ghostStartOffsetPx,
+		maskGhostWidthPx: mask.ghostWidthPx,
+		handleMaskRowMouseEnter: mask.onMouseEnter,
+		handleMaskRowMouseMove: mask.onMouseMove,
+		handleMaskRowMouseLeave: mask.onMouseLeave,
+		handleMaskRowMouseDown: mask.onMouseDown,
+		handleMaskRowClick: mask.onClick,
 		canShowGhostCaption: caption.canShowGhost,
 		captionGhostStartMs: caption.ghostStartMs,
 		captionGhostStartOffsetPx: caption.ghostStartOffsetPx,
@@ -433,6 +468,15 @@ interface TimelineCanvasRowsProps {
 	onZoomRowMouseLeave: MouseEventHandler<HTMLDivElement>;
 	onZoomRowMouseDown: MouseEventHandler<HTMLDivElement>;
 	onZoomRowClick: MouseEventHandler<HTMLDivElement>;
+	canShowGhostMask: boolean;
+	maskGhostStartMs: number | null;
+	maskGhostStartOffsetPx: number;
+	maskGhostWidthPx: number;
+	onMaskRowMouseEnter: MouseEventHandler<HTMLDivElement>;
+	onMaskRowMouseMove: MouseEventHandler<HTMLDivElement>;
+	onMaskRowMouseLeave: MouseEventHandler<HTMLDivElement>;
+	onMaskRowMouseDown: MouseEventHandler<HTMLDivElement>;
+	onMaskRowClick: MouseEventHandler<HTMLDivElement>;
 	captionsEnabled?: boolean;
 	canShowGhostCaption: boolean;
 	captionGhostStartMs: number | null;
@@ -526,6 +570,15 @@ const TimelineCanvasRows = memo(function TimelineCanvasRows({
 	onZoomRowMouseLeave,
 	onZoomRowMouseDown,
 	onZoomRowClick,
+	canShowGhostMask,
+	maskGhostStartMs,
+	maskGhostStartOffsetPx,
+	maskGhostWidthPx,
+	onMaskRowMouseEnter,
+	onMaskRowMouseMove,
+	onMaskRowMouseLeave,
+	onMaskRowMouseDown,
+	onMaskRowClick,
 	captionsEnabled = false,
 	canShowGhostCaption,
 	captionGhostStartMs,
@@ -554,6 +607,7 @@ const TimelineCanvasRows = memo(function TimelineCanvasRows({
 		zoomItems,
 		captionItems,
 		webcamLayoutItems,
+		maskItems,
 		annotationRows,
 		audioRows,
 	} = useMemo(() => {
@@ -562,6 +616,7 @@ const TimelineCanvasRows = memo(function TimelineCanvasRows({
 		const nextZoomItems: TimelineRenderItem[] = [];
 		const nextCaptionItems: TimelineRenderItem[] = [];
 		const nextWebcamLayoutItems: TimelineRenderItem[] = [];
+		const nextMaskItems: TimelineRenderItem[] = [];
 		const annotationBuckets = new Map<number, TimelineRenderItem[]>();
 		const audioBuckets = new Map<number, TimelineRenderItem[]>();
 
@@ -584,6 +639,10 @@ const TimelineCanvasRows = memo(function TimelineCanvasRows({
 			}
 			if (item.rowId === WEBCAM_LAYOUT_ROW_ID) {
 				nextWebcamLayoutItems.push(item);
+				continue;
+			}
+			if (item.rowId === MASK_ROW_ID) {
+				nextMaskItems.push(item);
 				continue;
 			}
 			if (isAnnotationTrackRowId(item.rowId)) {
@@ -620,6 +679,7 @@ const TimelineCanvasRows = memo(function TimelineCanvasRows({
 			zoomItems: nextZoomItems,
 			captionItems: nextCaptionItems,
 			webcamLayoutItems: nextWebcamLayoutItems,
+			maskItems: nextMaskItems,
 			annotationRows: annotationRowsSorted,
 			audioRows: audioRowsSorted,
 		};
@@ -753,6 +813,63 @@ const TimelineCanvasRows = memo(function TimelineCanvasRows({
 							{item.label}
 						</Item>
 					))}
+			</Row>
+
+			<Row
+				id={MASK_ROW_ID}
+				isEmpty={maskItems.length === 0}
+				hint={HINT_MASK}
+				onMouseEnter={onMaskRowMouseEnter}
+				onMouseMove={onMaskRowMouseMove}
+				onMouseLeave={onMaskRowMouseLeave}
+				onMouseDown={onMaskRowMouseDown}
+				onClick={onMaskRowClick}
+			>
+				{canShowGhostMask && maskGhostStartMs !== null && (
+					<div className="absolute inset-0 z-[3] pointer-events-none">
+						<div
+							className="absolute top-1/2 -translate-y-1/2 h-[85%] min-h-[22px]"
+							style={
+								direction === "rtl"
+									? {
+											right: `${maskGhostStartOffsetPx}px`,
+											width: `${maskGhostWidthPx}px`,
+										}
+									: {
+											left: `${maskGhostStartOffsetPx}px`,
+											width: `${maskGhostWidthPx}px`,
+										}
+							}
+						>
+							<div
+								className={cn(
+									glassStyles.glassMask,
+									"w-full h-full overflow-hidden flex items-center justify-center cursor-default relative opacity-80",
+								)}
+							>
+								<div className="relative z-10 inline-flex h-4 w-4 items-center justify-center rounded-full border border-white/45 bg-white/15 text-white">
+									<Plus className="h-2.5 w-2.5" />
+								</div>
+							</div>
+						</div>
+					</div>
+				)}
+				{maskItems.map((item) => (
+					<Item
+						id={item.id}
+						key={item.id}
+						rowId={item.rowId}
+						span={item.span}
+						isSelected={item.id === selectedAnnotationId}
+						onSelectId={onSelectAnnotation}
+						variant="mask"
+						maskType={item.maskType}
+						maskOpacity={item.maskOpacity}
+						maskDisabled={item.maskDisabled}
+					>
+						{item.label}
+					</Item>
+				))}
 			</Row>
 
 			{(webcamLayoutsEnabled || webcamLayoutItems.length > 0) && (
@@ -920,6 +1037,9 @@ export default function TimelineCanvas({
 	onSeek,
 	onAddZoomAtMs,
 	canPlaceZoomAtMs,
+	onAddMaskAtMs,
+	canPlaceMaskAtMs,
+	resolveMaskSpanAtMs,
 	onAddCaptionAtMs,
 	canPlaceCaptionAtMs,
 	resolveCaptionSpanAtMs,
@@ -1131,7 +1251,7 @@ export default function TimelineCanvas({
 		const captionRows = hasCaptionRow || captionsEnabled ? 1 : 0;
 		const webcamLayoutRows = hasWebcamLayoutRow || webcamLayoutsEnabled ? 1 : 0;
 		return (
-			2 +
+			3 +
 			(hasSpeedRow ? 1 : 0) +
 			sourceAudioRows +
 			annotationRowIds.size +
@@ -1165,6 +1285,15 @@ export default function TimelineCanvas({
 		handleZoomRowMouseLeave,
 		handleZoomRowMouseDown,
 		handleZoomRowClick,
+		canShowGhostMask,
+		maskGhostStartMs,
+		maskGhostStartOffsetPx,
+		maskGhostWidthPx,
+		handleMaskRowMouseEnter,
+		handleMaskRowMouseMove,
+		handleMaskRowMouseLeave,
+		handleMaskRowMouseDown,
+		handleMaskRowClick,
 		canShowGhostCaption,
 		captionGhostStartMs,
 		captionGhostStartOffsetPx,
@@ -1191,6 +1320,9 @@ export default function TimelineCanvas({
 		videoDurationMs,
 		onAddZoomAtMs,
 		canPlaceZoomAtMs,
+		onAddMaskAtMs,
+		canPlaceMaskAtMs,
+		resolveMaskSpanAtMs,
 		onAddCaptionAtMs,
 		canPlaceCaptionAtMs,
 		resolveCaptionSpanAtMs,
@@ -1279,6 +1411,15 @@ export default function TimelineCanvas({
 					onZoomRowMouseLeave={handleZoomRowMouseLeave}
 					onZoomRowMouseDown={handleZoomRowMouseDown}
 					onZoomRowClick={handleZoomRowClick}
+					canShowGhostMask={canShowGhostMask}
+					maskGhostStartMs={maskGhostStartMs}
+					maskGhostStartOffsetPx={maskGhostStartOffsetPx}
+					maskGhostWidthPx={maskGhostWidthPx}
+					onMaskRowMouseEnter={handleMaskRowMouseEnter}
+					onMaskRowMouseMove={handleMaskRowMouseMove}
+					onMaskRowMouseLeave={handleMaskRowMouseLeave}
+					onMaskRowMouseDown={handleMaskRowMouseDown}
+					onMaskRowClick={handleMaskRowClick}
 					captionsEnabled={captionsEnabled}
 					canShowGhostCaption={canShowGhostCaption}
 					captionGhostStartMs={captionGhostStartMs}

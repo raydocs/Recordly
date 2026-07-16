@@ -68,6 +68,11 @@ export function AnnotationOverlay({
 	const height = sceneHeight * sceneTransform.scale;
 	const sizeScale = safeRecordingRect.width / BASE_PREVIEW_WIDTH;
 	const blurScaleFactor = sizeScale * sceneTransform.scale;
+	const highlightOpacity = Math.max(0, Math.min(0.9, annotation.highlightOpacity ?? 0.54));
+	const highlightShadow =
+		annotation.type === "highlight" && !annotation.disabled
+			? `0 0 0 ${Math.max(containerWidth, containerHeight) * 2}px rgba(0, 0, 0, ${highlightOpacity})`
+			: null;
 
 	const isDraggingRef = useRef(false);
 
@@ -90,7 +95,9 @@ export function AnnotationOverlay({
 			},
 			size: {
 				width: clampPercent((nextSceneWidth / Math.max(1, safeRecordingRect.width)) * 100),
-				height: clampPercent((nextSceneHeight / Math.max(1, safeRecordingRect.height)) * 100),
+				height: clampPercent(
+					(nextSceneHeight / Math.max(1, safeRecordingRect.height)) * 100,
+				),
 			},
 		};
 	};
@@ -105,6 +112,7 @@ export function AnnotationOverlay({
 	};
 
 	const renderContent = () => {
+		if (annotation.disabled) return null;
 		switch (annotation.type) {
 			case "text":
 				return (
@@ -195,6 +203,9 @@ export function AnnotationOverlay({
 				);
 			}
 
+			case "highlight":
+				return null;
+
 			default:
 				return null;
 		}
@@ -241,7 +252,10 @@ export function AnnotationOverlay({
 				pointerEvents: "auto",
 				border: isSelected ? "2px solid rgba(37, 99, 235, 0.8)" : "none",
 				backgroundColor: isSelected ? "rgba(37, 99, 235, 0.1)" : "transparent",
-				boxShadow: isSelected ? "0 0 0 1px rgba(37, 99, 235, 0.35)" : "none",
+				boxShadow:
+					[highlightShadow, isSelected ? "0 0 0 1px rgba(37, 99, 235, 0.35)" : null]
+						.filter(Boolean)
+						.join(", ") || "none",
 			}}
 			enableResizing={isSelected}
 			disableDragging={!isSelected}

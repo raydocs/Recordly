@@ -13,6 +13,10 @@ import type {
 	ZoomFocus,
 	ZoomRegion,
 } from "../../types";
+import {
+	type MaskAnnotationType,
+	resolveMaskSpanAtMs as resolveAvailableMaskSpanAtMs,
+} from "../../maskTimeline";
 import type { TimelineShortcutBindings } from "../core/timelineTypes";
 import type { TimelineEditorHandle } from "../TimelineEditor";
 import { useTimelineAudioActions } from "./actions/useTimelineAudioActions";
@@ -50,6 +54,7 @@ interface UseTimelineEditorRuntimeParams {
 	onSelectClip?: (id: string | null) => void;
 	annotationRegions: AnnotationRegion[];
 	onAnnotationAdded?: (span: Span, trackIndex?: number) => void;
+	onMaskAdded?: (span: Span, type: MaskAnnotationType) => void;
 	onAnnotationSpanChange?: (id: string, span: Span, trackIndex?: number) => void;
 	onAnnotationDelete?: (id: string) => void;
 	selectedAnnotationId?: string | null;
@@ -109,6 +114,7 @@ export function useTimelineEditorRuntime({
 	onSelectClip,
 	annotationRegions,
 	onAnnotationAdded,
+	onMaskAdded,
 	onAnnotationSpanChange,
 	onAnnotationDelete,
 	selectedAnnotationId,
@@ -320,6 +326,33 @@ export function useTimelineEditorRuntime({
 		[videoDuration, totalMs, currentTimeMs, defaultRegionDurationMs, onAnnotationAdded],
 	);
 
+	const resolveMaskSpanAtMs = useCallback(
+		(startMs: number) =>
+			resolveAvailableMaskSpanAtMs({
+				annotations: annotationRegions,
+				startMs,
+				totalMs,
+				defaultDurationMs: defaultRegionDurationMs,
+				minimumDurationMs: safeMinDurationMs,
+			}),
+		[annotationRegions, defaultRegionDurationMs, safeMinDurationMs, totalMs],
+	);
+	const canPlaceMaskAtMs = useCallback(
+		(startMs: number) => Boolean(onMaskAdded && resolveMaskSpanAtMs(startMs)),
+		[onMaskAdded, resolveMaskSpanAtMs],
+	);
+	const addMaskAtMs = useCallback(
+		(startMs: number, type: MaskAnnotationType = "blur") => {
+			const span = resolveMaskSpanAtMs(startMs);
+			if (span) onMaskAdded?.(span, type);
+		},
+		[onMaskAdded, resolveMaskSpanAtMs],
+	);
+	const handleAddMask = useCallback(
+		(type: MaskAnnotationType = "blur") => addMaskAtMs(currentTimeMs, type),
+		[addMaskAtMs, currentTimeMs],
+	);
+
 	useTimelineKeyboardShortcuts({
 		isMac,
 		keyShortcuts,
@@ -358,12 +391,14 @@ export function useTimelineEditorRuntime({
 			suggestZooms: handleSuggestZooms,
 			splitClip: handleSplitClip,
 			addAnnotation: handleAddAnnotation,
+			addMask: handleAddMask,
 			addAudio: handleAddAudio,
 			keyframes,
 		}),
 		[
 			handleAddAnnotation,
 			handleAddAudio,
+			handleAddMask,
 			handleAddZoom,
 			handleSuggestZooms,
 			handleSplitClip,
@@ -399,10 +434,14 @@ export function useTimelineEditorRuntime({
 		canPlaceWebcamLayoutAtMs,
 		addWebcamLayoutAtMs,
 		resolveWebcamLayoutSpanAtMs,
+		canPlaceMaskAtMs,
+		addMaskAtMs,
+		resolveMaskSpanAtMs,
 		handleAddZoom,
 		handleSuggestZooms,
 		handleSplitClip,
 		handleAddAudio,
 		handleAddAnnotation,
+		handleAddMask,
 	};
 }

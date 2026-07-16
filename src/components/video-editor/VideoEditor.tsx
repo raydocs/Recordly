@@ -15,6 +15,7 @@ import {
 	PuzzlePiece,
 	ArrowClockwise as Redo2,
 	Scissors,
+	Selection as MaskIcon,
 	SkipBack,
 	SkipForward,
 	Sparkle,
@@ -88,6 +89,7 @@ import {
 } from "@/utils/aspectRatioUtils";
 import { planClipSpeedChange } from "./clipSpeedChange";
 import { getClipCursorPresentationAtSourceTime } from "./clipCursorPresentation";
+import type { MaskAnnotationType } from "./maskTimeline";
 import { ExtensionIcon } from "./ExtensionIcon";
 import {
 	calculateMp4ExportDimensions,
@@ -212,6 +214,7 @@ import {
 	DEFAULT_CROP_REGION,
 	DEFAULT_CURSOR_STYLE,
 	DEFAULT_FIGURE_DATA,
+	DEFAULT_HIGHLIGHT_OPACITY,
 	DEFAULT_WEBCAM_OVERLAY,
 	DEFAULT_WEBCAM_TIME_OFFSET_MS,
 	DEFAULT_ZOOM_IN_DURATION_MS,
@@ -4613,6 +4616,27 @@ export default function VideoEditor() {
 		setSelectedZoomId(null);
 	}, []);
 
+	const handleMaskAdded = useCallback((span: Span, type: MaskAnnotationType) => {
+		const id = `annotation-${nextAnnotationIdRef.current++}`;
+		const newRegion: AnnotationRegion = {
+			id,
+			startMs: Math.round(span.start),
+			endMs: Math.round(span.end),
+			type,
+			content: "",
+			position: { x: 25, y: 25 },
+			size: { width: 50, height: 30 },
+			style: { ...DEFAULT_ANNOTATION_STYLE, borderRadius: 8 },
+			zIndex: nextAnnotationZIndexRef.current++,
+			blurIntensity: 20,
+			highlightOpacity: DEFAULT_HIGHLIGHT_OPACITY,
+			disabled: false,
+		};
+		setAnnotationRegions((previous) => [...previous, newRegion]);
+		setSelectedAnnotationId(id);
+		setSelectedZoomId(null);
+	}, []);
+
 	const handleAnnotationSpanChange = useCallback(
 		(id: string, span: Span, trackIndex?: number) => {
 			const normalizedTrackIndex =
@@ -4688,6 +4712,11 @@ export default function VideoEditor() {
 					if (region.blurIntensity === undefined) {
 						updatedRegion.blurIntensity = 20;
 					}
+				} else if (type === "highlight") {
+					updatedRegion.content = "";
+					if (region.highlightOpacity === undefined) {
+						updatedRegion.highlightOpacity = DEFAULT_HIGHLIGHT_OPACITY;
+					}
 				}
 
 				return updatedRegion;
@@ -4722,6 +4751,28 @@ export default function VideoEditor() {
 	const handleAnnotationBlurColorChange = useCallback((id: string, blurColor: string) => {
 		setAnnotationRegions((prev) =>
 			prev.map((region) => (region.id === id ? { ...region, blurColor } : region)),
+		);
+	}, []);
+
+	const handleAnnotationHighlightOpacityChange = useCallback(
+		(id: string, highlightOpacity: number) => {
+			setAnnotationRegions((previous) =>
+				previous.map((region) =>
+					region.id === id
+						? {
+								...region,
+								highlightOpacity: Math.max(0, Math.min(1, highlightOpacity)),
+							}
+						: region,
+				),
+			);
+		},
+		[],
+	);
+
+	const handleAnnotationDisabledChange = useCallback((id: string, disabled: boolean) => {
+		setAnnotationRegions((previous) =>
+			previous.map((region) => (region.id === id ? { ...region, disabled } : region)),
 		);
 	}, []);
 
@@ -4772,6 +4823,12 @@ export default function VideoEditor() {
 					e.preventDefault();
 					handleRedo();
 				}
+				return;
+			}
+
+			if (!isEditableTarget && !e.metaKey && !e.ctrlKey && !e.altKey && e.key === "4") {
+				e.preventDefault();
+				timelineRef.current?.addMask("blur");
 				return;
 			}
 
@@ -6876,6 +6933,10 @@ export default function VideoEditor() {
 									handleAnnotationBlurIntensityChange
 								}
 								onAnnotationBlurColorChange={handleAnnotationBlurColorChange}
+								onAnnotationHighlightOpacityChange={
+									handleAnnotationHighlightOpacityChange
+								}
+								onAnnotationDisabledChange={handleAnnotationDisabledChange}
 								onAnnotationDelete={handleAnnotationDelete}
 							/>
 						)}
@@ -7000,6 +7061,20 @@ export default function VideoEditor() {
 											{t("timeline.annotation.label")}
 										</DropdownMenuItem>
 										<DropdownMenuItem
+											onClick={() => timelineRef.current?.addMask("blur")}
+											className="text-muted-foreground hover:text-foreground hover:bg-foreground/10 cursor-pointer"
+										>
+									{t("editor.masks.sensitiveData", "Sensitive Data Mask")}
+										</DropdownMenuItem>
+										<DropdownMenuItem
+											onClick={() =>
+												timelineRef.current?.addMask("highlight")
+											}
+											className="text-muted-foreground hover:text-foreground hover:bg-foreground/10 cursor-pointer"
+										>
+									{t("editor.masks.highlight", "Highlight")}
+										</DropdownMenuItem>
+										<DropdownMenuItem
 											onClick={() => {
 												const nextTrackIndex =
 													audioRegions.length > 0
@@ -7036,6 +7111,15 @@ export default function VideoEditor() {
 									title={t("timeline.zoom.suggestZooms")}
 								>
 									<WandSparkles className="w-4 h-4" />
+								</Button>
+								<Button
+									onClick={() => timelineRef.current?.addMask("blur")}
+									variant="ghost"
+									size="icon"
+									className="h-7 w-7 rounded-full text-muted-foreground transition-all hover:bg-pink-500/10 hover:text-pink-400"
+									title={`${t("editor.masks.title", "Mask")} (4)`}
+								>
+									<MaskIcon className="w-4 h-4" />
 								</Button>
 								<Button
 									onClick={() => timelineRef.current?.splitClip()}
@@ -7208,6 +7292,7 @@ export default function VideoEditor() {
 						captionQuickAddEnabled={autoCaptionSettings.timelineQuickAdd}
 						annotationRegions={annotationRegions}
 						onAnnotationAdded={handleAnnotationAdded}
+						onMaskAdded={handleMaskAdded}
 						onAnnotationSpanChange={handleAnnotationSpanChange}
 						onAnnotationDelete={handleAnnotationDelete}
 						selectedAnnotationId={selectedAnnotationId}

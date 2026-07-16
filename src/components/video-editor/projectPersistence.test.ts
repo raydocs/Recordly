@@ -79,4 +79,30 @@ describe("normalizeProjectEditor", () => {
 			disableCursorSmoothing: true,
 		});
 	});
+
+	it("normalizes persisted highlight masks and their disabled state", () => {
+		const editor = normalizeProjectEditor({
+			annotationRegions: [
+				{
+					id: "mask-highlight",
+					startMs: 100,
+					endMs: 1_100,
+					type: "highlight",
+					content: "",
+					position: { x: 12, y: 18 },
+					size: { width: 40, height: 24 },
+					style: {} as never,
+					zIndex: 1,
+					highlightOpacity: 1.8,
+					disabled: true,
+				},
+			],
+		});
+
+		expect(editor.annotationRegions[0]).toMatchObject({
+			type: "highlight",
+			highlightOpacity: 1,
+			disabled: true,
+		});
+	});
 });

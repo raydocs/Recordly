@@ -7,7 +7,6 @@ import {
 	ImageSquare as ImageIcon,
 	Info,
 	TextItalic as Italic,
-	BoundingBox as SquareDashed,
 	Trash as Trash2,
 	TextT as Type,
 	TextUnderline as Underline,
@@ -26,6 +25,7 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
+import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { type CustomFont, getCustomFonts } from "@/lib/customFonts";
@@ -43,6 +43,8 @@ interface AnnotationSettingsPanelProps {
 	onFigureDataChange?: (figureData: FigureData) => void;
 	onBlurIntensityChange?: (intensity: number) => void;
 	onBlurColorChange?: (color: string) => void;
+	onHighlightOpacityChange?: (opacity: number) => void;
+	onDisabledChange?: (disabled: boolean) => void;
 	onDelete: () => void;
 }
 
@@ -67,6 +69,8 @@ export function AnnotationSettingsPanel({
 	onFigureDataChange,
 	onBlurIntensityChange,
 	onBlurColorChange,
+	onHighlightOpacityChange,
+	onDisabledChange,
 	onDelete,
 }: AnnotationSettingsPanelProps) {
 	const t = useScopedT("editor");
@@ -138,6 +142,136 @@ export function AnnotationSettingsPanel({
 		event.target.value = "";
 	};
 
+	if (annotation.type === "blur" || annotation.type === "highlight") {
+		const isHighlight = annotation.type === "highlight";
+		const opacityPercent = Math.round((annotation.highlightOpacity ?? 0.54) * 100);
+		return (
+			<div className="flex h-full min-w-0 flex-[2] flex-col overflow-hidden rounded-2xl border border-foreground/10 bg-editor-panel shadow-xl">
+				<div className="min-h-0 flex-1 overflow-y-auto p-4 custom-scrollbar">
+					<div className="mb-5 flex items-center justify-between">
+						<div>
+							<p className="text-sm font-semibold text-foreground">
+								{t("masks.title", "Mask")}
+							</p>
+							<p className="mt-1 text-[10px] text-muted-foreground">
+								{t("masks.timelineHint", "Applied only across this timeline block")}
+							</p>
+						</div>
+						<span className="rounded-full bg-pink-500/10 px-2 py-1 text-[10px] font-semibold uppercase tracking-wider text-pink-400">
+							{t("masks.active", "Active")}
+						</span>
+					</div>
+
+					<section className="space-y-3">
+						<label className="block text-xs font-medium text-foreground">
+							{t("masks.type", "Mask type")}
+						</label>
+						<div className="grid grid-cols-2 gap-2 rounded-xl border border-foreground/10 bg-foreground/[0.04] p-1">
+							<button
+								type="button"
+								onClick={() => onTypeChange("blur")}
+								className={cn(
+									"rounded-lg px-3 py-2 text-xs font-medium transition-colors",
+									!isHighlight
+										? "bg-pink-500 text-white"
+										: "text-muted-foreground hover:bg-foreground/[0.06]",
+								)}
+							>
+								{t("masks.sensitiveData", "Sensitive Data")}
+							</button>
+							<button
+								type="button"
+								onClick={() => onTypeChange("highlight")}
+								className={cn(
+									"rounded-lg px-3 py-2 text-xs font-medium transition-colors",
+									isHighlight
+										? "bg-pink-500 text-white"
+										: "text-muted-foreground hover:bg-foreground/[0.06]",
+								)}
+							>
+								{t("masks.highlight", "Highlight")}
+							</button>
+						</div>
+					</section>
+
+					{isHighlight ? (
+						<section className="mt-5 space-y-3 rounded-xl border border-foreground/10 bg-foreground/[0.04] p-4">
+							<div className="flex items-center justify-between text-xs">
+								<span className="font-medium text-foreground">
+									{t("masks.highlightOpacity", "Highlight mask opacity")}
+								</span>
+								<span className="tabular-nums text-muted-foreground">
+									{opacityPercent}%
+								</span>
+							</div>
+							<Slider
+								value={[opacityPercent]}
+								onValueChange={([value]) => onHighlightOpacityChange?.(value / 100)}
+								min={0}
+								max={90}
+								step={1}
+							/>
+						</section>
+					) : (
+						<section className="mt-5 space-y-3 rounded-xl border border-foreground/10 bg-foreground/[0.04] p-4">
+							<div className="flex items-center justify-between text-xs">
+								<span className="font-medium text-foreground">
+									{t("masks.blurStrength", "Blur strength")}
+								</span>
+								<span className="tabular-nums text-muted-foreground">
+									{annotation.blurIntensity ?? 20}
+								</span>
+							</div>
+							<Slider
+								value={[annotation.blurIntensity ?? 20]}
+								onValueChange={([value]) => onBlurIntensityChange?.(value)}
+								min={1}
+								max={100}
+								step={1}
+							/>
+							<p className="text-[10px] leading-relaxed text-amber-400/80">
+								{t(
+									"masks.sensitiveHint",
+									"Cover the entire timeline section where sensitive data is visible.",
+								)}
+							</p>
+						</section>
+					)}
+
+					<section className="mt-5 flex items-center justify-between rounded-xl border border-foreground/10 bg-foreground/[0.04] p-4">
+						<div className="pr-4">
+							<p className="text-xs font-medium text-foreground">
+								{t("masks.disable", "Disable")}
+							</p>
+							<p className="mt-1 text-[10px] leading-relaxed text-muted-foreground">
+								{t(
+									"masks.disableHint",
+									"Keep this block on the timeline without applying it.",
+								)}
+							</p>
+						</div>
+						<Switch
+							checked={Boolean(annotation.disabled)}
+							onCheckedChange={(checked) => onDisabledChange?.(checked)}
+							className="data-[state=checked]:bg-pink-500"
+						/>
+					</section>
+				</div>
+
+				<div className="border-t border-foreground/10 p-4">
+					<Button
+						variant="ghost"
+						onClick={onDelete}
+						className="w-full border border-red-500/20 text-red-400 hover:bg-red-500/10 hover:text-red-300"
+					>
+						<Trash2 className="mr-2 h-4 w-4" />
+						{t("masks.remove", "Remove mask")}
+					</Button>
+				</div>
+			</div>
+		);
+	}
+
 	return (
 		<div className="flex-[2] min-w-0 bg-editor-panel border border-foreground/10 rounded-2xl flex flex-col shadow-xl h-full overflow-hidden">
 			<div className="flex-1 min-h-0 p-4 overflow-y-auto custom-scrollbar">
@@ -157,7 +291,7 @@ export function AnnotationSettingsPanel({
 					onValueChange={(value) => onTypeChange(value as AnnotationType)}
 					className="mb-6"
 				>
-					<TabsList className="mb-4 bg-foreground/5 border border-foreground/5 p-1 w-full grid grid-cols-4 h-auto rounded-xl">
+						<TabsList className="mb-4 bg-foreground/5 border border-foreground/5 p-1 w-full grid grid-cols-3 h-auto rounded-xl">
 						<TabsTrigger
 							value="text"
 							className="data-[state=active]:bg-[#2563EB] data-[state=active]:text-white text-muted-foreground py-2 rounded-lg transition-all gap-2"
@@ -190,13 +324,6 @@ export function AnnotationSettingsPanel({
 								/>
 							</svg>
 							{t("annotations.arrow")}
-						</TabsTrigger>
-						<TabsTrigger
-							value="blur"
-							className="data-[state=active]:bg-[#2563EB] data-[state=active]:text-white text-muted-foreground py-2 rounded-lg transition-all gap-2"
-						>
-							<SquareDashed className="w-4 h-4" />
-							{t("annotations.blur")}
 						</TabsTrigger>
 					</TabsList>
 
@@ -253,7 +380,9 @@ export function AnnotationSettingsPanel({
 														<SelectItem
 															key={font.id}
 															value={font.fontFamily}
-															style={{ fontFamily: font.fontFamily }}
+																style={{
+																	fontFamily: font.fontFamily,
+																}}
 														>
 															{font.name}
 														</SelectItem>
@@ -307,7 +436,9 @@ export function AnnotationSettingsPanel({
 										value="bold"
 										aria-label={t("annotations.toggleBold")}
 										data-state={
-											annotation.style.fontWeight === "bold" ? "on" : "off"
+												annotation.style.fontWeight === "bold"
+													? "on"
+													: "off"
 										}
 										onClick={() =>
 											onStyleChange({
@@ -325,7 +456,9 @@ export function AnnotationSettingsPanel({
 										value="italic"
 										aria-label={t("annotations.toggleItalic")}
 										data-state={
-											annotation.style.fontStyle === "italic" ? "on" : "off"
+												annotation.style.fontStyle === "italic"
+													? "on"
+													: "off"
 										}
 										onClick={() =>
 											onStyleChange({
@@ -350,7 +483,8 @@ export function AnnotationSettingsPanel({
 										onClick={() =>
 											onStyleChange({
 												textDecoration:
-													annotation.style.textDecoration === "underline"
+														annotation.style.textDecoration ===
+														"underline"
 														? "none"
 														: "underline",
 											})
@@ -447,7 +581,8 @@ export function AnnotationSettingsPanel({
 														className="absolute inset-0"
 														style={{
 															backgroundColor:
-																annotation.style.backgroundColor,
+																	annotation.style
+																		.backgroundColor,
 														}}
 													/>
 												</div>
@@ -470,7 +605,9 @@ export function AnnotationSettingsPanel({
 												}
 												colors={colorPalette}
 												onChange={(color) => {
-													onStyleChange({ backgroundColor: color.hex });
+														onStyleChange({
+															backgroundColor: color.hex,
+														});
 												}}
 												style={{
 													borderRadius: "8px",
@@ -564,7 +701,8 @@ export function AnnotationSettingsPanel({
 											)}
 											className={cn(
 												"h-16 rounded-lg border flex items-center justify-center transition-all p-2",
-												annotation.figureData?.arrowDirection === direction
+													annotation.figureData?.arrowDirection ===
+														direction
 													? "bg-[#2563EB] border-[#2563EB]"
 													: "bg-foreground/5 border-foreground/10 hover:bg-foreground/10 hover:border-foreground/20",
 											)}
@@ -672,7 +810,10 @@ export function AnnotationSettingsPanel({
 							<div className="w-full space-y-3 mt-4">
 								<div className="flex items-center justify-between">
 									<span className="text-xs font-medium text-foreground">
-										{t("annotations.solidColor", "Solid Color (Censorship)")}
+											{t(
+												"annotations.solidColor",
+												"Solid Color (Censorship)",
+											)}
 									</span>
 								</div>
 								<div className="flex flex-wrap gap-2">

@@ -140,5 +140,19 @@
 		"noTypingSegments": "在此範圍內找不到持續打字片段。",
 		"typingSegmentsAdded": "已加入 {{count}} 個智慧打字變速區域。"
 	},
-	"openRecordingsFolder": "打開錄製資料夾"
+	"openRecordingsFolder": "打開錄製資料夾",
+	"masks": {
+		"title": "遮罩",
+		"timelineHint": "僅在此時間軸片段內生效",
+		"active": "已啟用",
+		"type": "遮罩類型",
+		"sensitiveData": "敏感資訊",
+		"highlight": "醒目提示",
+		"highlightOpacity": "醒目提示遮罩透明度",
+		"blurStrength": "模糊強度",
+		"sensitiveHint": "請覆蓋敏感資訊出現的整個時間軸區段。",
+		"disable": "停用",
+		"disableHint": "保留時間軸片段，但不套用遮罩效果。",
+		"remove": "移除遮罩"
+	}
 }
