@@ -32,6 +32,59 @@ export function getWebcamPositionForPreset(preset: WebcamPositionPreset): { x: n
 	}
 }
 
+export function getAutoDirectedWebcamLayout({
+	enabled,
+	zoomScale,
+	focusX,
+	focusY,
+	positionPreset,
+	positionX,
+	positionY,
+	widthPercent,
+	heightPercent,
+}: {
+	enabled: boolean;
+	zoomScale: number;
+	focusX: number;
+	focusY: number;
+	positionPreset: WebcamPositionPreset;
+	positionX: number;
+	positionY: number;
+	widthPercent: number;
+	heightPercent: number;
+}) {
+	const basePosition =
+		positionPreset === "custom"
+			? { x: clamp(positionX, 0, 1), y: clamp(positionY, 0, 1) }
+			: getWebcamPositionForPreset(positionPreset);
+	if (!enabled) {
+		return {
+			positionPreset,
+			positionX: basePosition.x,
+			positionY: basePosition.y,
+			widthPercent,
+			heightPercent,
+		};
+	}
+
+	const safeZoomScale = Number.isFinite(zoomScale) ? Math.max(1, zoomScale) : 1;
+	const rawActivity = clamp((safeZoomScale - 1) / 0.7, 0, 1);
+	const activity = rawActivity * rawActivity * (3 - 2 * rawActivity);
+	const safeFocusX = clamp(Number.isFinite(focusX) ? focusX : 0.5, 0, 1);
+	const safeFocusY = clamp(Number.isFinite(focusY) ? focusY : 0.5, 0, 1);
+	const targetX = Math.abs(safeFocusX - 0.5) < 0.12 ? basePosition.x : safeFocusX < 0.5 ? 1 : 0;
+	const targetY = Math.abs(safeFocusY - 0.5) < 0.12 ? basePosition.y : safeFocusY < 0.5 ? 1 : 0;
+	const sizeScale = 1 - activity * 0.28;
+
+	return {
+		positionPreset: "custom" as const,
+		positionX: basePosition.x + (targetX - basePosition.x) * activity,
+		positionY: basePosition.y + (targetY - basePosition.y) * activity,
+		widthPercent: widthPercent * sizeScale,
+		heightPercent: heightPercent * sizeScale,
+	};
+}
+
 function isCornerPreset(preset: WebcamPositionPreset): preset is WebcamCorner {
 	return (
 		preset === "top-left" ||

@@ -10,6 +10,7 @@ const MIN_EDITED_TRACK_TEMPO_SPEED = 0.5;
 const MAX_EDITED_TRACK_TEMPO_SPEED = 2;
 
 export type NativeExportEncodingMode = "fast" | "balanced" | "quality";
+export type NativeVideoCodec = "h264" | "hevc";
 
 export type NativeVideoExportAudioMode = "none" | "copy-source" | "trim-source" | "edited-track";
 export type NativeVideoExportEditedTrackStrategy =
@@ -22,6 +23,7 @@ export interface NativeVideoExportStartOptions {
 	frameRate: number;
 	bitrate: number;
 	encodingMode: NativeExportEncodingMode;
+	videoCodec?: NativeVideoCodec;
 	inputMode?: "rawvideo" | "h264-stream";
 }
 
@@ -114,7 +116,23 @@ export function parseAvailableFfmpegEncoders(stdout: string): Set<string> {
 	return encoders;
 }
 
-export function getPreferredNativeVideoEncoders(platform: NodeJS.Platform): string[] {
+export function getPreferredNativeVideoEncoders(
+	platform: NodeJS.Platform,
+	videoCodec: NativeVideoCodec = "h264",
+): string[] {
+	if (videoCodec === "hevc") {
+		switch (platform) {
+			case "darwin":
+				return ["hevc_videotoolbox", "libx265"];
+			case "win32":
+				return ["hevc_nvenc", "hevc_qsv", "hevc_amf", "libx265"];
+			case "linux":
+				return ["hevc_nvenc", "hevc_qsv", "libx265"];
+			default:
+				return ["libx265"];
+		}
+	}
+
 	switch (platform) {
 		case "darwin":
 			return ["h264_videotoolbox", "libx264"];
@@ -124,6 +142,18 @@ export function getPreferredNativeVideoEncoders(platform: NodeJS.Platform): stri
 			return ["h264_nvenc", "h264_qsv", "libx264"];
 		default:
 			return ["libx264"];
+	}
+}
+
+function getLibx265ModeArgs(encodingMode: NativeExportEncodingMode): string[] {
+	switch (encodingMode) {
+		case "fast":
+			return ["-preset", "ultrafast"];
+		case "quality":
+			return ["-preset", "slow"];
+		case "balanced":
+		default:
+			return ["-preset", "medium"];
 	}
 }
 
@@ -295,8 +325,7 @@ export function buildNativeVideoExportArgs(
 		String(options.frameRate),
 		"-i",
 		"pipe:0",
-		"-vf",
-		"vflip",
+		...(options.videoCodec === "hevc" ? [] : ["-vf", "vflip"]),
 		"-an",
 		"-c:v",
 		encoder,
@@ -308,8 +337,15 @@ export function buildNativeVideoExportArgs(
 	if (encoder === "libx264") {
 		args.push(...getLibx264ModeArgs(options.encodingMode));
 	}
+	if (encoder === "libx265") {
+		args.push(...getLibx265ModeArgs(options.encodingMode));
+	}
 
-	args.push("-pix_fmt", "yuv420p", "-movflags", "+faststart", outputPath);
+	args.push("-pix_fmt", "yuv420p");
+	if (options.videoCodec === "hevc" || encoder.startsWith("hevc_") || encoder === "libx265") {
+		args.push("-tag:v", "hvc1");
+	}
+	args.push("-movflags", "+faststart", outputPath);
 	return args;
 }
 

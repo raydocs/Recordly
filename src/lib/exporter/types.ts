@@ -4,6 +4,7 @@ export interface ExportConfig {
 	frameRate: number;
 	bitrate: number;
 	codec?: string;
+	videoCodec?: ExportVideoCodec;
 	encodingMode?: ExportEncodingMode;
 	backendPreference?: ExportBackendPreference;
 	preferredRenderBackend?: ExportRenderBackend;
@@ -171,6 +172,7 @@ export interface VideoFrameData {
 }
 
 export type ExportEncodingMode = "fast" | "balanced" | "quality";
+export type ExportVideoCodec = "h264" | "hevc";
 
 export type ExportQuality = "medium" | "good" | "high" | "source";
 
@@ -197,6 +199,7 @@ export interface ExportSettings {
 	// MP4 settings
 	quality?: ExportQuality;
 	encodingMode?: ExportEncodingMode;
+	videoCodec?: ExportVideoCodec;
 	mp4FrameRate?: ExportMp4FrameRate;
 	backendPreference?: ExportBackendPreference;
 	pipelineModel?: ExportPipelineModel;

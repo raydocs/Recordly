@@ -171,9 +171,7 @@ import {
 	SNAP_TO_EDGES_RATIO_AUTO,
 } from "./videoPlayback/cursorFollowCamera";
 import { clampFocusToStage as clampFocusToStageUtil } from "./videoPlayback/focusUtils";
-import {
-	layoutVideoContent as layoutVideoContentUtil,
-} from "./videoPlayback/layoutUtils";
+import { layoutVideoContent as layoutVideoContentUtil } from "./videoPlayback/layoutUtils";
 import { updateOverlayIndicator } from "./videoPlayback/overlayUtils";
 import { createVideoEventHandlers } from "./videoPlayback/videoEventHandlers";
 import { getWebcamMediaTargetTimeSeconds, shouldSeekWebcamMedia } from "./videoPlayback/webcamSync";
@@ -185,6 +183,7 @@ import {
 	type MotionBlurState,
 } from "./videoPlayback/zoomTransform";
 import {
+	getAutoDirectedWebcamLayout,
 	getCropMatchedWebcamHeightPercent,
 	getWebcamCropSourceRect,
 	getWebcamOverlayDimensionsPx,
@@ -915,6 +914,7 @@ const VideoPlayback = forwardRef<VideoPlaybackRef, VideoPlaybackProps>(
 		const webcamWidth = webcam?.width ?? webcam?.size ?? DEFAULT_WEBCAM_SIZE;
 		const rawWebcamHeight = webcam?.height ?? webcam?.size ?? DEFAULT_WEBCAM_SIZE;
 		const webcamReactToZoom = webcam?.reactToZoom ?? DEFAULT_WEBCAM_REACT_TO_ZOOM;
+		const webcamAutoDirector = webcam?.autoDirector ?? true;
 		const webcamPositionPreset = webcam?.positionPreset ?? webcam?.corner ?? "bottom-right";
 		const webcamPositionX = webcam?.positionX ?? 1;
 		const webcamPositionY = webcam?.positionY ?? 1;
@@ -970,11 +970,23 @@ const VideoPlayback = forwardRef<VideoPlaybackRef, VideoPlaybackProps>(
 					return;
 				}
 
+				const animationState = animationStateRef.current;
+				const directedLayout = getAutoDirectedWebcamLayout({
+					enabled: webcamAutoDirector,
+					zoomScale,
+					focusX: animationState.focusX,
+					focusY: animationState.focusY,
+					positionPreset: webcamPositionPreset,
+					positionX: webcamPositionX,
+					positionY: webcamPositionY,
+					widthPercent: webcamWidth,
+					heightPercent: webcamHeight,
+				});
 				const scaledDimensions = getWebcamOverlayDimensionsPx({
 					containerWidth: overlay.clientWidth,
 					containerHeight: overlay.clientHeight,
-					widthPercent: webcamWidth,
-					heightPercent: webcamHeight,
+					widthPercent: directedLayout.widthPercent,
+					heightPercent: directedLayout.heightPercent,
 					margin: webcamMargin,
 					zoomScale,
 					reactToZoom: webcamReactToZoom,
@@ -985,9 +997,9 @@ const VideoPlayback = forwardRef<VideoPlaybackRef, VideoPlaybackProps>(
 					width: scaledDimensions.width,
 					height: scaledDimensions.height,
 					margin: webcamMargin,
-					positionPreset: webcamPositionPreset,
-					positionX: webcamPositionX,
-					positionY: webcamPositionY,
+					positionPreset: directedLayout.positionPreset,
+					positionX: directedLayout.positionX,
+					positionY: directedLayout.positionY,
 					legacyCorner: webcamCorner,
 				});
 
@@ -997,6 +1009,9 @@ const VideoPlayback = forwardRef<VideoPlaybackRef, VideoPlaybackProps>(
 				bubble.style.width = `${scaledDimensions.width}px`;
 				bubble.style.height = `${scaledDimensions.height}px`;
 				bubble.style.aspectRatio = `${scaledDimensions.width} / ${scaledDimensions.height}`;
+				bubble.style.transition = webcamAutoDirector
+					? "left 420ms cubic-bezier(0.22, 1, 0.36, 1), top 420ms cubic-bezier(0.22, 1, 0.36, 1), width 420ms cubic-bezier(0.22, 1, 0.36, 1), height 420ms cubic-bezier(0.22, 1, 0.36, 1)"
+					: "none";
 				const squirclePath = getSquircleSvgPath({
 					x: 0,
 					y: 0,
@@ -1018,6 +1033,7 @@ const VideoPlayback = forwardRef<VideoPlaybackRef, VideoPlaybackProps>(
 				bubbleInner.style.setProperty("-webkit-clip-path", `path('${squirclePath}')`);
 			},
 			[
+				webcamAutoDirector,
 				webcamCorner,
 				webcamCornerRadius,
 				webcamEnabled,

@@ -20,6 +20,7 @@ import {
 	setCountdownTimer,
 } from "../state";
 import { parseJsonWithByteOrderMark } from "../utils";
+import { normalizeVoiceEnhancementMode } from "../recording/voiceEnhancement";
 
 const BROWSER_MICROPHONE_PROFILE_ENV = "RECORDLY_BROWSER_MIC_PROFILE";
 const DEFAULT_BROWSER_MICROPHONE_PROFILE = "processed";
@@ -154,6 +155,7 @@ export function registerSettingsHandlers() {
 						? parsed.microphoneDeviceId
 						: undefined,
 				systemAudioEnabled: parsed.systemAudioEnabled === true,
+				voiceEnhancementMode: normalizeVoiceEnhancementMode(parsed.voiceEnhancementMode),
 			};
 		} catch {
 			return {
@@ -161,6 +163,7 @@ export function registerSettingsHandlers() {
 				microphoneEnabled: false,
 				microphoneDeviceId: undefined,
 				systemAudioEnabled: false,
+				voiceEnhancementMode: "standard" as const,
 			};
 		}
 	});
@@ -177,6 +180,7 @@ export function registerSettingsHandlers() {
 				microphoneEnabled?: boolean;
 				microphoneDeviceId?: string;
 				systemAudioEnabled?: boolean;
+				voiceEnhancementMode?: "off" | "standard" | "strong";
 			},
 		) => {
 			try {

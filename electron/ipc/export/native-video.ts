@@ -17,6 +17,7 @@ import type {
 	NativeVideoExportAudioMode,
 	NativeVideoExportEditedTrackSegment,
 	NativeVideoExportFinishOptions,
+	NativeVideoCodec,
 } from "../nativeVideoExport";
 import {
 	buildEditedTrackSourceAudioFilter,
@@ -3891,6 +3892,7 @@ export async function probeNativeVideoEncoder(
 	ffmpegPath: string,
 	encoderName: string,
 	encodingMode: NativeExportEncodingMode,
+	videoCodec: NativeVideoCodec = "h264",
 ) {
 	const outputPath = path.join(
 		app.getPath("temp"),
@@ -3904,6 +3906,7 @@ export async function probeNativeVideoEncoder(
 			frameRate: 1,
 			bitrate: 1_500_000,
 			encodingMode,
+			videoCodec,
 		},
 		outputPath,
 	);
@@ -3945,17 +3948,23 @@ export async function probeNativeVideoEncoder(
 export async function resolveNativeVideoEncoder(
 	ffmpegPath: string,
 	encodingMode: NativeExportEncodingMode,
+	videoCodec: NativeVideoCodec = "h264",
 ) {
 	if (
 		cachedNativeVideoEncoder?.ffmpegPath === ffmpegPath &&
-		cachedNativeVideoEncoder?.encodingMode === encodingMode
+		cachedNativeVideoEncoder?.encodingMode === encodingMode &&
+		cachedNativeVideoEncoder?.videoCodec === videoCodec
 	) {
 		return cachedNativeVideoEncoder.encoderName;
 	}
 
 	const availableEncoders = await getAvailableNativeVideoEncoders(ffmpegPath);
+	const softwareFallback = videoCodec === "hevc" ? "libx265" : "libx264";
 	const candidates = [
-		...new Set([...getPreferredNativeVideoEncoders(process.platform), "libx264"]),
+		...new Set([
+			...getPreferredNativeVideoEncoders(process.platform, videoCodec),
+			softwareFallback,
+		]),
 	];
 
 	for (const encoderName of candidates) {
@@ -3963,13 +3972,13 @@ export async function resolveNativeVideoEncoder(
 			continue;
 		}
 
-		if (await probeNativeVideoEncoder(ffmpegPath, encoderName, encodingMode)) {
-			setCachedNativeVideoEncoder({ ffmpegPath, encodingMode, encoderName });
+		if (await probeNativeVideoEncoder(ffmpegPath, encoderName, encodingMode, videoCodec)) {
+			setCachedNativeVideoEncoder({ ffmpegPath, encodingMode, videoCodec, encoderName });
 			return encoderName;
 		}
 	}
 
-	throw new Error("No usable FFmpeg encoder was available for native export");
+	throw new Error(`No usable FFmpeg ${videoCodec.toUpperCase()} encoder was available`);
 }
 
 export function canCopyAudioCodecIntoMp4(codec?: string | null) {

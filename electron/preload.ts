@@ -321,6 +321,7 @@ contextBridge.exposeInMainWorld("electronAPI", {
 		frameRate: number;
 		bitrate: number;
 		encodingMode: "fast" | "balanced" | "quality";
+		videoCodec?: "h264" | "hevc";
 		inputMode?: "rawvideo" | "h264-stream";
 	}) => {
 		return ipcRenderer.invoke("native-video-export-start", options);
@@ -509,6 +510,7 @@ contextBridge.exposeInMainWorld("electronAPI", {
 			capturesMicrophone?: boolean;
 			microphoneDeviceId?: string;
 			microphoneLabel?: string;
+			voiceEnhancementMode?: "off" | "standard" | "strong";
 		},
 	) => {
 		return ipcRenderer.invoke("start-native-screen-recording", source, options);
@@ -972,6 +974,7 @@ contextBridge.exposeInMainWorld("electronAPI", {
 		microphoneEnabled?: boolean;
 		microphoneDeviceId?: string;
 		systemAudioEnabled?: boolean;
+		voiceEnhancementMode?: "off" | "standard" | "strong";
 	}) => ipcRenderer.invoke("set-recording-preferences", prefs),
 	getCountdownDelay: () => ipcRenderer.invoke("get-countdown-delay"),
 	setCountdownDelay: (delay: number) => ipcRenderer.invoke("set-countdown-delay", delay),

@@ -126,6 +126,8 @@ type DesktopCaptureMediaDevices = {
 	getDisplayMedia: (constraints: unknown) => Promise<MediaStream>;
 };
 
+export type VoiceEnhancementMode = "off" | "standard" | "strong";
+
 type UseScreenRecorderReturn = {
 	recording: boolean;
 	paused: boolean;
@@ -143,6 +145,8 @@ type UseScreenRecorderReturn = {
 	setMicrophoneDeviceId: (deviceId: string | undefined) => void;
 	systemAudioEnabled: boolean;
 	setSystemAudioEnabled: (enabled: boolean) => void;
+	voiceEnhancementMode: VoiceEnhancementMode;
+	setVoiceEnhancementMode: (mode: VoiceEnhancementMode) => void;
 	webcamEnabled: boolean;
 	setWebcamEnabled: (enabled: boolean) => void;
 	webcamDeviceId: string | undefined;
@@ -213,10 +217,7 @@ export function resolveBrowserCaptureCursorPolicy({
 export function shouldUseNativeWindowsCaptureForSource(
 	source: Pick<ProcessedDesktopSource, "id"> | null | undefined,
 ): boolean {
-	return (
-		source?.id?.startsWith("screen:") === true ||
-		source?.id?.startsWith("window:") === true
-	);
+	return source?.id?.startsWith("screen:") === true || source?.id?.startsWith("window:") === true;
 }
 
 export function createProcessedMicrophoneConstraints(
@@ -329,6 +330,8 @@ export function useScreenRecorder(): UseScreenRecorderReturn {
 	const [microphoneEnabled, setMicrophoneEnabled] = useState(false);
 	const [microphoneDeviceId, setMicrophoneDeviceId] = useState<string | undefined>(undefined);
 	const [systemAudioEnabled, setSystemAudioEnabled] = useState(false);
+	const [voiceEnhancementMode, setVoiceEnhancementMode] =
+		useState<VoiceEnhancementMode>("standard");
 	const [webcamEnabled, setWebcamEnabled] = useState(false);
 	const [webcamDeviceId, setWebcamDeviceId] = useState<string | undefined>(undefined);
 	const [countdownDelay, setCountdownDelayState] = useState(3);
@@ -1267,6 +1270,7 @@ export function useScreenRecorder(): UseScreenRecorderReturn {
 					setMicrophoneDeviceId(result.microphoneDeviceId);
 				}
 				setSystemAudioEnabled(result.systemAudioEnabled);
+				setVoiceEnhancementMode(result.voiceEnhancementMode ?? "standard");
 			}
 		})();
 	}, []);
@@ -1284,6 +1288,11 @@ export function useScreenRecorder(): UseScreenRecorderReturn {
 	const persistSystemAudioEnabled = useCallback((enabled: boolean) => {
 		setSystemAudioEnabled(enabled);
 		void window.electronAPI.setRecordingPreferences({ systemAudioEnabled: enabled });
+	}, []);
+
+	const persistVoiceEnhancementMode = useCallback((mode: VoiceEnhancementMode) => {
+		setVoiceEnhancementMode(mode);
+		void window.electronAPI.setRecordingPreferences({ voiceEnhancementMode: mode });
 	}, []);
 
 	useEffect(() => {
@@ -1460,6 +1469,7 @@ export function useScreenRecorder(): UseScreenRecorderReturn {
 						capturesMicrophone: microphoneEnabled,
 						microphoneDeviceId,
 						microphoneLabel: micLabel,
+						voiceEnhancementMode,
 					},
 				);
 				if (!nativeResult.success) {
@@ -2118,6 +2128,8 @@ export function useScreenRecorder(): UseScreenRecorderReturn {
 		setMicrophoneDeviceId: persistMicrophoneDeviceId,
 		systemAudioEnabled,
 		setSystemAudioEnabled: persistSystemAudioEnabled,
+		voiceEnhancementMode,
+		setVoiceEnhancementMode: persistVoiceEnhancementMode,
 		webcamEnabled,
 		setWebcamEnabled,
 		webcamDeviceId,

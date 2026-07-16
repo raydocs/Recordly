@@ -235,6 +235,7 @@ interface Window {
 				capturesMicrophone?: boolean;
 				microphoneDeviceId?: string;
 				microphoneLabel?: string;
+				voiceEnhancementMode?: "off" | "standard" | "strong";
 			},
 		) => Promise<{
 			success: boolean;
@@ -441,6 +442,7 @@ interface Window {
 			frameRate: number;
 			bitrate: number;
 			encodingMode: "fast" | "balanced" | "quality";
+			videoCodec?: "h264" | "hevc";
 			inputMode?: "rawvideo" | "h264-stream";
 		}) => Promise<{
 			success: boolean;
@@ -881,6 +883,7 @@ interface Window {
 			microphoneEnabled: boolean;
 			microphoneDeviceId?: string;
 			systemAudioEnabled: boolean;
+			voiceEnhancementMode: "off" | "standard" | "strong";
 		}>;
 		getRecordingAudioLabConfig: () => Promise<{
 			browserMicrophoneProfile: string;
@@ -890,6 +893,7 @@ interface Window {
 			microphoneEnabled?: boolean;
 			microphoneDeviceId?: string;
 			systemAudioEnabled?: boolean;
+			voiceEnhancementMode?: "off" | "standard" | "strong";
 		}) => Promise<{ success: boolean; error?: string }>;
 		/** Countdown timer before recording */
 		getCountdownDelay: () => Promise<{ success: boolean; delay: number }>;

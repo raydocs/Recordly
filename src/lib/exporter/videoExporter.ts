@@ -28,6 +28,7 @@ import {
 } from "./finalizationTimeout";
 import { FrameRenderer } from "./frameRenderer";
 import { getLocalFilePath } from "./localMediaSource";
+import { captureCanvasFrameForNativeExport } from "./nativeFrameCapture";
 import type { SupportedMp4EncoderPath } from "./mp4Support";
 import { VideoMuxer } from "./muxer";
 import { type DecodedVideoInfo, StreamingVideoDecoder } from "./streamingDecoder";
@@ -155,6 +156,7 @@ export class VideoExporter {
 	private encoderError: Error | null = null;
 	private nativeExportSessionId: string | null = null;
 	private nativeH264Encoder: VideoEncoder | null = null;
+	private nativeRawVideoInput = false;
 	private nativePendingWrite: Promise<void> = Promise.resolve();
 	private nativeWritePromises = new Set<Promise<void>>();
 	private nativeWriteError: Error | null = null;
@@ -200,6 +202,11 @@ export class VideoExporter {
 			let useNativeEncoder = shouldUseExperimentalNativeExport
 				? await this.tryStartNativeVideoExport()
 				: false;
+			if (this.config.videoCodec === "hevc" && !useNativeEncoder) {
+				throw new Error(
+					"HEVC export is unavailable because no native HEVC encoder could start.",
+				);
+			}
 			const shouldUsePitchPreservingFfmpegAudio =
 				audioPlan.audioMode === "edited-track" &&
 				audioPlan.strategy === "filtergraph-fast-path";
@@ -684,6 +691,7 @@ export class VideoExporter {
 			return false;
 		}
 
+		const useRawVideoInput = this.config.videoCodec === "hevc";
 		const encoderConfig: VideoEncoderConfig = {
 			codec: "avc1.640034",
 			width: this.config.width,
@@ -694,17 +702,19 @@ export class VideoExporter {
 			avc: { format: "annexb" },
 		};
 
-		try {
-			const support = await VideoEncoder.isConfigSupported(encoderConfig);
-			if (!support.supported) {
-				console.warn(
-					`[VideoExporter] Native H.264 Annex B encoding is unsupported at ${this.config.width}x${this.config.height}`,
-				);
+		if (!useRawVideoInput) {
+			try {
+				const support = await VideoEncoder.isConfigSupported(encoderConfig);
+				if (!support.supported) {
+					console.warn(
+						`[VideoExporter] Native H.264 Annex B encoding is unsupported at ${this.config.width}x${this.config.height}`,
+					);
+					return false;
+				}
+			} catch (error) {
+				console.warn("[VideoExporter] Native encoder support check failed:", error);
 				return false;
 			}
-		} catch (error) {
-			console.warn("[VideoExporter] Native encoder support check failed:", error);
-			return false;
 		}
 
 		const result = await window.electronAPI.nativeVideoExportStart({
@@ -713,7 +723,8 @@ export class VideoExporter {
 			frameRate: this.config.frameRate,
 			bitrate: this.config.bitrate,
 			encodingMode: this.config.encodingMode ?? "balanced",
-			inputMode: "h264-stream",
+			videoCodec: this.config.videoCodec ?? "h264",
+			inputMode: useRawVideoInput ? "rawvideo" : "h264-stream",
 		});
 
 		if (!result.success || !result.sessionId) {
@@ -725,10 +736,12 @@ export class VideoExporter {
 		this.nativePendingWrite = Promise.resolve();
 		this.nativeWritePromises = new Set();
 		this.nativeWriteError = null;
+		this.nativeRawVideoInput = useRawVideoInput;
 		this.maxNativeWriteInFlight = Math.max(
 			1,
 			Math.floor(this.config.maxInFlightNativeWrites ?? 1),
 		);
+		if (useRawVideoInput) return true;
 
 		// Initialize the browser-side H.264 encoder (hardware-accelerated where available).
 		// Encoded Annex B chunks are sent over IPC and FFmpeg stream-copies them into MP4.
@@ -795,7 +808,7 @@ export class VideoExporter {
 		frameDuration: number,
 		frameIndex: number,
 	): Promise<void> {
-		if (!this.nativeH264Encoder || !this.nativeExportSessionId) {
+		if ((!this.nativeH264Encoder && !this.nativeRawVideoInput) || !this.nativeExportSessionId) {
 			if (this.cancelled) return;
 			throw new Error("Native export session is not active");
 		}
@@ -809,9 +822,38 @@ export class VideoExporter {
 			if (this.nativeWriteError) throw this.nativeWriteError;
 		}
 
+		if (this.nativeRawVideoInput) {
+			const frameData = await captureCanvasFrameForNativeExport(
+				this.renderer!.getCanvas(),
+				timestamp,
+			);
+			const sessionId = this.nativeExportSessionId;
+			const writePromise = this.nativePendingWrite
+				.then(async () => {
+					const result = await window.electronAPI.nativeVideoExportWriteFrame(
+						sessionId,
+						frameData,
+					);
+					if (!result.success && !this.cancelled) {
+						throw new Error(result.error || "Failed to write raw HEVC frame");
+					}
+				})
+				.catch((error) => {
+					if (!this.cancelled) {
+						this.nativeWriteError =
+							error instanceof Error ? error : new Error(String(error));
+					}
+				});
+			this.nativePendingWrite = writePromise;
+			this.trackNativeWritePromise(writePromise);
+			return;
+		}
+		const nativeEncoder = this.nativeH264Encoder;
+		if (!nativeEncoder) throw new Error("Native H.264 encoder is not active");
+
 		// Apply backpressure: don't queue too far ahead of FFmpeg's stdin pipe
 		while (
-			this.nativeH264Encoder.encodeQueueSize >=
+			nativeEncoder.encodeQueueSize >=
 			Math.max(1, Math.floor(this.config.maxEncodeQueue ?? DEFAULT_MAX_ENCODE_QUEUE))
 		) {
 			await new Promise<void>((r) => setTimeout(r, 2));
@@ -832,7 +874,7 @@ export class VideoExporter {
 				fullRange: true,
 			},
 		});
-		this.nativeH264Encoder.encode(frame, { keyFrame: frameIndex % 300 === 0 });
+		nativeEncoder.encode(frame, { keyFrame: frameIndex % 300 === 0 });
 		frame.close();
 	}
 
@@ -1376,6 +1418,7 @@ export class VideoExporter {
 	}
 
 	private cleanup(): void {
+		this.nativeRawVideoInput = false;
 		if (this.nativeH264Encoder) {
 			try {
 				if (this.nativeH264Encoder.state === "configured") {

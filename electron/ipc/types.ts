@@ -13,6 +13,7 @@ export type NativeMacRecordingOptions = {
 	capturesMicrophone?: boolean;
 	microphoneDeviceId?: string;
 	microphoneLabel?: string;
+	voiceEnhancementMode?: "off" | "standard" | "strong";
 };
 
 export type WindowBounds = {

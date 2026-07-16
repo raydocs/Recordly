@@ -8,10 +8,39 @@ import {
 	buildNativePrecompositedStaticLayoutArgs,
 	buildNativeStaticBackgroundRenderArgs,
 	buildNativeStaticLayoutChunks,
+	buildNativeVideoExportArgs,
 	buildTrimmedSourceAudioFilter,
 	createNativeSquircleMaskPgmBuffer,
+	getPreferredNativeVideoEncoders,
 	isNativeCudaOutOfMemory,
 } from "./nativeVideoExport";
+
+describe("native HEVC export", () => {
+	it("prefers VideoToolbox on macOS and keeps a software fallback", () => {
+		expect(getPreferredNativeVideoEncoders("darwin", "hevc")).toEqual([
+			"hevc_videotoolbox",
+			"libx265",
+		]);
+	});
+
+	it("writes an Apple-compatible hvc1 MP4", () => {
+		const args = buildNativeVideoExportArgs(
+			"hevc_videotoolbox",
+			{
+				width: 1920,
+				height: 1080,
+				frameRate: 30,
+				bitrate: 8_000_000,
+				encodingMode: "balanced",
+				videoCodec: "hevc",
+			},
+			"output.mp4",
+		);
+		expect(args).toEqual(expect.arrayContaining(["-c:v", "hevc_videotoolbox"]));
+		expect(args).toEqual(expect.arrayContaining(["-tag:v", "hvc1"]));
+		expect(args).not.toContain("vflip");
+	});
+});
 
 describe("buildTrimmedSourceAudioFilter", () => {
 	it("concatenates trimmed source segments into a single output label", () => {

@@ -1052,6 +1052,10 @@ export function normalizeProjectEditor(editor: Partial<ProjectEditorState>): Pro
 					: legacyZoomScaleEffect != null
 						? legacyZoomScaleEffect > 0
 						: DEFAULT_WEBCAM_REACT_TO_ZOOM,
+			autoDirector:
+				typeof webcam.autoDirector === "boolean"
+					? webcam.autoDirector
+					: DEFAULT_WEBCAM_OVERLAY.autoDirector,
 			cornerRadius: isFiniteNumber(webcam.cornerRadius)
 				? clamp(webcam.cornerRadius, 0, 160)
 				: DEFAULT_WEBCAM_CORNER_RADIUS,

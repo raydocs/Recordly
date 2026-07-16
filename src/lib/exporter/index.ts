@@ -27,6 +27,7 @@ export type {
 	ExportRenderBackend,
 	ExportResult,
 	ExportSettings,
+	ExportVideoCodec,
 	GifExportConfig,
 	GifFrameRate,
 	GifSizePreset,

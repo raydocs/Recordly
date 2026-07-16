@@ -68,6 +68,7 @@ import {
 	waitForNativeCaptureStart,
 	waitForNativeCaptureStop,
 } from "../recording/mac";
+import { normalizeVoiceEnhancementMode } from "../recording/voiceEnhancement";
 import { resolveRecordedVideoStoragePath } from "../recording/storagePath";
 import {
 	attachWindowsCaptureLifecycle,
@@ -95,6 +96,7 @@ import {
 	nativeCaptureProcess,
 	nativeCaptureSystemAudioPath,
 	nativeCaptureTargetPath,
+	nativeCaptureVoiceEnhancementMode,
 	nativeScreenRecordingActive,
 	selectedSource,
 	setActiveCursorSamples,
@@ -115,6 +117,7 @@ import {
 	setNativeCaptureStopRequested,
 	setNativeCaptureSystemAudioPath,
 	setNativeCaptureTargetPath,
+	setNativeCaptureVoiceEnhancementMode,
 	setNativeScreenRecordingActive,
 	setPendingCursorSamples,
 	setWindowsCaptureOutputBuffer,
@@ -750,6 +753,9 @@ export function registerRecordingHandlers(
 				setNativeCaptureTargetPath(outputPath);
 				setNativeCaptureSystemAudioPath(systemAudioOutputPath);
 				setNativeCaptureMicrophonePath(microphoneOutputPath);
+				setNativeCaptureVoiceEnhancementMode(
+					normalizeVoiceEnhancementMode(options?.voiceEnhancementMode),
+				);
 				setNativeCaptureStopRequested(false);
 				setNativeCapturePaused(false);
 				captProc = spawn(helperPath, [JSON.stringify(config)], {
@@ -1121,6 +1127,7 @@ export function registerRecordingHandlers(
 			const preferredVideoPath = nativeCaptureTargetPath;
 			const preferredSystemAudioPath = nativeCaptureSystemAudioPath;
 			const preferredMicrophonePath = nativeCaptureMicrophonePath;
+			const preferredVoiceEnhancementMode = nativeCaptureVoiceEnhancementMode;
 			console.log(
 				"[stop-native] Audio paths — system:",
 				preferredSystemAudioPath,
@@ -1154,6 +1161,7 @@ export function registerRecordingHandlers(
 						finalVideoPath,
 						preferredSystemAudioPath,
 						preferredMicrophonePath,
+						preferredVoiceEnhancementMode,
 					);
 					console.log("[stop-native] Audio mux completed successfully");
 				} catch (error) {
@@ -1172,6 +1180,7 @@ export function registerRecordingHandlers(
 			const fallbackPath = nativeCaptureTargetPath;
 			const fallbackSystemAudioPath = nativeCaptureSystemAudioPath;
 			const fallbackMicrophonePath = nativeCaptureMicrophonePath;
+			const fallbackVoiceEnhancementMode = nativeCaptureVoiceEnhancementMode;
 			const fallbackFileSizeBytes = await getFileSizeIfPresent(fallbackPath);
 			setNativeScreenRecordingActive(false);
 			setNativeCaptureProcess(null);
@@ -1215,6 +1224,7 @@ export function registerRecordingHandlers(
 								fallbackPath,
 								fallbackSystemAudioPath,
 								fallbackMicrophonePath,
+								fallbackVoiceEnhancementMode,
 							);
 						} catch (muxError) {
 							console.warn(

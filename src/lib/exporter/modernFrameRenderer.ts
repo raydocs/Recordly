@@ -59,6 +59,7 @@ import {
 	type MotionBlurState,
 } from "@/components/video-editor/videoPlayback/zoomTransform";
 import {
+	getAutoDirectedWebcamLayout,
 	getCropMatchedWebcamHeightPercent,
 	getWebcamCropSourceRect,
 	getWebcamOverlayDimensionsPx,
@@ -2913,11 +2914,22 @@ export class FrameRenderer {
 			aspectSourceHeight,
 			webcam.cropRegion,
 		);
+		const directedLayout = getAutoDirectedWebcamLayout({
+			enabled: webcam.autoDirector ?? true,
+			zoomScale: this.animationState.appliedScale || 1,
+			focusX: this.animationState.focusX,
+			focusY: this.animationState.focusY,
+			positionPreset: webcam.positionPreset ?? webcam.corner,
+			positionX: webcam.positionX ?? 1,
+			positionY: webcam.positionY ?? 1,
+			widthPercent,
+			heightPercent,
+		});
 		const dimensions = getWebcamOverlayDimensionsPx({
 			containerWidth: this.config.width,
 			containerHeight: this.config.height,
-			widthPercent,
-			heightPercent,
+			widthPercent: directedLayout.widthPercent,
+			heightPercent: directedLayout.heightPercent,
 			margin,
 			zoomScale: this.animationState.appliedScale || 1,
 			reactToZoom: webcam.reactToZoom ?? true,
@@ -2928,9 +2940,9 @@ export class FrameRenderer {
 			width: dimensions.width,
 			height: dimensions.height,
 			margin,
-			positionPreset: webcam.positionPreset ?? webcam.corner,
-			positionX: webcam.positionX ?? 1,
-			positionY: webcam.positionY ?? 1,
+			positionPreset: directedLayout.positionPreset,
+			positionX: directedLayout.positionX,
+			positionY: directedLayout.positionY,
 			legacyCorner: webcam.corner,
 		});
 		const radius = Math.max(0, webcam.cornerRadius ?? 18);

@@ -71,6 +71,8 @@ function LaunchWindowContent() {
 		setMicrophoneDeviceId,
 		systemAudioEnabled,
 		setSystemAudioEnabled,
+		voiceEnhancementMode,
+		setVoiceEnhancementMode,
 		webcamEnabled,
 		setWebcamEnabled,
 		webcamDeviceId,
@@ -258,6 +260,8 @@ function LaunchWindowContent() {
 				systemAudioEnabled={systemAudioEnabled}
 				onToggleSystemAudio={() => setSystemAudioEnabled(!systemAudioEnabled)}
 				microphoneEnabled={microphoneEnabled}
+				voiceEnhancementMode={voiceEnhancementMode}
+				onVoiceEnhancementModeChange={setVoiceEnhancementMode}
 				onDisableMicrophone={() => setMicrophoneEnabled(false)}
 				devices={devices}
 				microphoneDeviceId={microphoneDeviceId}

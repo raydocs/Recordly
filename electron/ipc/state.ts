@@ -29,6 +29,7 @@ export let nativeCaptureTargetPath: string | null = null;
 export let nativeCaptureStopRequested = false;
 export let nativeCaptureSystemAudioPath: string | null = null;
 export let nativeCaptureMicrophonePath: string | null = null;
+export let nativeCaptureVoiceEnhancementMode: "off" | "standard" | "strong" = "standard";
 export let nativeCapturePaused = false;
 
 // ── Native cursor monitor ─────────────────────────────────────────────────────
@@ -96,6 +97,7 @@ export let cachedNativeMacWindowSourcesAtMs = 0;
 export let cachedNativeVideoEncoder: {
 	ffmpegPath: string;
 	encodingMode: string;
+	videoCodec: "h264" | "hevc";
 	encoderName: string;
 } | null = null;
 
@@ -142,6 +144,9 @@ export function setNativeCaptureSystemAudioPath(v: string | null) {
 }
 export function setNativeCaptureMicrophonePath(v: string | null) {
 	nativeCaptureMicrophonePath = v;
+}
+export function setNativeCaptureVoiceEnhancementMode(v: "off" | "standard" | "strong") {
+	nativeCaptureVoiceEnhancementMode = v;
 }
 export function setNativeCapturePaused(v: boolean) {
 	nativeCapturePaused = v;
@@ -283,7 +288,12 @@ export function setCachedNativeMacWindowSourcesAtMs(v: number) {
 }
 
 export function setCachedNativeVideoEncoder(
-	v: { ffmpegPath: string; encodingMode: string; encoderName: string } | null,
+	v: {
+		ffmpegPath: string;
+		encodingMode: string;
+		videoCodec: "h264" | "hevc";
+		encoderName: string;
+	} | null,
 ) {
 	cachedNativeVideoEncoder = v;
 }

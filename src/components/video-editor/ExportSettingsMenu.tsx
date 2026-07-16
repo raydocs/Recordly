@@ -9,6 +9,7 @@ import type {
 	ExportMp4FrameRate,
 	ExportPipelineModel,
 	ExportQuality,
+	ExportVideoCodec,
 	GifFrameRate,
 	GifSizePreset,
 } from "@/lib/exporter";
@@ -22,6 +23,8 @@ interface ExportSettingsMenuProps {
 	onExportQualityChange?: (quality: ExportQuality) => void;
 	exportEncodingMode: ExportEncodingMode;
 	onExportEncodingModeChange?: (encodingMode: ExportEncodingMode) => void;
+	exportVideoCodec: ExportVideoCodec;
+	onExportVideoCodecChange?: (videoCodec: ExportVideoCodec) => void;
 	mp4FrameRate: ExportMp4FrameRate;
 	onMp4FrameRateChange?: (frameRate: ExportMp4FrameRate) => void;
 	exportPipelineModel?: ExportPipelineModel;
@@ -51,6 +54,8 @@ export function ExportSettingsMenu({
 	onExportQualityChange,
 	exportEncodingMode,
 	onExportEncodingModeChange,
+	exportVideoCodec,
+	onExportVideoCodecChange,
 	mp4FrameRate,
 	onMp4FrameRateChange,
 	exportPipelineModel = "modern",
@@ -130,6 +135,47 @@ export function ExportSettingsMenu({
 
 			{exportFormat === "mp4" ? (
 				<LayoutGroup id="header-export-quality-toggle">
+					<div className="mb-1 flex items-center justify-between px-1">
+						<span className="text-[10px] font-medium uppercase tracking-[0.14em] text-muted-foreground/70">
+							{tSettings("export.codecTitle", "Video codec")}
+						</span>
+					</div>
+					<div className="mb-3 grid min-h-10 w-full grid-cols-2 rounded-xl border border-foreground/5 bg-foreground/5 p-0.5">
+						{(
+							[
+								{ value: "h264", label: "H.264" },
+								{ value: "hevc", label: "HEVC (H.265)" },
+							] as const
+						).map((option) => {
+							const isActive = exportVideoCodec === option.value;
+							return (
+								<button
+									key={option.value}
+									type="button"
+									onClick={() => onExportVideoCodecChange?.(option.value)}
+									aria-pressed={isActive}
+									className="relative rounded-lg px-1 py-1 text-[11px] font-medium transition-colors"
+								>
+									{isActive ? (
+										<motion.span
+											layoutId="header-export-codec-pill"
+											className="absolute inset-0 rounded-lg bg-neutral-800 dark:bg-white"
+										/>
+									) : null}
+									<span
+										className={cn(
+											"relative z-10",
+											isActive
+												? "text-white dark:text-black"
+												: "text-muted-foreground",
+										)}
+									>
+										{option.label}
+									</span>
+								</button>
+							);
+						})}
+					</div>
 					<div className="mb-3 grid min-h-12 w-full grid-cols-4 rounded-xl border border-foreground/5 bg-foreground/5 p-0.5">
 						{(
 							[
@@ -151,7 +197,7 @@ export function ExportSettingsMenu({
 									{isActive ? (
 										<motion.span
 											layoutId="header-export-quality-pill"
-										className="absolute inset-0 rounded-lg bg-neutral-800 dark:bg-white"
+											className="absolute inset-0 rounded-lg bg-neutral-800 dark:bg-white"
 											transition={{
 												type: "spring",
 												stiffness: 420,
@@ -163,17 +209,19 @@ export function ExportSettingsMenu({
 										<span
 											className={cn(
 												isActive
-												? "text-white dark:text-black"
-												: "text-muted-foreground hover:text-foreground",
-										)}
-									>
-										{option.label}
-									</span>
-									{mp4OutputDimensions ? (
-										<span
-											className={cn(
-												"mt-0.5 text-[9px]",
-												isActive ? "text-white/75 dark:text-black/75" : "text-muted-foreground/70",
+													? "text-white dark:text-black"
+													: "text-muted-foreground hover:text-foreground",
+											)}
+										>
+											{option.label}
+										</span>
+										{mp4OutputDimensions ? (
+											<span
+												className={cn(
+													"mt-0.5 text-[9px]",
+													isActive
+														? "text-white/75 dark:text-black/75"
+														: "text-muted-foreground/70",
 												)}
 											>
 												{mp4OutputDimensions[option.value].width} x{" "}
@@ -216,7 +264,7 @@ export function ExportSettingsMenu({
 									{isActive ? (
 										<motion.span
 											layoutId="header-export-encoding-pill"
-										className="absolute inset-0 rounded-lg bg-neutral-800 dark:bg-white"
+											className="absolute inset-0 rounded-lg bg-neutral-800 dark:bg-white"
 											transition={{
 												type: "spring",
 												stiffness: 420,
@@ -257,7 +305,7 @@ export function ExportSettingsMenu({
 									{isActive ? (
 										<motion.span
 											layoutId="header-export-fps-pill"
-										className="absolute inset-0 rounded-lg bg-neutral-800 dark:bg-white"
+											className="absolute inset-0 rounded-lg bg-neutral-800 dark:bg-white"
 											transition={{
 												type: "spring",
 												stiffness: 420,
@@ -309,7 +357,7 @@ export function ExportSettingsMenu({
 									{isActive ? (
 										<motion.span
 											layoutId="header-export-pipeline-pill"
-										className="absolute inset-0 rounded-lg bg-neutral-800 dark:bg-white"
+											className="absolute inset-0 rounded-lg bg-neutral-800 dark:bg-white"
 											transition={{
 												type: "spring",
 												stiffness: 420,
@@ -375,7 +423,10 @@ export function ExportSettingsMenu({
 						<div className="mb-3 flex min-h-12 items-center justify-between gap-3 rounded-lg border border-foreground/10 bg-foreground/5 px-3 py-2">
 							<div className="min-w-0">
 								<p className="text-[11px] font-semibold text-foreground">
-									{tSettings("export.captionSidecar.title", "Export captions file")}
+									{tSettings(
+										"export.captionSidecar.title",
+										"Export captions file",
+									)}
 								</p>
 								<p className="mt-0.5 truncate text-[10px] text-muted-foreground/75">
 									{tSettings(
@@ -414,7 +465,7 @@ export function ExportSettingsMenu({
 											{isActive ? (
 												<motion.span
 													layoutId="header-gif-frame-rate-pill"
-											className="absolute inset-0 rounded-lg bg-neutral-800 dark:bg-white"
+													className="absolute inset-0 rounded-lg bg-neutral-800 dark:bg-white"
 													transition={{
 														type: "spring",
 														stiffness: 420,
@@ -454,7 +505,7 @@ export function ExportSettingsMenu({
 											{isActive ? (
 												<motion.span
 													layoutId="header-gif-size-pill"
-											className="absolute inset-0 rounded-lg bg-neutral-800 dark:bg-white"
+													className="absolute inset-0 rounded-lg bg-neutral-800 dark:bg-white"
 													transition={{
 														type: "spring",
 														stiffness: 420,

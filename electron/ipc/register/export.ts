@@ -48,6 +48,7 @@ import {
 	getNativeVideoInputByteSize,
 	type NativeExportEncodingMode,
 	type NativeVideoExportFinishOptions,
+	type NativeVideoCodec,
 } from "../nativeVideoExport";
 import { isAllowedLocalReadPath, resolveApprovedLocalMediaPath } from "../project/manager";
 import { approveUserPath } from "../utils";
@@ -75,12 +76,7 @@ export async function moveExportedTempFile(tempPath: string, destinationPath: st
 		return;
 	} catch (error) {
 		const code = (error as NodeJS.ErrnoException).code;
-		if (
-			code !== "EXDEV" &&
-			code !== "EPERM" &&
-			code !== "ENOTEMPTY" &&
-			code !== "EEXIST"
-		) {
+		if (code !== "EXDEV" && code !== "EPERM" && code !== "ENOTEMPTY" && code !== "EEXIST") {
 			throw error;
 		}
 		// Cross-device or Windows permission quirks — fall back to copy + unlink so
@@ -113,9 +109,7 @@ export async function moveExportedTempFile(tempPath: string, destinationPath: st
 				await fs.rename(partialDestinationPath, destinationPath);
 			} catch (replaceError) {
 				if (movedExistingDestination) {
-					await fs
-						.rename(backupDestinationPath, destinationPath)
-						.catch(() => undefined);
+					await fs.rename(backupDestinationPath, destinationPath).catch(() => undefined);
 				}
 				throw replaceError;
 			}
@@ -263,6 +257,7 @@ export function registerExportHandlers() {
 				frameRate: number;
 				bitrate: number;
 				encodingMode: NativeExportEncodingMode;
+				videoCodec?: NativeVideoCodec;
 				inputMode?: "rawvideo" | "h264-stream";
 			},
 		) => {
@@ -273,6 +268,10 @@ export function registerExportHandlers() {
 
 				const ffmpegPath = getFfmpegBinaryPath();
 				const inputMode = options.inputMode ?? "rawvideo";
+				const videoCodec = options.videoCodec ?? "h264";
+				if (inputMode === "h264-stream" && videoCodec !== "h264") {
+					throw new Error("HEVC export requires raw video input");
+				}
 				const sessionId = `recordly-export-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 				const outputPath = path.join(app.getPath("temp"), `${sessionId}.mp4`);
 
@@ -287,7 +286,11 @@ export function registerExportHandlers() {
 						outputPath,
 					});
 				} else {
-					encoderName = await resolveNativeVideoEncoder(ffmpegPath, options.encodingMode);
+					encoderName = await resolveNativeVideoEncoder(
+						ffmpegPath,
+						options.encodingMode,
+						videoCodec,
+					);
 					ffmpegArgs = buildNativeVideoExportArgs(encoderName, options, outputPath);
 				}
 

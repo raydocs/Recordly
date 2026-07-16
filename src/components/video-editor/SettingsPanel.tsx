@@ -3947,6 +3947,29 @@ export function SettingsPanel({
 								/>
 							</div>
 							<div className="flex items-center justify-between rounded-lg bg-foreground/[0.03] px-2.5 py-1.5">
+								<div className="min-w-0 pr-3">
+									<div className="text-[10px] text-muted-foreground">
+										{tSettings(
+											"effects.webcamAutoDirector",
+											"AI Auto Director",
+										)}
+									</div>
+									<div className="text-[9px] text-muted-foreground/60">
+										{tSettings(
+											"effects.webcamAutoDirectorHint",
+											"Moves and resizes the camera away from the active screen area.",
+										)}
+									</div>
+								</div>
+								<Switch
+									checked={webcam?.autoDirector ?? true}
+									onCheckedChange={(autoDirector) =>
+										updateWebcam({ autoDirector })
+									}
+									className="data-[state=checked]:bg-[#2563EB] scale-75"
+								/>
+							</div>
+							<div className="flex items-center justify-between rounded-lg bg-foreground/[0.03] px-2.5 py-1.5">
 								<span className="text-[10px] text-muted-foreground">
 									{tSettings("effects.webcamReactToZoom")}
 								</span>

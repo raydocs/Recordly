@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+	getAutoDirectedWebcamLayout,
 	getCropMatchedWebcamHeightPercent,
 	getWebcamCropSourceRect,
 	getWebcamOverlayDimensionsPx,
@@ -7,6 +8,42 @@ import {
 	isWebcamCropRegionDefault,
 	normalizeWebcamCropRegion,
 } from "./webcamOverlay";
+
+describe("getAutoDirectedWebcamLayout", () => {
+	it("keeps the chosen layout while the screen is not zoomed", () => {
+		expect(
+			getAutoDirectedWebcamLayout({
+				enabled: true,
+				zoomScale: 1,
+				focusX: 0.2,
+				focusY: 0.2,
+				positionPreset: "bottom-right",
+				positionX: 1,
+				positionY: 1,
+				widthPercent: 40,
+				heightPercent: 40,
+			}),
+		).toMatchObject({ positionX: 1, positionY: 1, widthPercent: 40, heightPercent: 40 });
+	});
+
+	it("moves opposite the active zoom focus and shrinks the camera", () => {
+		const layout = getAutoDirectedWebcamLayout({
+			enabled: true,
+			zoomScale: 2,
+			focusX: 0.15,
+			focusY: 0.2,
+			positionPreset: "top-left",
+			positionX: 0,
+			positionY: 0,
+			widthPercent: 40,
+			heightPercent: 40,
+		});
+		expect(layout.positionPreset).toBe("custom");
+		expect(layout.positionX).toBe(1);
+		expect(layout.positionY).toBe(1);
+		expect(layout.widthPercent).toBeLessThan(40);
+	});
+});
 
 describe("normalizeWebcamCropRegion", () => {
 	it("defaults to the full webcam frame", () => {

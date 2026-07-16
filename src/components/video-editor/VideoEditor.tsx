@@ -62,6 +62,7 @@ import {
 	type ExportProgress,
 	type ExportQuality,
 	type ExportSettings,
+	type ExportVideoCodec,
 	FrameRenderer,
 	GIF_SIZE_PRESETS,
 	GifExporter,
@@ -616,6 +617,7 @@ export default function VideoEditor() {
 	const [exportEncodingMode, setExportEncodingMode] = useState<ExportEncodingMode>(
 		initialEditorPreferences.exportEncodingMode,
 	);
+	const [exportVideoCodec, setExportVideoCodec] = useState<ExportVideoCodec>("h264");
 	const [exportBackendPreference, setExportBackendPreference] = useState<ExportBackendPreference>(
 		initialEditorPreferences.exportBackendPreference,
 	);
@@ -4787,6 +4789,9 @@ export default function VideoEditor() {
 						experimentalNvidiaCudaExport,
 						nvidiaCudaExportAvailable,
 					});
+					const selectedVideoCodec = settings.videoCodec ?? exportVideoCodec;
+					const nativeExportEnabled =
+						selectedVideoCodec === "hevc" || useExperimentalNativeExport;
 					const supportedSourceDimensions =
 						await ensureSupportedMp4SourceDimensions(selectedMp4FrameRate);
 					const { width: exportWidth, height: exportHeight } =
@@ -4801,7 +4806,7 @@ export default function VideoEditor() {
 						frameRate: selectedMp4FrameRate,
 						quality,
 						encodingMode,
-						useModernNativeStaticLayout: useExperimentalNativeExport,
+						useModernNativeStaticLayout: nativeExportEnabled,
 					});
 					const sourceAudioTrackSettingsForExport =
 						selectedClipId !== null
@@ -4815,10 +4820,11 @@ export default function VideoEditor() {
 						frameRate: selectedMp4FrameRate,
 						bitrate,
 						codec: DEFAULT_MP4_CODEC,
+						videoCodec: selectedVideoCodec,
 						encodingMode,
 						preferredEncoderPath: supportedSourceDimensions.encoderPath,
 						preferredRenderBackend: smokeExportConfig.renderBackend,
-						experimentalNativeExport: useExperimentalNativeExport,
+						experimentalNativeExport: nativeExportEnabled,
 						experimentalNvidiaCudaExport: useExperimentalNvidiaCudaExport,
 						maxEncodeQueue: smokeExportConfig.maxEncodeQueue,
 						maxDecodeQueue: smokeExportConfig.maxDecodeQueue,
@@ -5150,6 +5156,7 @@ export default function VideoEditor() {
 			audio.activeSourceAudioTrackSettings,
 			audio.selectedClipSourceAudioTrackSettings,
 			exportEncodingMode,
+			exportVideoCodec,
 			exportBackendPreference,
 			exportPipelineModel,
 			experimentalNvidiaCudaExport,
@@ -5322,6 +5329,7 @@ export default function VideoEditor() {
 			exportFormat,
 			includeCaptionSidecar: hasCaptionsForSidecar && includeCaptionSidecar,
 			exportEncodingMode,
+			exportVideoCodec,
 			exportQuality,
 			mp4FrameRate,
 			exportBackendPreference,
@@ -5339,6 +5347,7 @@ export default function VideoEditor() {
 		videoPath,
 		exportFormat,
 		exportEncodingMode,
+		exportVideoCodec,
 		exportQuality,
 		mp4FrameRate,
 		gifFrameRate,
@@ -6227,6 +6236,8 @@ export default function VideoEditor() {
 									onExportFormatChange={setExportFormat}
 									exportEncodingMode={exportEncodingMode}
 									onExportEncodingModeChange={setExportEncodingMode}
+									exportVideoCodec={exportVideoCodec}
+									onExportVideoCodecChange={setExportVideoCodec}
 									mp4FrameRate={mp4FrameRate}
 									onMp4FrameRateChange={setMp4FrameRate}
 									exportPipelineModel={exportPipelineModel}

@@ -8,6 +8,7 @@ import {
 import {
 	lastNativeCaptureDiagnostics,
 	nativeCaptureMicrophonePath,
+	nativeCaptureVoiceEnhancementMode,
 	nativeCaptureOutputBuffer,
 	nativeCaptureStopRequested,
 	nativeCaptureSystemAudioPath,
@@ -32,6 +33,7 @@ import {
 import { emitRecordingInterrupted } from "./events";
 import { getFinalMacCompanionAudioPath } from "./macCompanionAudio";
 import { pruneAutoRecordings } from "./prune";
+import { enhanceMicrophoneRecording, type VoiceEnhancementMode } from "./voiceEnhancement";
 
 export function waitForNativeCaptureStart(process: ChildProcessWithoutNullStreams) {
 	return new Promise<void>((resolve, reject) => {
@@ -117,6 +119,7 @@ export async function muxNativeMacRecordingWithAudio(
 	videoPath: string,
 	systemAudioPath?: string | null,
 	microphonePath?: string | null,
+	voiceEnhancementMode: VoiceEnhancementMode = nativeCaptureVoiceEnhancementMode,
 ) {
 	console.log("[mac-mux] Optimization active: keeping tracks separate.");
 
@@ -141,7 +144,27 @@ export async function muxNativeMacRecordingWithAudio(
 			if (stat.size > 0 && microphonePath !== finalMicPath) {
 				await moveFileWithOverwrite(microphonePath, finalMicPath);
 			}
+			if (stat.size > 0 && voiceEnhancementMode !== "off") {
+				console.log(`[voice-enhancement] Applying ${voiceEnhancementMode} RNNoise cleanup`);
+				await enhanceMicrophoneRecording(finalMicPath, voiceEnhancementMode);
+			}
 		} catch (err) {
+			// In microphone-only ScreenCaptureKit sessions the microphone is stored
+			// inline in the MP4. Create a cleaned companion track for the editor.
+			if (!systemAudioPath && voiceEnhancementMode !== "off") {
+				try {
+					console.log(
+						`[voice-enhancement] Extracting inline microphone with ${voiceEnhancementMode} RNNoise cleanup`,
+					);
+					await enhanceMicrophoneRecording(videoPath, voiceEnhancementMode, finalMicPath);
+					return;
+				} catch (enhancementError) {
+					console.error(
+						`[mac-mux] Failed to enhance inline mic audio:`,
+						enhancementError,
+					);
+				}
+			}
 			console.error(`[mac-mux] Failed to handle mic audio:`, err);
 		}
 	}
