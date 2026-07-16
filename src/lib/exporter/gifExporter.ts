@@ -70,6 +70,7 @@ interface GifExporterConfig {
 	autoCaptionSettings?: AutoCaptionSettings;
 	cursorTelemetry?: CursorTelemetryPoint[];
 	showCursor?: boolean;
+	hideCursorWhenIdle?: boolean;
 	cursorStyle?: CursorStyle;
 	cursorSize?: number;
 	cursorSmoothing?: number;
@@ -178,6 +179,7 @@ export function buildGifFrameRendererConfig(
 		previewHeight: config.previewHeight,
 		cursorTelemetry: config.cursorTelemetry,
 		showCursor: config.showCursor,
+		hideCursorWhenIdle: config.hideCursorWhenIdle,
 		cursorStyle: config.cursorStyle,
 		cursorSize: config.cursorSize,
 		cursorSmoothing: config.cursorSmoothing,

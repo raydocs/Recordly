@@ -38,6 +38,8 @@
 		"title": "Video-effecten",
 		"show": "Tonen",
 		"showCursor": "Cursor tonen",
+		"hideCursorWhenIdle": "Cursor verbergen bij inactiviteit",
+		"hideCursorWhenIdleDescription": "Automatisch verbergen wanneer de aanwijzer niet meer beweegt",
 		"loopCursor": "Cursor herhalen",
 		"cursorStyle": "Cursorstijl",
 		"cursorStyleOptions": {

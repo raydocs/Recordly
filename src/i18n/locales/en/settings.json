@@ -38,6 +38,8 @@
 		"title": "Video Effects",
 		"show": "Show",
 		"showCursor": "Show Cursor",
+		"hideCursorWhenIdle": "Hide cursor when idle",
+		"hideCursorWhenIdleDescription": "Automatically hide after the pointer stops moving",
 		"loopCursor": "Loop cursor",
 		"cursorStyle": "Cursor Style",
 		"cursorStyleOptions": {

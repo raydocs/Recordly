@@ -274,6 +274,7 @@ describe("GIF renderer config", () => {
 				cursorClickEffectScale: 1.4,
 				cursorClickEffectOpacity: 0.65,
 				cursorClickEffectDurationMs: 720,
+				hideCursorWhenIdle: true,
 				clipRegions: [
 					{
 						id: "clip-1",
@@ -293,6 +294,7 @@ describe("GIF renderer config", () => {
 			cursorClickEffectScale: 1.4,
 			cursorClickEffectOpacity: 0.65,
 			cursorClickEffectDurationMs: 720,
+			hideCursorWhenIdle: true,
 			clipRegions: [expect.objectContaining({ id: "clip-1", hideCursor: true })],
 		});
 	});

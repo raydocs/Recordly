@@ -4,6 +4,11 @@ import { normalizeProjectEditor } from "./projectPersistence";
 import { ADVANCED_VERTICAL_PADDING_MAX } from "./types";
 
 describe("normalizeProjectEditor", () => {
+	it("persists idle cursor hiding while keeping it opt-in by default", () => {
+		expect(normalizeProjectEditor({}).hideCursorWhenIdle).toBe(false);
+		expect(normalizeProjectEditor({ hideCursorWhenIdle: true }).hideCursorWhenIdle).toBe(true);
+	});
+
 	it("preserves the extended advanced vertical padding range", () => {
 		const editor = normalizeProjectEditor({
 			padding: {

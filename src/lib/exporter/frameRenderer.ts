@@ -35,6 +35,10 @@ import {
 	PixiCursorOverlay,
 	preloadCursorAssets,
 } from "@/components/video-editor/videoPlayback/cursorRenderer";
+import {
+	buildCursorActivityTimeline,
+	isCursorActiveAtTime,
+} from "@/components/video-editor/videoPlayback/cursorIdleVisibility";
 import { computePaddedLayout } from "@/components/video-editor/videoPlayback/layoutUtils";
 import {
 	createSpringState,
@@ -128,6 +132,7 @@ interface FrameRenderConfig {
 	previewHeight?: number;
 	cursorTelemetry?: CursorTelemetryPoint[];
 	showCursor?: boolean;
+	hideCursorWhenIdle?: boolean;
 	cursorStyle?: CursorStyle;
 	cursorSize?: number;
 	cursorSmoothing?: number;
@@ -281,6 +286,7 @@ export class FrameRenderer {
 	private cursorFollowCamera: CursorFollowCameraState;
 	private lastContentTimeMs: number | null = null;
 	private cursorOverlay: PixiCursorOverlay | null = null;
+	private cursorActivityTimes: number[];
 	private webcamForwardFrameSource: ForwardFrameSource | null = null;
 	private webcamDecodedFrame: VideoFrame | null = null;
 	private webcamVideoElement: HTMLVideoElement | null = null;
@@ -298,6 +304,7 @@ export class FrameRenderer {
 
 	constructor(config: FrameRenderConfig) {
 		this.config = config;
+		this.cursorActivityTimes = buildCursorActivityTimeline(config.cursorTelemetry ?? []);
 		this.animationState = createAnimationState();
 		this.motionBlurState = createMotionBlurState();
 		this.springScale = createSpringState(1);
@@ -1648,7 +1655,10 @@ export class FrameRenderer {
 				this.config.cursorTelemetry ?? [],
 				cursorTimeMs,
 				layoutCache.maskRect,
-				(this.config.showCursor ?? true) && cursorPresentation.visible,
+				(this.config.showCursor ?? true) &&
+					cursorPresentation.visible &&
+					(!this.config.hideCursorWhenIdle ||
+						isCursorActiveAtTime(this.cursorActivityTimes, cursorTimeMs)),
 				false,
 			);
 		}
@@ -2121,7 +2131,10 @@ export class FrameRenderer {
 				this.config.cursorTelemetry ?? [],
 				cursorTimeMs,
 				layoutCache.maskRect,
-				(this.config.showCursor ?? true) && cursorPresentation.visible,
+				(this.config.showCursor ?? true) &&
+					cursorPresentation.visible &&
+					(!this.config.hideCursorWhenIdle ||
+						isCursorActiveAtTime(this.cursorActivityTimes, cursorTimeMs)),
 				false,
 			);
 		}

@@ -38,6 +38,8 @@
 		"title": "Effetti video",
 		"show": "Mostra",
 		"showCursor": "Mostra cursore",
+		"hideCursorWhenIdle": "Nascondi il cursore quando è inattivo",
+		"hideCursorWhenIdleDescription": "Nascondilo automaticamente quando il puntatore smette di muoversi",
 		"loopCursor": "Cursore in loop",
 		"cursorStyle": "Stile cursore",
 		"cursorStyleOptions": {

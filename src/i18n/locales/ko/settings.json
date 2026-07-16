@@ -38,6 +38,8 @@
 		"title": "비디오 효과",
 		"show": "표시",
 		"showCursor": "커서 표시",
+		"hideCursorWhenIdle": "커서가 멈추면 자동 숨기기",
+		"hideCursorWhenIdleDescription": "포인터가 움직이지 않으면 자동으로 숨깁니다",
 		"loopCursor": "커서 반복",
 		"cursorStyle": "커서 스타일",
 		"cursorStyleOptions": {

@@ -481,6 +481,9 @@ export default function VideoEditor() {
 		initialEditorPreferences.connectedZoomEasing ?? DEFAULT_CONNECTED_ZOOM_EASING,
 	);
 	const [showCursor, setShowCursor] = useState(initialEditorPreferences.showCursor);
+	const [hideCursorWhenIdle, setHideCursorWhenIdle] = useState(
+		initialEditorPreferences.hideCursorWhenIdle,
+	);
 	const [loopCursor, setLoopCursor] = useState(initialEditorPreferences.loopCursor);
 	const [cursorStyle, setCursorStyle] = useState<CursorStyle>(
 		initialEditorPreferences.cursorStyle ?? DEFAULT_CURSOR_STYLE,
@@ -788,6 +791,7 @@ export default function VideoEditor() {
 			zoomOutEasing,
 			connectedZoomEasing,
 			showCursor,
+			hideCursorWhenIdle,
 			loopCursor,
 			cursorStyle,
 			cursorSize,
@@ -845,6 +849,7 @@ export default function VideoEditor() {
 			zoomOutEasing,
 			connectedZoomEasing,
 			showCursor,
+			hideCursorWhenIdle,
 			loopCursor,
 			cursorStyle,
 			cursorSize,
@@ -943,6 +948,7 @@ export default function VideoEditor() {
 		setZoomOutEasing(snapshot.zoomOutEasing);
 		setConnectedZoomEasing(snapshot.connectedZoomEasing);
 		setShowCursor(snapshot.showCursor);
+		setHideCursorWhenIdle(snapshot.hideCursorWhenIdle);
 		setLoopCursor(snapshot.loopCursor);
 		setCursorStyle(snapshot.cursorStyle);
 		setCursorSize(snapshot.cursorSize);
@@ -1221,6 +1227,7 @@ export default function VideoEditor() {
 					previewHeight,
 					cursorTelemetry,
 					showCursor: effectiveShowCursor,
+					hideCursorWhenIdle,
 					cursorStyle,
 					cursorSize,
 					cursorSmoothing,
@@ -1330,6 +1337,7 @@ export default function VideoEditor() {
 		resolvedWebcamVideoUrl,
 		shadowIntensity,
 		effectiveShowCursor,
+		hideCursorWhenIdle,
 		speedRegions,
 		wallpaper,
 		webcam,
@@ -1724,6 +1732,7 @@ export default function VideoEditor() {
 				zoomOutEasing: ZoomTransitionEasing;
 				connectedZoomEasing: ZoomTransitionEasing;
 				showCursor: boolean;
+				hideCursorWhenIdle: boolean;
 				loopCursor: boolean;
 				cursorStyle: CursorStyle;
 				cursorSize: number;
@@ -1847,6 +1856,7 @@ export default function VideoEditor() {
 				zoomOutEasing,
 				connectedZoomEasing,
 				showCursor,
+				hideCursorWhenIdle,
 				loopCursor,
 				cursorStyle,
 				cursorSize,
@@ -1914,6 +1924,7 @@ export default function VideoEditor() {
 			zoomOutEasing,
 			connectedZoomEasing,
 			showCursor,
+			hideCursorWhenIdle,
 			loopCursor,
 			cursorStyle,
 			cursorSize,
@@ -2116,6 +2127,7 @@ export default function VideoEditor() {
 			setZoomOutEasing(normalizedEditor.zoomOutEasing);
 			setConnectedZoomEasing(normalizedEditor.connectedZoomEasing);
 			setShowCursor(normalizedEditor.showCursor);
+			setHideCursorWhenIdle(normalizedEditor.hideCursorWhenIdle);
 			setLoopCursor(normalizedEditor.loopCursor);
 			setCursorStyle(normalizedEditor.cursorStyle);
 			setCursorSize(normalizedEditor.cursorSize);
@@ -2681,6 +2693,7 @@ export default function VideoEditor() {
 			zoomOutEasing,
 			connectedZoomEasing,
 			showCursor,
+			hideCursorWhenIdle,
 			loopCursor,
 			cursorStyle,
 			cursorSize,
@@ -2737,6 +2750,7 @@ export default function VideoEditor() {
 		zoomOutEasing,
 		connectedZoomEasing,
 		showCursor,
+		hideCursorWhenIdle,
 		loopCursor,
 		cursorStyle,
 		cursorSize,
@@ -5000,6 +5014,7 @@ export default function VideoEditor() {
 						zoomRegions: effectiveZoomRegions,
 						cursorTelemetry: effectiveCursorTelemetry,
 						showCursor: effectiveShowCursor,
+						hideCursorWhenIdle,
 						cursorStyle,
 						cursorSize,
 						cursorSmoothing,
@@ -5187,6 +5202,7 @@ export default function VideoEditor() {
 						zoomRegions: effectiveZoomRegions,
 						cursorTelemetry: effectiveCursorTelemetry,
 						showCursor: effectiveShowCursor,
+						hideCursorWhenIdle,
 						cursorStyle,
 						cursorSize,
 						cursorSmoothing,
@@ -5453,6 +5469,7 @@ export default function VideoEditor() {
 			zoomOutEasing,
 			connectedZoomEasing,
 			effectiveShowCursor,
+			hideCursorWhenIdle,
 			cursorStyle,
 			effectiveCursorTelemetry,
 			cursorSize,
@@ -5926,6 +5943,7 @@ export default function VideoEditor() {
 			onAnnotationSizeChange={handleAnnotationSizeChange}
 			cursorTelemetry={effectiveCursorTelemetry}
 			showCursor={previewShowCursor}
+			hideCursorWhenIdle={hideCursorWhenIdle}
 			cursorStyle={cursorStyle}
 			cursorSize={cursorSize}
 			cursorSmoothing={previewCursorSmoothing}
@@ -6829,6 +6847,8 @@ export default function VideoEditor() {
 								onConnectedZoomEasingChange={setConnectedZoomEasing}
 								showCursor={effectiveShowCursor}
 								onShowCursorChange={handleShowCursorChange}
+								hideCursorWhenIdle={hideCursorWhenIdle}
+								onHideCursorWhenIdleChange={setHideCursorWhenIdle}
 								loopCursor={loopCursor}
 								onLoopCursorChange={setLoopCursor}
 								cursorStyle={cursorStyle}

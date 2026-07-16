@@ -38,6 +38,8 @@
 		"title": "Эффекты",
 		"show": "Показать",
 		"showCursor": "Показать курсор",
+		"hideCursorWhenIdle": "Скрывать курсор при бездействии",
+		"hideCursorWhenIdleDescription": "Автоматически скрывать, когда указатель перестаёт двигаться",
 		"loopCursor": "Зациклить курсор",
 		"cursorStyle": "Стиль курсора",
 		"cursorStyleOptions": {

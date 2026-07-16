@@ -38,6 +38,8 @@
 		"title": "Efeitos de vídeo",
 		"show": "Mostrar",
 		"showCursor": "Mostrar cursor",
+		"hideCursorWhenIdle": "Ocultar cursor quando estiver inativo",
+		"hideCursorWhenIdleDescription": "Ocultar automaticamente quando o ponteiro parar de se mover",
 		"loopCursor": "Loop do cursor",
 		"cursorStyle": "Estilo do cursor",
 		"cursorStyleOptions": {
