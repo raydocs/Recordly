@@ -43,6 +43,8 @@ import { RecordingControls } from "./RecordingControls";
 import { MarqueeText } from "./SourceSelector";
 import { computeWebcamFramingLayout } from "./webcamPreviewFraming";
 import { WEBCAM_PREVIEW_ANCHOR } from "./webcamPreviewPlacement";
+import { computeResizeCornerInset, WEBCAM_RESIZE_HANDLE_SIZE } from "./webcamPreviewResize";
+import { getWebcamPreviewShapeStyle } from "./webcamPreviewShape";
 
 const SHOW_DEV_UPDATE_PREVIEW = import.meta.env.DEV;
 
@@ -156,10 +158,15 @@ function LaunchWindowContent() {
 		videoAspect,
 		recordingWebcamPreviewContainerRef,
 		isWebcamPreviewDraggingRef,
+		isWebcamPreviewResizingRef,
 		webcamPreviewDragStartRef,
+		webcamPreviewSizePillRef,
 		handleWebcamPreviewPointerDown,
 		handleWebcamPreviewPointerMove,
 		handleWebcamPreviewPointerUp,
+		handleWebcamResizeHandlePointerDown,
+		handleWebcamResizeHandlePointerMove,
+		handleWebcamResizeHandlePointerUp,
 		setWebcamPreviewNode,
 		setRecordingWebcamPreviewNode,
 	} = useWebcamPreviewOverlay({
@@ -196,6 +203,9 @@ function LaunchWindowContent() {
 			videoAspect,
 		],
 	);
+	const webcamResizeHandleOffset =
+		computeResizeCornerInset(webcamPreviewAppearance.size, webcamPreviewAppearance.roundness) -
+		WEBCAM_RESIZE_HANDLE_SIZE / 2;
 
 	useEffect(() => {
 		window.electronAPI?.hudOverlaySetWebcamPreviewVisible?.(showRecordingWebcamPreview);
@@ -226,6 +236,7 @@ function LaunchWindowContent() {
 			openId,
 			isHudDraggingRef,
 			isWebcamPreviewDraggingRef,
+			isWebcamPreviewResizingRef,
 			webcamPreviewDragStartRef,
 		});
 
@@ -572,7 +583,7 @@ function LaunchWindowContent() {
 						{showRecordingWebcamPreview && (
 							<div
 								ref={recordingWebcamPreviewContainerRef}
-								className={`${styles.recordingWebcamPreview} ${styles.electronNoDrag} pointer-events-auto`}
+								className={`${styles.webcamPreviewShell} ${styles.electronNoDrag} pointer-events-auto`}
 								data-hud-interactive
 								title={t("recording.webcam")}
 								style={{
@@ -581,7 +592,6 @@ function LaunchWindowContent() {
 									transform: `translate(${webcamPreviewOffset.x}px, ${webcamPreviewOffset.y}px)`,
 									width: webcamPreviewAppearance.size,
 									height: webcamPreviewAppearance.size,
-									borderRadius: `${webcamPreviewAppearance.roundness / 2}%`,
 								}}
 								onMouseEnter={handleHudMouseEnter}
 								onMouseLeave={handleHudMouseLeave}
@@ -590,20 +600,79 @@ function LaunchWindowContent() {
 								onPointerUp={handleWebcamPreviewPointerUp}
 								onPointerCancel={handleWebcamPreviewPointerUp}
 							>
-								<video
-									ref={setRecordingWebcamPreviewNode}
-									className={styles.webcamPreviewFrame}
-									muted
-									playsInline
+								<div
+									className={styles.webcamPreviewClip}
+									style={getWebcamPreviewShapeStyle(
+										webcamPreviewAppearance.roundness,
+									)}
+								>
+									<video
+										ref={setRecordingWebcamPreviewNode}
+										className={styles.webcamPreviewFrame}
+										muted
+										playsInline
+										style={{
+											left: floatingWebcamFramingLayout.video.left,
+											top: floatingWebcamFramingLayout.video.top,
+											width: floatingWebcamFramingLayout.video.width,
+											height: floatingWebcamFramingLayout.video.height,
+											transform: webcamPreviewAppearance.mirror
+												? "scaleX(-1)"
+												: undefined,
+										}}
+									/>
+								</div>
+								<div
+									className={`${styles.webcamResizeHandle} ${styles.webcamResizeHandleTopLeft}`}
 									style={{
-										left: floatingWebcamFramingLayout.video.left,
-										top: floatingWebcamFramingLayout.video.top,
-										width: floatingWebcamFramingLayout.video.width,
-										height: floatingWebcamFramingLayout.video.height,
-										transform: webcamPreviewAppearance.mirror
-											? "scaleX(-1)"
-											: undefined,
+										left: webcamResizeHandleOffset,
+										top: webcamResizeHandleOffset,
 									}}
+									onPointerDown={handleWebcamResizeHandlePointerDown("top-left")}
+									onPointerMove={handleWebcamResizeHandlePointerMove}
+									onPointerUp={handleWebcamResizeHandlePointerUp}
+									onPointerCancel={handleWebcamResizeHandlePointerUp}
+								/>
+								<div
+									className={`${styles.webcamResizeHandle} ${styles.webcamResizeHandleTopRight}`}
+									style={{
+										right: webcamResizeHandleOffset,
+										top: webcamResizeHandleOffset,
+									}}
+									onPointerDown={handleWebcamResizeHandlePointerDown("top-right")}
+									onPointerMove={handleWebcamResizeHandlePointerMove}
+									onPointerUp={handleWebcamResizeHandlePointerUp}
+									onPointerCancel={handleWebcamResizeHandlePointerUp}
+								/>
+								<div
+									className={`${styles.webcamResizeHandle} ${styles.webcamResizeHandleBottomLeft}`}
+									style={{
+										left: webcamResizeHandleOffset,
+										bottom: webcamResizeHandleOffset,
+									}}
+									onPointerDown={handleWebcamResizeHandlePointerDown(
+										"bottom-left",
+									)}
+									onPointerMove={handleWebcamResizeHandlePointerMove}
+									onPointerUp={handleWebcamResizeHandlePointerUp}
+									onPointerCancel={handleWebcamResizeHandlePointerUp}
+								/>
+								<div
+									className={`${styles.webcamResizeHandle} ${styles.webcamResizeHandleBottomRight}`}
+									style={{
+										right: webcamResizeHandleOffset,
+										bottom: webcamResizeHandleOffset,
+									}}
+									onPointerDown={handleWebcamResizeHandlePointerDown(
+										"bottom-right",
+									)}
+									onPointerMove={handleWebcamResizeHandlePointerMove}
+									onPointerUp={handleWebcamResizeHandlePointerUp}
+									onPointerCancel={handleWebcamResizeHandlePointerUp}
+								/>
+								<div
+									ref={webcamPreviewSizePillRef}
+									className={styles.webcamSizePill}
 								/>
 							</div>
 						)}

@@ -4,11 +4,13 @@ export function useLaunchHudInteractionState({
 	openId,
 	isHudDraggingRef,
 	isWebcamPreviewDraggingRef,
+	isWebcamPreviewResizingRef,
 	webcamPreviewDragStartRef,
 }: {
 	openId: string | null;
 	isHudDraggingRef: RefObject<boolean>;
 	isWebcamPreviewDraggingRef: RefObject<boolean>;
+	isWebcamPreviewResizingRef: RefObject<boolean>;
 	webcamPreviewDragStartRef: RefObject<unknown>;
 }) {
 	const isMouseOverHudRef = useRef(false);
@@ -48,6 +50,7 @@ export function useLaunchHudInteractionState({
 						openId === null &&
 						!isHudDraggingRef.current &&
 						!isWebcamPreviewDraggingRef.current &&
+						!isWebcamPreviewResizingRef.current &&
 						!webcamPreviewDragStartRef.current &&
 						!isMouseOverHudRef.current
 					) {
@@ -59,7 +62,13 @@ export function useLaunchHudInteractionState({
 
 		window.addEventListener("mouseover", handleMouseOver);
 		return () => window.removeEventListener("mouseover", handleMouseOver);
-	}, [openId, isHudDraggingRef, isWebcamPreviewDraggingRef, webcamPreviewDragStartRef]);
+	}, [
+		openId,
+		isHudDraggingRef,
+		isWebcamPreviewDraggingRef,
+		isWebcamPreviewResizingRef,
+		webcamPreviewDragStartRef,
+	]);
 
 	const beginInteractiveHudAction = useCallback(() => {
 		isMouseOverHudRef.current = true;
@@ -88,6 +97,7 @@ export function useLaunchHudInteractionState({
 					openId === null &&
 					!isHudDraggingRef.current &&
 					!isWebcamPreviewDraggingRef.current &&
+					!isWebcamPreviewResizingRef.current &&
 					!webcamPreviewDragStartRef.current &&
 					!isMouseOverHudRef.current
 				) {
@@ -95,7 +105,13 @@ export function useLaunchHudInteractionState({
 				}
 			}, 300);
 		},
-		[openId, isHudDraggingRef, isWebcamPreviewDraggingRef, webcamPreviewDragStartRef],
+		[
+			openId,
+			isHudDraggingRef,
+			isWebcamPreviewDraggingRef,
+			isWebcamPreviewResizingRef,
+			webcamPreviewDragStartRef,
+		],
 	);
 
 	return {

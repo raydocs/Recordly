@@ -254,25 +254,30 @@
 	animation: blink 1.2s ease-in-out infinite;
 }
 
-.recordingWebcamPreview {
+.webcamPreviewShell {
 	position: fixed;
-	overflow: hidden;
-	background: var(--launch-surface);
-	border: 1px solid var(--launch-border-strong);
-	box-shadow: var(--launch-bar-shadow);
 	cursor: grab;
 	touch-action: none;
 	user-select: none;
 	will-change: transform;
 	transition:
 		width 180ms cubic-bezier(0.22, 1, 0.36, 1),
-		height 180ms cubic-bezier(0.22, 1, 0.36, 1),
-		border-radius 180ms cubic-bezier(0.22, 1, 0.36, 1);
+		height 180ms cubic-bezier(0.22, 1, 0.36, 1);
 	z-index: 120;
 }
 
-.recordingWebcamPreview:active {
+.webcamPreviewShell:active {
 	cursor: grabbing;
+}
+
+.webcamPreviewClip {
+	position: absolute;
+	inset: 0;
+	overflow: hidden;
+	background: var(--launch-surface);
+	border: 1px solid var(--launch-border-strong);
+	box-shadow: var(--launch-bar-shadow);
+	transition: border-radius 180ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .webcamPreviewFrame {
@@ -290,6 +295,53 @@
 		top 180ms cubic-bezier(0.22, 1, 0.36, 1),
 		width 180ms cubic-bezier(0.22, 1, 0.36, 1),
 		height 180ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.webcamResizeHandle {
+	position: absolute;
+	width: 24px;
+	height: 24px;
+	touch-action: none;
+}
+
+.webcamResizeHandleTopLeft,
+.webcamResizeHandleBottomRight {
+	cursor: nwse-resize;
+}
+
+.webcamResizeHandleTopRight,
+.webcamResizeHandleBottomLeft {
+	cursor: nesw-resize;
+}
+
+.webcamSizePill {
+	position: absolute;
+	left: 50%;
+	top: 50%;
+	transform: translate(-50%, -50%);
+	padding: 3px 10px;
+	border-radius: 999px;
+	background: rgba(17, 17, 22, 0.72);
+	color: #eeeef2;
+	font-size: 11px;
+	font-weight: 600;
+	font-variant-numeric: tabular-nums;
+	pointer-events: none;
+	opacity: 0;
+	transition: opacity 120ms ease;
+}
+
+.webcamSizePill[data-visible] {
+	opacity: 1;
+}
+
+.webcamPreviewShell[data-resizing],
+.webcamPreviewShell[data-framing],
+.webcamPreviewShell[data-resizing] .webcamPreviewClip,
+.webcamPreviewShell[data-framing] .webcamPreviewClip,
+.webcamPreviewShell[data-resizing] .webcamPreviewFrame,
+.webcamPreviewShell[data-framing] .webcamPreviewFrame {
+	transition: none;
 }
 
 @keyframes blink {

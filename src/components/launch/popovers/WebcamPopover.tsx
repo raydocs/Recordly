@@ -21,6 +21,8 @@ import {
 	computeWebcamFramingLayout,
 	type WebcamFramingLayout,
 } from "../webcamPreviewFraming";
+import { WEBCAM_PREVIEW_SHAPE_PRESETS, WEBCAM_PREVIEW_SIZE_PRESETS } from "../webcamPreviewPresets";
+import { getWebcamPreviewShapeStyle } from "../webcamPreviewShape";
 import { useLaunchPopoverCoordinator } from "./LaunchPopoverCoordinator";
 import type { DeviceOption } from "./launchPopoverTypes";
 import { DropdownItem, HudPopover } from "./PopoverScaffold";
@@ -68,6 +70,17 @@ export function WebcamPopover({
 	const t = useScopedT("launch");
 	const { isOpen, requestOpen, requestClose } = useLaunchPopoverCoordinator();
 	const open = isOpen(POPOVER_ID);
+	const sizePresetLabels = {
+		small: t("recording.webcamPreviewSizeSmall", "Small"),
+		medium: t("recording.webcamPreviewSizeMedium", "Medium"),
+		large: t("recording.webcamPreviewSizeLarge", "Large"),
+	};
+	const sizePresetShortLabels = { small: "S", medium: "M", large: "L" };
+	const shapePresetLabels = {
+		circle: t("recording.webcamShapeCircle", "Circle"),
+		rounded: t("recording.webcamShapeRounded", "Rounded"),
+		square: t("recording.webcamShapeSquare", "Square"),
+	};
 
 	const [draftCenter, setDraftCenter] = useState<{
 		centerX: number;
@@ -284,7 +297,7 @@ export function WebcamPopover({
 					<div
 						className="relative h-24 w-24 overflow-hidden bg-[var(--launch-hover)] ring-1 ring-[var(--launch-border-strong)]"
 						style={{
-							borderRadius: `${previewAppearance.roundness / 2}%`,
+							...getWebcamPreviewShapeStyle(previewAppearance.roundness),
 							cursor: isPannable
 								? isFramingDragging
 									? "grabbing"
@@ -339,6 +352,27 @@ export function WebcamPopover({
 			)}
 			{webcamEnabled && (
 				<div className="border-y border-[var(--launch-border)] px-3 py-2.5">
+					<SegmentedRow
+						label={t("recording.webcamPreviewSizePresets", "Size")}
+						options={WEBCAM_PREVIEW_SIZE_PRESETS.map((preset) => ({
+							id: preset.id,
+							label: sizePresetShortLabels[preset.id],
+							accessibleLabel: sizePresetLabels[preset.id],
+							selected: previewAppearance.size === preset.size,
+							onClick: () => onPreviewAppearanceChange({ size: preset.size }),
+						}))}
+					/>
+					<SegmentedRow
+						label={t("recording.webcamPreviewShape", "Shape")}
+						options={WEBCAM_PREVIEW_SHAPE_PRESETS.map((preset) => ({
+							id: preset.id,
+							label: shapePresetLabels[preset.id],
+							accessibleLabel: shapePresetLabels[preset.id],
+							selected: previewAppearance.roundness === preset.roundness,
+							onClick: () =>
+								onPreviewAppearanceChange({ roundness: preset.roundness }),
+						}))}
+					/>
 					<WebcamPreviewSlider
 						label={t("recording.webcamPreviewSize", "Preview size")}
 						valueLabel={`${previewAppearance.size}px`}
@@ -396,6 +430,45 @@ export function WebcamPopover({
 				</div>
 			)}
 		</HudPopover>
+	);
+}
+
+function SegmentedRow({
+	label,
+	options,
+}: {
+	label: string;
+	options: Array<{
+		id: string;
+		label: string;
+		accessibleLabel: string;
+		selected: boolean;
+		onClick: () => void;
+	}>;
+}) {
+	return (
+		<div className="mb-2 flex items-center justify-between gap-4 text-[11px]">
+			<span className="text-[var(--launch-text-muted)]">{label}</span>
+			<div className="flex items-center gap-0.5">
+				{options.map((option) => (
+					<button
+						key={option.id}
+						type="button"
+						aria-label={option.accessibleLabel}
+						aria-pressed={option.selected}
+						title={option.accessibleLabel}
+						className={`min-w-7 rounded-[8px] px-2 py-1 text-[11px] transition-colors ${
+							option.selected
+								? "bg-[var(--launch-selected)] text-[var(--launch-accent)]"
+								: "text-[var(--launch-text-muted)] hover:bg-[var(--launch-hover)]"
+						}`}
+						onClick={option.onClick}
+					>
+						{option.label}
+					</button>
+				))}
+			</div>
+		</div>
 	);
 }
 
