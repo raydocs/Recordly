@@ -1,16 +1,17 @@
 import {
+	MicrophoneIcon,
 	MicrophoneSlashIcon,
+	SparkleIcon,
 	SpeakerHighIcon,
 	SpeakerXIcon,
-	SparkleIcon,
 } from "@phosphor-icons/react";
+import { type ReactElement, useCallback, useRef } from "react";
 import { useScopedT } from "@/contexts/I18nContext";
-import { DropdownItem, HudPopover, MicDeviceRow } from "./PopoverScaffold";
+import type { VoiceEnhancementMode } from "@/hooks/useScreenRecorder";
+import styles from "../LaunchWindow.module.css";
 import { useLaunchPopoverCoordinator } from "./LaunchPopoverCoordinator";
 import type { DeviceOption } from "./launchPopoverTypes";
-import type { ReactElement } from "react";
-import styles from "../LaunchWindow.module.css";
-import type { VoiceEnhancementMode } from "@/hooks/useScreenRecorder";
+import { DropdownItem, HudPopover, MicDeviceRow } from "./PopoverScaffold";
 
 const POPOVER_ID = "mic";
 
@@ -26,6 +27,7 @@ export function MicPopover({
 	devices,
 	microphoneDeviceId,
 	selectedDeviceId,
+	attachMeter,
 	onSelectDevice,
 }: {
 	trigger: ReactElement;
@@ -39,11 +41,20 @@ export function MicPopover({
 	devices: DeviceOption[];
 	microphoneDeviceId?: string;
 	selectedDeviceId?: string;
+	attachMeter: (element: HTMLElement | null) => () => void;
 	onSelectDevice: (deviceId: string) => void;
 }) {
 	const t = useScopedT("launch");
 	const { isOpen, requestOpen, requestClose } = useLaunchPopoverCoordinator();
 	const open = isOpen(POPOVER_ID);
+	const meterCleanupRef = useRef<() => void>();
+	const attachPopoverMeter = useCallback(
+		(element: HTMLDivElement | null) => {
+			meterCleanupRef.current?.();
+			meterCleanupRef.current = attachMeter(element);
+		},
+		[attachMeter],
+	);
 
 	return (
 		<HudPopover
@@ -61,6 +72,18 @@ export function MicPopover({
 			trigger={trigger}
 			align="start"
 		>
+			{microphoneEnabled && (
+				<div className="flex items-center gap-2 border-b border-[var(--launch-border)] px-3 py-3">
+					<MicrophoneIcon size={15} className="shrink-0 text-[var(--launch-accent)]" />
+					<div className="relative h-1 flex-1 overflow-hidden rounded-full bg-[var(--launch-border-strong)]">
+						<div
+							ref={attachPopoverMeter}
+							className="absolute inset-0 origin-left rounded-full bg-[var(--launch-accent)]"
+							style={{ transform: "scaleX(0)" }}
+						/>
+					</div>
+				</div>
+			)}
 			<div className={styles.ddLabel}>{t("recording.microphone")}</div>
 			<DropdownItem
 				icon={

@@ -6,13 +6,15 @@ import {
 	MicrophoneSlashIcon,
 	MinusIcon,
 	MonitorIcon,
+	SpeakerHighIcon,
+	SpeakerXIcon,
 	TimerIcon,
 	VideoCameraIcon,
 	VideoCameraSlashIcon,
 	XIcon,
 } from "@phosphor-icons/react";
 import { AnimatePresence, motion } from "motion/react";
-import { useEffect, useMemo, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef } from "react";
 import { RxDragHandleDots2 } from "react-icons/rx";
 import { Separator } from "@/components/ui/separator";
 import { useScopedT } from "../../contexts/I18nContext";
@@ -26,8 +28,10 @@ import { useHudBarDrag } from "./hooks/useHudBarDrag";
 import { useLaunchHudInteractionState } from "./hooks/useLaunchHudInteractionState";
 import { useLaunchWindowActions } from "./hooks/useLaunchWindowActions";
 import { useLaunchWindowSystemState } from "./hooks/useLaunchWindowSystemState";
+import { useMicrophoneLevel } from "./hooks/useMicrophoneLevel";
 import { useRecordingTimer } from "./hooks/useRecordingTimer";
 import { useWebcamPreviewOverlay } from "./hooks/useWebcamPreviewOverlay";
+import { resolveMicPillLabel, resolveWebcamPillLabel } from "./hudDevicePillLabels";
 import styles from "./LaunchWindow.module.css";
 import { CountdownPopover } from "./popovers/CountdownPopover";
 import {
@@ -37,9 +41,11 @@ import {
 import { MicPopover } from "./popovers/MicPopover";
 import { MorePopover } from "./popovers/MorePopover";
 import { ProjectPopover } from "./popovers/ProjectPopover";
+import { RecordConfirmPopover } from "./popovers/RecordConfirmPopover";
 import { SourcePopover } from "./popovers/SourcePopover";
 import { WebcamPopover } from "./popovers/WebcamPopover";
 import { RecordingControls } from "./RecordingControls";
+import { shouldConfirmMutedCameraRecording } from "./recordPreflight";
 import { MarqueeText } from "./SourceSelector";
 import { computeWebcamFramingLayout } from "./webcamPreviewFraming";
 import { WEBCAM_PREVIEW_ANCHOR } from "./webcamPreviewPlacement";
@@ -118,6 +124,20 @@ function LaunchWindowContent() {
 		selectedDeviceId: selectedVideoDeviceId,
 		setSelectedDeviceId: setSelectedVideoDeviceId,
 	} = useVideoDevices(webcamEnabled || openId === "webcam", webcamDeviceId);
+	const meterDeviceId =
+		microphoneDeviceId ?? (selectedDeviceId === "default" ? undefined : selectedDeviceId);
+	const { attachMeter } = useMicrophoneLevel({
+		enabled: microphoneEnabled && !recording && !finalizing,
+		deviceId: meterDeviceId,
+	});
+	const micPillMeterCleanupRef = useRef<() => void>();
+	const attachMicPillMeter = useCallback(
+		(element: HTMLDivElement | null) => {
+			micPillMeterCleanupRef.current?.();
+			micPillMeterCleanupRef.current = attachMeter(element);
+		},
+		[attachMeter],
+	);
 
 	const {
 		hudOverlayMousePassthroughSupported,
@@ -261,6 +281,36 @@ function LaunchWindowContent() {
 		duration: 0.24,
 		ease: [0.22, 1, 0.36, 1] as const,
 	};
+	const micPillLabel = resolveMicPillLabel(
+		devices,
+		selectedDeviceId,
+		microphoneDeviceId,
+		microphoneEnabled,
+		t("recording.microphoneOffLabel"),
+		t("recording.microphoneGenericLabel"),
+	);
+	const webcamPillLabel = resolveWebcamPillLabel(
+		videoDevices,
+		selectedVideoDeviceId,
+		webcamDeviceId,
+		webcamEnabled,
+		t("recording.webcamOffLabel"),
+		t("recording.webcamGenericLabel"),
+	);
+	const handleRecordClick = () => {
+		if (!hasSelectedSource && platform !== "linux") {
+			beginInteractiveHudAction();
+			requestOpen("sources");
+			return;
+		}
+
+		if (shouldConfirmMutedCameraRecording({ webcamEnabled, microphoneEnabled })) {
+			requestOpen("record-confirm");
+			return;
+		}
+
+		toggleRecording();
+	};
 
 	const recordingControls = (
 		<RecordingControls
@@ -320,6 +370,7 @@ function LaunchWindowContent() {
 				devices={devices}
 				microphoneDeviceId={microphoneDeviceId}
 				selectedDeviceId={selectedDeviceId}
+				attachMeter={attachMeter}
 				onSelectDevice={(deviceId) => {
 					setMicrophoneEnabled(true);
 					setSelectedDeviceId(deviceId);
@@ -327,24 +378,54 @@ function LaunchWindowContent() {
 				}}
 				trigger={
 					<Button
-						variant="ghost"
-						size="icon"
-						iconSize="lg"
-						title={
-							microphoneEnabled
-								? t("recording.disableMicrophone")
-								: t("recording.enableMicrophone")
-						}
-						className={microphoneEnabled ? styles.ibActive : ""}
+						variant="outline"
+						size="lg"
+						disabled={recording}
+						title={micPillLabel}
+						className={`${styles.electronNoDrag} relative group gap-2 px-3 min-w-0 max-w-[172px] rounded-[11px] font-medium text-[12px] shrink-0 border-[var(--launch-border)] bg-[var(--launch-surface)] text-[var(--launch-text)] hover:border-[var(--launch-border-strong)] hover:bg-[var(--launch-hover)] transition-all ${microphoneEnabled ? "border-[var(--launch-border-strong)] bg-[var(--launch-selected)] text-[var(--launch-accent)] hover:bg-[var(--launch-selected)]" : ""} ${openId === "mic" ? "border-[var(--launch-border-strong)] bg-[var(--launch-hover)]" : ""}`}
 					>
 						{microphoneEnabled ? (
-							<MicrophoneIcon size={18} />
+							<MicrophoneIcon size={16} className="shrink-0" />
 						) : (
-							<MicrophoneSlashIcon size={18} />
+							<MicrophoneSlashIcon size={16} className="shrink-0" />
+						)}
+						<div className="flex-1 min-w-0 max-w-[120px] overflow-hidden">
+							<MarqueeText text={micPillLabel} />
+						</div>
+						<CaretUpIcon
+							size={10}
+							className={`text-[#6b6b78] ml-0.5 shrink-0 transition-transform duration-200 ${
+								openId === "mic" ? "" : "rotate-180"
+							}`}
+						/>
+						{microphoneEnabled && (
+							<div className="absolute inset-x-2 bottom-[3px] h-0.5 overflow-hidden rounded-full bg-[var(--launch-border-strong)]">
+								<div
+									ref={attachMicPillMeter}
+									className="absolute inset-0 origin-left rounded-full bg-[var(--launch-accent)]"
+									style={{ transform: "scaleX(0)" }}
+								/>
+							</div>
 						)}
 					</Button>
 				}
 			/>
+
+			<Button
+				variant="ghost"
+				size="icon"
+				iconSize="lg"
+				onClick={() => setSystemAudioEnabled(!systemAudioEnabled)}
+				disabled={recording}
+				title={
+					systemAudioEnabled
+						? t("recording.disableSystemAudio")
+						: t("recording.enableSystemAudio")
+				}
+				className={systemAudioEnabled ? styles.ibActive : ""}
+			>
+				{systemAudioEnabled ? <SpeakerHighIcon size={18} /> : <SpeakerXIcon size={18} />}
+			</Button>
 
 			<WebcamPopover
 				disabled={recording}
@@ -370,21 +451,26 @@ function LaunchWindowContent() {
 				}}
 				trigger={
 					<Button
-						variant="ghost"
-						size="icon"
-						iconSize="lg"
-						title={
-							webcamEnabled
-								? t("recording.disableWebcam")
-								: t("recording.enableWebcam")
-						}
-						className={webcamEnabled ? styles.ibActive : ""}
+						variant="outline"
+						size="lg"
+						disabled={recording}
+						title={webcamPillLabel}
+						className={`${styles.electronNoDrag} group gap-2 px-3 min-w-0 max-w-[172px] rounded-[11px] font-medium text-[12px] shrink-0 border-[var(--launch-border)] bg-[var(--launch-surface)] text-[var(--launch-text)] hover:border-[var(--launch-border-strong)] hover:bg-[var(--launch-hover)] transition-all ${webcamEnabled ? "border-[var(--launch-border-strong)] bg-[var(--launch-selected)] text-[var(--launch-accent)] hover:bg-[var(--launch-selected)]" : ""} ${openId === "webcam" ? "border-[var(--launch-border-strong)] bg-[var(--launch-hover)]" : ""}`}
 					>
 						{webcamEnabled ? (
-							<VideoCameraIcon size={18} />
+							<VideoCameraIcon size={16} className="shrink-0" />
 						) : (
-							<VideoCameraSlashIcon size={18} />
+							<VideoCameraSlashIcon size={16} className="shrink-0" />
 						)}
+						<div className="flex-1 min-w-0 max-w-[120px] overflow-hidden">
+							<MarqueeText text={webcamPillLabel} />
+						</div>
+						<CaretUpIcon
+							size={10}
+							className={`text-[#6b6b78] ml-0.5 shrink-0 transition-transform duration-200 ${
+								openId === "webcam" ? "" : "rotate-180"
+							}`}
+						/>
 					</Button>
 				}
 			/>
@@ -405,22 +491,20 @@ function LaunchWindowContent() {
 				}
 			/>
 
-			<button
-				type="button"
-				className={`${styles.recBtn} ${styles.electronNoDrag}`}
-				onClick={
-					hasSelectedSource || platform === "linux"
-						? toggleRecording
-						: () => {
-								beginInteractiveHudAction();
-								requestOpen("sources");
-							}
+			<RecordConfirmPopover
+				onRecordAnyway={toggleRecording}
+				trigger={
+					<button
+						type="button"
+						className={`${styles.recBtn} ${styles.electronNoDrag}`}
+						onClick={handleRecordClick}
+						disabled={countdownActive}
+						title={t("recording.record")}
+					>
+						<div className={styles.recDot} />
+					</button>
 				}
-				disabled={countdownActive}
-				title={t("recording.record")}
-			>
-				<div className={styles.recDot} />
-			</button>
+			/>
 
 			<Separator orientation="vertical" className="mx-[5px] h-6" />
 
