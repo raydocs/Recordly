@@ -9,6 +9,12 @@ import type {
 } from "./types";
 
 const MIN_WEBCAM_OVERLAY_SIZE_PX = 56;
+const CURSOR_SAFETY_PADDING = 0.055;
+const CURSOR_DODGE_SIZE_SCALE = 0.88;
+const DODGE_IN_MS = 200;
+const RETURN_HOLD_MS = 1200;
+const BACKWARD_TIME_RESET_MS = 500;
+const FORWARD_GAP_RESET_MS = 5000;
 
 function clamp(value: number, min: number, max: number) {
 	return Math.min(max, Math.max(min, value));
@@ -62,21 +68,7 @@ export function getWebcamPositionForPreset(preset: WebcamPositionPreset): { x: n
 	}
 }
 
-export function getAutoDirectedWebcamLayout({
-	enabled,
-	zoomScale,
-	focusX,
-	focusY,
-	cursorX,
-	cursorY,
-	containerWidth,
-	containerHeight,
-	positionPreset,
-	positionX,
-	positionY,
-	widthPercent,
-	heightPercent,
-}: {
+export type WebcamAutoDirectorInput = {
 	enabled: boolean;
 	zoomScale: number;
 	focusX: number;
@@ -90,7 +82,124 @@ export function getAutoDirectedWebcamLayout({
 	positionY: number;
 	widthPercent: number;
 	heightPercent: number;
-}) {
+};
+
+export type WebcamAutoDirectorLayout = {
+	positionPreset: WebcamPositionPreset;
+	positionX: number;
+	positionY: number;
+	widthPercent: number;
+	heightPercent: number;
+};
+
+function cursorTouchesWebcamLayout({
+	cursorX,
+	cursorY,
+	containerWidth,
+	containerHeight,
+	positionX,
+	positionY,
+	widthPercent,
+	heightPercent,
+}: Pick<WebcamAutoDirectorInput, "cursorX" | "cursorY" | "containerWidth" | "containerHeight"> & {
+	positionX: number;
+	positionY: number;
+	widthPercent: number;
+	heightPercent: number;
+}): boolean {
+	if (!Number.isFinite(cursorX) || !Number.isFinite(cursorY)) return false;
+
+	const safeContainerWidth = Math.max(
+		1,
+		Number.isFinite(containerWidth) ? (containerWidth as number) : 1,
+	);
+	const safeContainerHeight = Math.max(
+		1,
+		Number.isFinite(containerHeight) ? (containerHeight as number) : 1,
+	);
+	const minDimension = Math.min(safeContainerWidth, safeContainerHeight);
+	const normalizedWidth = clamp((widthPercent * minDimension) / 100 / safeContainerWidth, 0, 1);
+	const normalizedHeight = clamp(
+		(heightPercent * minDimension) / 100 / safeContainerHeight,
+		0,
+		1,
+	);
+	const left = positionX * Math.max(0, 1 - normalizedWidth);
+	const top = positionY * Math.max(0, 1 - normalizedHeight);
+	const safeCursorX = clamp(cursorX as number, 0, 1);
+	const safeCursorY = clamp(cursorY as number, 0, 1);
+
+	return (
+		safeCursorX >= left - CURSOR_SAFETY_PADDING &&
+		safeCursorX <= left + normalizedWidth + CURSOR_SAFETY_PADDING &&
+		safeCursorY >= top - CURSOR_SAFETY_PADDING &&
+		safeCursorY <= top + normalizedHeight + CURSOR_SAFETY_PADDING
+	);
+}
+
+function getCursorDodgePosition({
+	currentX,
+	currentY,
+	cursorX,
+	cursorY,
+	containerWidth,
+	containerHeight,
+	widthPercent,
+	heightPercent,
+}: Pick<WebcamAutoDirectorInput, "cursorX" | "cursorY" | "containerWidth" | "containerHeight"> & {
+	currentX: number;
+	currentY: number;
+	widthPercent: number;
+	heightPercent: number;
+}): { x: number; y: number } {
+	const candidates = [
+		{ x: 1 - currentX, y: currentY, preference: 0 },
+		{ x: currentX, y: 1 - currentY, preference: 1 },
+		{ x: 1 - currentX, y: 1 - currentY, preference: 2 },
+	]
+		.map((candidate) => ({
+			...candidate,
+			distance: Math.hypot(candidate.x - currentX, candidate.y - currentY),
+		}))
+		.sort(
+			(first, second) =>
+				first.distance - second.distance || first.preference - second.preference,
+		);
+
+	const clearCandidate = candidates.find(
+		(candidate) =>
+			!cursorTouchesWebcamLayout({
+				cursorX,
+				cursorY,
+				containerWidth,
+				containerHeight,
+				positionX: candidate.x,
+				positionY: candidate.y,
+				widthPercent,
+				heightPercent,
+			}),
+	);
+	if (clearCandidate) return clearCandidate;
+
+	const safeCursorX = clamp(cursorX as number, 0, 1);
+	const safeCursorY = clamp(cursorY as number, 0, 1);
+	return {
+		x: safeCursorX < 0.5 ? 1 : 0,
+		y: safeCursorY < 0.5 ? 1 : 0,
+	};
+}
+
+function getUndodgedWebcamLayout({
+	enabled,
+	zoomScale,
+	focusX,
+	focusY,
+	positionPreset,
+	positionX,
+	positionY,
+	widthPercent,
+	heightPercent,
+}: WebcamAutoDirectorInput): WebcamAutoDirectorLayout {
 	const basePosition =
 		positionPreset === "custom"
 			? { x: clamp(positionX, 0, 1), y: clamp(positionY, 0, 1) }
@@ -113,57 +222,139 @@ export function getAutoDirectedWebcamLayout({
 	const targetX = Math.abs(safeFocusX - 0.5) < 0.12 ? basePosition.x : safeFocusX < 0.5 ? 1 : 0;
 	const targetY = Math.abs(safeFocusY - 0.5) < 0.12 ? basePosition.y : safeFocusY < 0.5 ? 1 : 0;
 	const zoomSizeScale = 1 - activity * 0.28;
-	let directedX = basePosition.x + (targetX - basePosition.x) * activity;
-	let directedY = basePosition.y + (targetY - basePosition.y) * activity;
-	let cursorSizeScale = 1;
 
-	const hasCursor = Number.isFinite(cursorX) && Number.isFinite(cursorY);
-	if (hasCursor) {
-		const safeContainerWidth = Math.max(
-			1,
-			Number.isFinite(containerWidth) ? (containerWidth as number) : 1,
-		);
-		const safeContainerHeight = Math.max(
-			1,
-			Number.isFinite(containerHeight) ? (containerHeight as number) : 1,
-		);
-		const minDimension = Math.min(safeContainerWidth, safeContainerHeight);
-		const normalizedWidth = clamp(
-			(widthPercent * zoomSizeScale * minDimension) / 100 / safeContainerWidth,
-			0,
-			1,
-		);
-		const normalizedHeight = clamp(
-			(heightPercent * zoomSizeScale * minDimension) / 100 / safeContainerHeight,
-			0,
-			1,
-		);
-		const left = directedX * Math.max(0, 1 - normalizedWidth);
-		const top = directedY * Math.max(0, 1 - normalizedHeight);
-		const safeCursorX = clamp(cursorX as number, 0, 1);
-		const safeCursorY = clamp(cursorY as number, 0, 1);
-		const safetyPadding = 0.055;
-		const cursorTouchesWebcam =
-			safeCursorX >= left - safetyPadding &&
-			safeCursorX <= left + normalizedWidth + safetyPadding &&
-			safeCursorY >= top - safetyPadding &&
-			safeCursorY <= top + normalizedHeight + safetyPadding;
+	return {
+		positionPreset: "custom",
+		positionX: basePosition.x + (targetX - basePosition.x) * activity,
+		positionY: basePosition.y + (targetY - basePosition.y) * activity,
+		widthPercent: widthPercent * zoomSizeScale,
+		heightPercent: heightPercent * zoomSizeScale,
+	};
+}
 
-		if (cursorTouchesWebcam) {
-			// Pick the corner farthest from the pointer. The renderer animates this
-			// transition, while a small scale reduction keeps nearby content visible.
-			directedX = safeCursorX < 0.5 ? 1 : 0;
-			directedY = safeCursorY < 0.5 ? 1 : 0;
-			cursorSizeScale = 0.88;
-		}
+export function getAutoDirectedWebcamLayout(
+	input: WebcamAutoDirectorInput,
+): WebcamAutoDirectorLayout {
+	const layout = getUndodgedWebcamLayout(input);
+	if (
+		!input.enabled ||
+		!cursorTouchesWebcamLayout({
+			...input,
+			positionX: layout.positionX,
+			positionY: layout.positionY,
+			widthPercent: layout.widthPercent,
+			heightPercent: layout.heightPercent,
+		})
+	) {
+		return layout;
+	}
+
+	const dodgedWidthPercent = layout.widthPercent * CURSOR_DODGE_SIZE_SCALE;
+	const dodgedHeightPercent = layout.heightPercent * CURSOR_DODGE_SIZE_SCALE;
+	const dodgePosition = getCursorDodgePosition({
+		...input,
+		currentX: layout.positionX,
+		currentY: layout.positionY,
+		widthPercent: layout.widthPercent,
+		heightPercent: layout.heightPercent,
+	});
+
+	return {
+		positionPreset: "custom",
+		positionX: dodgePosition.x,
+		positionY: dodgePosition.y,
+		widthPercent: dodgedWidthPercent,
+		heightPercent: dodgedHeightPercent,
+	};
+}
+
+export function createWebcamAutoDirectorController(): {
+	direct: (input: WebcamAutoDirectorInput & { timeMs: number }) => WebcamAutoDirectorLayout;
+} {
+	let lastTimeMs: number | null = null;
+	let collisionStartedAtMs: number | null = null;
+	let clearStartedAtMs: number | null = null;
+	let dodgePosition: { x: number; y: number } | null = null;
+
+	function resetDwellState() {
+		collisionStartedAtMs = null;
+		clearStartedAtMs = null;
+		dodgePosition = null;
 	}
 
 	return {
-		positionPreset: "custom" as const,
-		positionX: directedX,
-		positionY: directedY,
-		widthPercent: widthPercent * zoomSizeScale * cursorSizeScale,
-		heightPercent: heightPercent * zoomSizeScale * cursorSizeScale,
+		direct(input) {
+			const timeMs = Number.isFinite(input.timeMs) ? input.timeMs : 0;
+			if (
+				lastTimeMs !== null &&
+				(timeMs < lastTimeMs - BACKWARD_TIME_RESET_MS ||
+					timeMs - lastTimeMs > FORWARD_GAP_RESET_MS)
+			) {
+				// Scrubs and long frame gaps start fresh instead of carrying stale dwell timers.
+				resetDwellState();
+			}
+			lastTimeMs = timeMs;
+
+			const baseLayout = getUndodgedWebcamLayout(input);
+			if (!input.enabled) {
+				resetDwellState();
+				return baseLayout;
+			}
+
+			const activePosition = dodgePosition ?? {
+				x: baseLayout.positionX,
+				y: baseLayout.positionY,
+			};
+			const collision = cursorTouchesWebcamLayout({
+				...input,
+				positionX: activePosition.x,
+				positionY: activePosition.y,
+				widthPercent: baseLayout.widthPercent,
+				heightPercent: baseLayout.heightPercent,
+			});
+
+			if (collision) {
+				clearStartedAtMs = null;
+				collisionStartedAtMs ??= timeMs;
+				if (timeMs - collisionStartedAtMs >= DODGE_IN_MS) {
+					const immediateLayout = getAutoDirectedWebcamLayout({
+						...input,
+						zoomScale: 1,
+						focusX: 0.5,
+						focusY: 0.5,
+						positionPreset: "custom",
+						positionX: activePosition.x,
+						positionY: activePosition.y,
+						widthPercent: baseLayout.widthPercent,
+						heightPercent: baseLayout.heightPercent,
+					});
+					dodgePosition = {
+						x: immediateLayout.positionX,
+						y: immediateLayout.positionY,
+					};
+					collisionStartedAtMs = timeMs;
+				}
+			} else {
+				collisionStartedAtMs = null;
+				if (dodgePosition) {
+					clearStartedAtMs ??= timeMs;
+					if (timeMs - clearStartedAtMs >= RETURN_HOLD_MS) {
+						resetDwellState();
+						return baseLayout;
+					}
+				}
+			}
+
+			if (!dodgePosition) return baseLayout;
+			return {
+				...baseLayout,
+				positionPreset: "custom",
+				positionX: dodgePosition.x,
+				positionY: dodgePosition.y,
+				widthPercent: baseLayout.widthPercent * CURSOR_DODGE_SIZE_SCALE,
+				heightPercent: baseLayout.heightPercent * CURSOR_DODGE_SIZE_SCALE,
+			};
+		},
 	};
 }
 

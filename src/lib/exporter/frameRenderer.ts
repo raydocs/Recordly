@@ -1,6 +1,7 @@
 import { Application, Container, Graphics, Rectangle, Sprite, Texture } from "pixi.js";
 import { MotionBlurFilter } from "pixi-filters/motion-blur";
 import { ZoomBlurFilter } from "pixi-filters/zoom-blur";
+import { getClipCursorPresentationAtSourceTime } from "@/components/video-editor/clipCursorPresentation";
 import type {
 	AnnotationRegion,
 	AutoCaptionSettings,
@@ -17,7 +18,6 @@ import type {
 	ZoomRegion,
 	ZoomTransitionEasing,
 } from "@/components/video-editor/types";
-import { getClipCursorPresentationAtSourceTime } from "@/components/video-editor/clipCursorPresentation";
 import {
 	BASE_PREVIEW_HEIGHT,
 	BASE_PREVIEW_WIDTH,
@@ -31,14 +31,14 @@ import {
 	SNAP_TO_EDGES_RATIO_AUTO,
 } from "@/components/video-editor/videoPlayback/cursorFollowCamera";
 import {
+	buildCursorActivityTimeline,
+	isCursorActiveAtTime,
+} from "@/components/video-editor/videoPlayback/cursorIdleVisibility";
+import {
 	DEFAULT_CURSOR_CONFIG,
 	PixiCursorOverlay,
 	preloadCursorAssets,
 } from "@/components/video-editor/videoPlayback/cursorRenderer";
-import {
-	buildCursorActivityTimeline,
-	isCursorActiveAtTime,
-} from "@/components/video-editor/videoPlayback/cursorIdleVisibility";
 import { computePaddedLayout } from "@/components/video-editor/videoPlayback/layoutUtils";
 import {
 	createSpringState,
@@ -56,7 +56,7 @@ import {
 	type MotionBlurState,
 } from "@/components/video-editor/videoPlayback/zoomTransform";
 import {
-	getAutoDirectedWebcamLayout,
+	createWebcamAutoDirectorController,
 	getCropMatchedWebcamHeightPercent,
 	getWebcamCropSourceRect,
 	getWebcamLayoutModeAtTime,
@@ -280,6 +280,7 @@ export class FrameRenderer {
 	private layoutCache: LayoutCache | null = null;
 	private currentVideoTime = 0;
 	private currentTimelineTimeMs = 0;
+	private readonly webcamAutoDirectorController = createWebcamAutoDirectorController();
 	private springScale: SpringState;
 	private springX: SpringState;
 	private springY: SpringState;
@@ -2502,7 +2503,7 @@ export class FrameRenderer {
 				canvasHeight: height,
 			},
 		);
-		const directedLayout = getAutoDirectedWebcamLayout({
+		const directedLayout = this.webcamAutoDirectorController.direct({
 			enabled: !isFullscreen && (webcam.autoDirector ?? true),
 			zoomScale: this.animationState.appliedScale || 1,
 			focusX: this.animationState.focusX,
@@ -2516,6 +2517,7 @@ export class FrameRenderer {
 			positionY: webcam.positionY ?? 1,
 			widthPercent,
 			heightPercent,
+			timeMs: this.currentVideoTime * 1000,
 		});
 		const dimensions = isFullscreen
 			? { width, height }

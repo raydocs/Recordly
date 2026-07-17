@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
 	applySessionWebcamAppearance,
+	createWebcamAutoDirectorController,
 	getAutoDirectedWebcamLayout,
 	getCropMatchedWebcamHeightPercent,
 	getWebcamCropSourceRect,
@@ -45,7 +46,7 @@ describe("getAutoDirectedWebcamLayout", () => {
 		expect(layout.widthPercent).toBeLessThan(40);
 	});
 
-	it("moves away from a cursor that would be covered and slightly zooms out", () => {
+	it("uses the nearest single-axis dodge and slightly zooms out", () => {
 		const layout = getAutoDirectedWebcamLayout({
 			enabled: true,
 			zoomScale: 1,
@@ -65,10 +66,51 @@ describe("getAutoDirectedWebcamLayout", () => {
 		expect(layout).toMatchObject({
 			positionPreset: "custom",
 			positionX: 0,
-			positionY: 0,
+			positionY: 1,
 		});
 		expect(layout.widthPercent).toBeCloseTo(35.2);
 		expect(layout.heightPercent).toBeCloseTo(35.2);
+	});
+
+	it("falls back to the farthest diagonal when no flipped candidate clears", () => {
+		const layout = getAutoDirectedWebcamLayout({
+			enabled: true,
+			zoomScale: 1,
+			focusX: 0.5,
+			focusY: 0.5,
+			cursorX: 0.5,
+			cursorY: 0.5,
+			containerWidth: 1920,
+			containerHeight: 1080,
+			positionPreset: "custom",
+			positionX: 0.5,
+			positionY: 0.5,
+			widthPercent: 40,
+			heightPercent: 40,
+		});
+
+		expect(layout).toMatchObject({ positionX: 0, positionY: 0 });
+	});
+
+	it("prefers the shortest cleared axis", () => {
+		const layout = getAutoDirectedWebcamLayout({
+			enabled: true,
+			zoomScale: 1,
+			focusX: 0.5,
+			focusY: 0.5,
+			cursorX: 0.2,
+			cursorY: 0.75,
+			containerWidth: 1920,
+			containerHeight: 1080,
+			positionPreset: "custom",
+			positionX: 0.1,
+			positionY: 0.8,
+			widthPercent: 40,
+			heightPercent: 40,
+		});
+
+		expect(layout.positionX).toBeCloseTo(0.1);
+		expect(layout.positionY).toBeCloseTo(0.2);
 	});
 
 	it("does not move when the cursor is safely outside the webcam", () => {
@@ -94,6 +136,105 @@ describe("getAutoDirectedWebcamLayout", () => {
 			widthPercent: 40,
 			heightPercent: 40,
 		});
+	});
+});
+
+const controllerInput = {
+	enabled: true,
+	zoomScale: 1,
+	focusX: 0.5,
+	focusY: 0.5,
+	containerWidth: 1920,
+	containerHeight: 1080,
+	positionPreset: "bottom-right" as const,
+	positionX: 1,
+	positionY: 1,
+	widthPercent: 40,
+	heightPercent: 40,
+};
+
+describe("createWebcamAutoDirectorController", () => {
+	it("waits for a continuous 200ms collision before dodging", () => {
+		const controller = createWebcamAutoDirectorController();
+		const collidingCursor = { cursorX: 0.92, cursorY: 0.9 };
+
+		expect(
+			controller.direct({ ...controllerInput, ...collidingCursor, timeMs: 0 }),
+		).toMatchObject({
+			positionX: 1,
+			positionY: 1,
+		});
+		expect(
+			controller.direct({ ...controllerInput, ...collidingCursor, timeMs: 100 }),
+		).toMatchObject({ positionX: 1, positionY: 1 });
+		expect(
+			controller.direct({ ...controllerInput, ...collidingCursor, timeMs: 250 }),
+		).toMatchObject({ positionX: 0, positionY: 1 });
+	});
+
+	it("does not dodge when the cursor passes through in under 200ms", () => {
+		const controller = createWebcamAutoDirectorController();
+
+		controller.direct({ ...controllerInput, cursorX: 0.92, cursorY: 0.9, timeMs: 0 });
+		expect(
+			controller.direct({ ...controllerInput, cursorX: 0.1, cursorY: 0.1, timeMs: 150 }),
+		).toMatchObject({ positionX: 1, positionY: 1, widthPercent: 40 });
+		expect(
+			controller.direct({ ...controllerInput, cursorX: 0.92, cursorY: 0.9, timeMs: 250 }),
+		).toMatchObject({ positionX: 1, positionY: 1, widthPercent: 40 });
+	});
+
+	it("holds the dodge for 1200ms after the cursor clears", () => {
+		const controller = createWebcamAutoDirectorController();
+		const collidingCursor = { cursorX: 0.92, cursorY: 0.9 };
+		const clearCursor = { cursorX: 0.1, cursorY: 0.1 };
+
+		controller.direct({ ...controllerInput, ...collidingCursor, timeMs: 0 });
+		controller.direct({ ...controllerInput, ...collidingCursor, timeMs: 250 });
+		expect(
+			controller.direct({ ...controllerInput, ...clearCursor, timeMs: 300 }),
+		).toMatchObject({
+			positionX: 0,
+			positionY: 1,
+		});
+		expect(
+			controller.direct({ ...controllerInput, ...clearCursor, timeMs: 1499 }),
+		).toMatchObject({
+			positionX: 0,
+			positionY: 1,
+		});
+		expect(
+			controller.direct({ ...controllerInput, ...clearCursor, timeMs: 1500 }),
+		).toMatchObject({
+			positionX: 1,
+			positionY: 1,
+		});
+	});
+
+	it("re-dodges after the cursor dwells on the current dodge position", () => {
+		const controller = createWebcamAutoDirectorController();
+
+		controller.direct({ ...controllerInput, cursorX: 0.92, cursorY: 0.9, timeMs: 0 });
+		controller.direct({ ...controllerInput, cursorX: 0.92, cursorY: 0.9, timeMs: 250 });
+		expect(
+			controller.direct({ ...controllerInput, cursorX: 0.08, cursorY: 0.9, timeMs: 300 }),
+		).toMatchObject({ positionX: 0, positionY: 1 });
+		expect(
+			controller.direct({ ...controllerInput, cursorX: 0.08, cursorY: 0.9, timeMs: 550 }),
+		).toMatchObject({ positionX: 1, positionY: 1 });
+	});
+
+	it("resets dwell and dodge state after a backward seek", () => {
+		const controller = createWebcamAutoDirectorController();
+		const collidingCursor = { cursorX: 0.92, cursorY: 0.9 };
+
+		controller.direct({ ...controllerInput, ...collidingCursor, timeMs: 0 });
+		expect(
+			controller.direct({ ...controllerInput, ...collidingCursor, timeMs: 250 }),
+		).toMatchObject({ positionX: 0, positionY: 1 });
+		expect(
+			controller.direct({ ...controllerInput, ...collidingCursor, timeMs: -300 }),
+		).toMatchObject({ positionX: 1, positionY: 1, widthPercent: 40 });
 	});
 });
 

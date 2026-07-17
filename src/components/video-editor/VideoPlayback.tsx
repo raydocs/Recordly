@@ -56,14 +56,14 @@ import {
 } from "./types";
 import { DEFAULT_FOCUS } from "./videoPlayback/constants";
 import {
+	buildCursorActivityTimeline,
+	isCursorActiveAtTime,
+} from "./videoPlayback/cursorIdleVisibility";
+import {
 	DEFAULT_CURSOR_CONFIG,
 	PixiCursorOverlay,
 	preloadCursorAssets,
 } from "./videoPlayback/cursorRenderer";
-import {
-	buildCursorActivityTimeline,
-	isCursorActiveAtTime,
-} from "./videoPlayback/cursorIdleVisibility";
 import { clamp01 } from "./videoPlayback/mathUtils";
 import {
 	createSpringState,
@@ -187,7 +187,7 @@ import {
 	type MotionBlurState,
 } from "./videoPlayback/zoomTransform";
 import {
-	getAutoDirectedWebcamLayout,
+	createWebcamAutoDirectorController,
 	getCropMatchedWebcamHeightPercent,
 	getWebcamCropSourceRect,
 	getWebcamLayoutModeAtTime,
@@ -553,6 +553,10 @@ const VideoPlayback = forwardRef<VideoPlaybackRef, VideoPlaybackProps>(
 			null,
 		);
 		const currentTimeRef = useRef(0);
+		const webcamAutoDirectorControllerRef = useRef<ReturnType<
+			typeof createWebcamAutoDirectorController
+		> | null>(null);
+		webcamAutoDirectorControllerRef.current ??= createWebcamAutoDirectorController();
 		const zoomRegionsRef = useRef<ZoomRegion[]>([]);
 		const selectedZoomIdRef = useRef<string | null>(null);
 		const animationStateRef = useRef<PlaybackAnimationState>(createPlaybackAnimationState());
@@ -1020,7 +1024,7 @@ const VideoPlayback = forwardRef<VideoPlaybackRef, VideoPlaybackProps>(
 								},
 							)
 						: null);
-				const directedLayout = getAutoDirectedWebcamLayout({
+				const directedLayout = webcamAutoDirectorControllerRef.current!.direct({
 					enabled: webcamAutoDirector && !webcamFullscreen,
 					zoomScale,
 					focusX: animationState.focusX,
@@ -1034,6 +1038,7 @@ const VideoPlayback = forwardRef<VideoPlaybackRef, VideoPlaybackProps>(
 					positionY: webcamPositionY,
 					widthPercent: webcamWidth,
 					heightPercent: webcamHeight,
+					timeMs: currentTimeRef.current,
 				});
 				const scaledDimensions = webcamFullscreen
 					? { width: overlay.clientWidth, height: overlay.clientHeight }
