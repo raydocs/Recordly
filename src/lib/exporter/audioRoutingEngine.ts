@@ -68,7 +68,14 @@ export function buildResolvedAudioPlan(input: {
 	if (pathsByTrack.mic) playbackPaths.push(pathsByTrack.mic);
 	if (!hasDedicatedTracks && pathsByTrack.mixed) playbackPaths.push(pathsByTrack.mixed);
 
-	const includeEmbeddedInExport = !pathsByTrack.system && !pathsByTrack.mixed;
+	// Companions were resolved but the caller left the video out of them: it is
+	// saying the embedded track must not be heard. mac microphone-only captures
+	// store the mic inline in the MP4 and ship the cleaned .mic sidecar beside it,
+	// so honouring both would play the same voice twice.
+	const hasResolvedCompanions = hasEmbeddedSourceAudio || externalAudioPaths.length > 0;
+	const embeddedExcludedByCaller = hasResolvedCompanions && !hasEmbeddedSourceAudio;
+	const includeEmbeddedInExport =
+		!embeddedExcludedByCaller && !pathsByTrack.system && !pathsByTrack.mixed;
 	const resolvedRegions = (input.audioRegions ?? []).slice().sort((a, b) => a.startMs - b.startMs);
 	const tracks: ResolvedAudioTrack[] = resolvedRegions.map((region) => ({
 		id: `user:${region.id}`,

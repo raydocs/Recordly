@@ -125,6 +125,10 @@ describe("AudioProcessor offline render preparation", () => {
 			}
 			return null;
 		});
+		// The caller excludes the video from the paths, so the embedded track is
+		// dropped and the source duration comes from the container instead of the
+		// decoded buffer — stub the DOM probe the node environment cannot run.
+		vi.spyOn(processor, "getMediaDurationSec").mockResolvedValue(mainBuffer.duration);
 
 		const prepared = await processor.prepareOfflineRender(
 			"file:///tmp/recording.mp4",
@@ -161,12 +165,13 @@ describe("AudioProcessor offline render preparation", () => {
 		expect(renderAndMuxOfflineAudio).toHaveBeenCalled();
 	});
 
-	it("avoids the single-sidecar fast path for legacy mac mic sidecars that still need embedded audio", async () => {
+	it("takes the single-sidecar fast path for a mac mic sidecar that replaces the inline mic", async () => {
+		// mac microphone-only capture: the mic is inline in the MP4 and the sidecar
+		// is its cleaned copy, so the caller omits the video path. Mixing the two
+		// would emit the voice twice; the cleaned sidecar alone is the whole output.
 		const processor = new AudioProcessor() as unknown as OfflineRenderTestHarness;
 		const loadAudioFileDemuxer = vi.spyOn(processor, "loadAudioFileDemuxer");
-		const renderAndMuxOfflineAudio = vi
-			.spyOn(processor, "renderAndMuxOfflineAudio")
-			.mockResolvedValue();
+		vi.spyOn(processor, "renderAndMuxOfflineAudio").mockResolvedValue();
 
 		await processor.process(
 			{} as never,
@@ -179,8 +184,7 @@ describe("AudioProcessor offline render preparation", () => {
 			["/tmp/recording.mic.m4a"],
 		);
 
-		expect(loadAudioFileDemuxer).not.toHaveBeenCalled();
-		expect(renderAndMuxOfflineAudio).toHaveBeenCalled();
+		expect(loadAudioFileDemuxer).toHaveBeenCalledWith("/tmp/recording.mic.m4a");
 	});
 
 	it("soft-limits mixed peaks before encoding or WAV conversion", () => {
