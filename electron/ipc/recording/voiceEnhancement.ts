@@ -30,7 +30,7 @@ export function getVoiceEnhancementFilters(mode: VoiceEnhancementMode, modelPath
 
 	filters.push(
 		"acompressor=threshold=0.125:ratio=2.5:attack=20:release=250:makeup=1.4",
-		"loudnorm=I=-16:TP=-1.5:LRA=8",
+		"loudnorm=I=-14:TP=-1.5:LRA=8",
 		"alimiter=limit=0.95:level=0",
 	);
 	return filters;
